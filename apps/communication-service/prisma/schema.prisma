@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma/client/communication"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_COMMUNICATION")
+}
+
+enum ConversationType {
+  DIRECT
+  CASE_DISCUSSION
+  BOOKING_CONSULTATION
+  SUPPORT
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  DOCUMENT
+  SYSTEM
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  READ
+}
+
+enum TranslationStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum ReviewDecision {
+  APPROVE
+  REJECT
+  REQUEST_CHANGES
+}
+
+model Conversation {
+  id           String                    @id @default(uuid())
+  caseId       String?                   @map("case_id")
+  bookingId    String?                   @map("booking_id")
+  type         ConversationType          @default(DIRECT)
+  createdAt    DateTime                  @default(now()) @map("created_at")
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  conversationId String       @map("conversation_id")
+  userId         String       @map("user_id")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String       @map("conversation_id")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String       @map("sender_id")
+  message        String
+  messageType    MessageType  @default(TEXT) @map("message_type")
+  attachmentKey  String?      @map("attachment_key")
+  sentAt         DateTime     @default(now()) @map("sent_at")
+  editedAt       DateTime?    @map("edited_at")
+  deletedAt      DateTime?    @map("deleted_at")
+
+  messageReads   MessageRead[]
+
+  @@map("messages")
+}
+
+model MessageRead {
+  messageId String   @map("message_id")
+  userId    String   @map("user_id")
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  readAt    DateTime @default(now()) @map("read_at")
+
+  @@id([messageId, userId])
+  @@map("message_reads")
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String              @map("user_id")
+  title     String
+  body      String
+  type      String
+  channel   NotificationChannel @default(IN_APP)
+  status    NotificationStatus  @default(PENDING)
+  sentAt    DateTime?           @map("sent_at")
+  readAt    DateTime?           @map("read_at")
+
+  @@map("notifications")
+}
+
+model NotificationTemplate {
+  id      String              @id @default(uuid())
+  name    String
+  channel NotificationChannel
+  subject String?
+  body    String
+  locale  String              @default("en")
+
+  @@map("notification_templates")
+}
+
+model I18nString {
+  id        String            @id @default(uuid())
+  key       String
+  namespace String            @default("default")
+  locale    String
+  value     String
+  status    TranslationStatus @default(DRAFT)
+  version   Int               @default(1)
+  updatedBy String?           @map("updated_by")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  reviews   I18nReview[]
+
+  @@unique([key, namespace, locale])
+  @@map("i18n_strings")
+}
+
+model I18nReview {
+  id         String         @id @default(uuid())
+  stringId   String         @map("string_id")
+  i18nString I18nString     @relation(fields: [stringId], references: [id], onDelete: Cascade)
+  reviewerId String         @map("reviewer_id")
+  decision   ReviewDecision
+  note       String?
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  @@map("i18n_reviews")
+}
+
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  payload       Json
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+}

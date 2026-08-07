@@ -1,0 +1,307 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma/client/marketplace"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_MARKETPLACE")
+}
+
+enum ConsultationType {
+  IN_PERSON
+  VIDEO
+  PHONE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NOSHOW
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum CaseStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING_REVIEW
+  CLOSED
+  ARCHIVED
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  FLAGGED
+  HIDDEN
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+  ACTIONED
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model PracticeArea {
+  id                    String                 @id @default(uuid())
+  nameEn                String                 @map("name_en")
+  nameAm                String                 @map("name_am")
+  descriptionEn         String?                @map("description_en")
+  descriptionAm         String?                @map("description_am")
+  icon                  String?
+  sortOrder             Int                    @default(0) @map("sort_order")
+  isActive              Boolean                @default(true) @map("is_active")
+  
+  attorneyPracticeAreas AttorneyPracticeArea[]
+  cases                 Case[]
+
+  @@map("practice_areas")
+}
+
+model AttorneyPracticeArea {
+  attorneyId     String       @map("attorney_id")
+  practiceAreaId String       @map("practice_area_id")
+  practiceArea   PracticeArea @relation(fields: [practiceAreaId], references: [id], onDelete: Cascade)
+
+  @@id([attorneyId, practiceAreaId])
+  @@map("attorney_practice_areas")
+}
+
+model AvailabilityWindow {
+  id          String    @id @default(uuid())
+  attorneyId  String    @map("attorney_id")
+  weekday     Int
+  startTime   String    @map("start_time")
+  endTime     String    @map("end_time")
+  timezone    String    @default("Africa/Addis_Ababa")
+  isAvailable Boolean   @default(true) @map("is_available")
+  
+  bookings    Booking[]
+
+  @@map("availability_windows")
+}
+
+model DiscoveryIndex {
+  attorneyId          String    @id @map("attorney_id")
+  practiceAreaIds     String[]  @map("practice_area_ids")
+  city                String?
+  languages           String[]
+  feeBand             String?   @map("fee_band")
+  rating              Float     @default(0.0)
+  responsivenessScore Float     @default(0.0) @map("responsiveness_score")
+  experienceScore     Float     @default(0.0) @map("experience_score")
+  verifiedAt          DateTime? @map("verified_at")
+  searchScore         Float     @default(0.0) @map("search_score")
+
+  @@map("discovery_index")
+}
+
+model RankingWeight {
+  id                   String   @id @default(uuid())
+  version              Int      @default(1)
+  verificationWeight   Float    @map("verification_weight")
+  ratingWeight         Float    @map("rating_weight")
+  experienceWeight     Float    @map("experience_weight")
+  responsivenessWeight Float    @map("responsiveness_weight")
+  effectiveAt          DateTime @default(now()) @map("effective_at")
+  approvedBy1          String?  @map("approved_by_1")
+  approvedBy2          String?  @map("approved_by_2")
+
+  @@map("ranking_weights")
+}
+
+model SearchEvent {
+  id           String   @id @default(uuid())
+  userId       String?  @map("user_id")
+  filtersJson  Json     @map("filters_json")
+  resultsCount Int      @map("results_count")
+  searchTime   Int      @map("search_time")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("search_events")
+}
+
+model Booking {
+  id               String              @id @default(uuid())
+  clientId         String              @map("client_id")
+  attorneyId       String              @map("attorney_id")
+  availabilityId   String?             @map("availability_id")
+  availability     AvailabilityWindow? @relation(fields: [availabilityId], references: [id])
+  bookingDate      DateTime            @map("booking_date")
+  startTime        String              @map("start_time")
+  endTime          String              @map("end_time")
+  consultationType ConsultationType    @default(VIDEO) @map("consultation_type")
+  status           BookingStatus       @default(PENDING)
+  paymentStatus    PaymentStatus       @default(UNPAID) @map("payment_status")
+  meetingLink      String?             @map("meeting_link")
+  createdAt        DateTime            @default(now()) @map("created_at")
+
+  bookingEvents    BookingEvent[]
+  case             Case?
+  review           Review?
+
+  @@map("bookings")
+}
+
+model BookingEvent {
+  id          String   @id @default(uuid())
+  bookingId   String   @map("booking_id")
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  event       String
+  description String?
+  createdBy   String?  @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("booking_events")
+}
+
+model Case {
+  id             String        @id @default(uuid())
+  bookingId      String?       @unique @map("booking_id")
+  booking        Booking?      @relation(fields: [bookingId], references: [id])
+  clientId       String        @map("client_id")
+  attorneyId     String        @map("attorney_id")
+  practiceAreaId String?       @map("practice_area_id")
+  practiceArea   PracticeArea? @relation(fields: [practiceAreaId], references: [id])
+  title          String
+  description    String
+  priority       Priority      @default(MEDIUM)
+  status         CaseStatus    @default(OPEN)
+  openedAt       DateTime      @default(now()) @map("opened_at")
+  closedAt       DateTime?     @map("closed_at")
+
+  caseDocuments  CaseDocument[]
+  caseMilestones CaseMilestone[]
+
+  @@map("cases")
+}
+
+model CaseDocument {
+  id         String   @id @default(uuid())
+  caseId     String   @map("case_id")
+  case       Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  uploadedBy String   @map("uploaded_by")
+  fileName   String   @map("file_name")
+  fileKey    String   @map("file_key")
+  mimeType   String   @map("mime_type")
+  size       Int
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("case_documents")
+}
+
+model CaseMilestone {
+  id          String          @id @default(uuid())
+  caseId      String          @map("case_id")
+  case        Case            @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  title       String
+  status      MilestoneStatus @default(PENDING)
+  dueDate     DateTime?       @map("due_date")
+  completedAt DateTime?       @map("completed_at")
+
+  @@map("case_milestones")
+}
+
+model Review {
+  id            String         @id @default(uuid())
+  bookingId     String         @unique @map("booking_id")
+  booking       Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  clientId      String         @map("client_id")
+  attorneyId    String         @map("attorney_id")
+  rating        Int
+  comment       String?
+  status        ReviewStatus   @default(PUBLISHED)
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  reviewReports ReviewReport[]
+
+  @@map("reviews")
+}
+
+model ReviewReport {
+  id          String       @id @default(uuid())
+  reviewId    String       @map("review_id")
+  review      Review       @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reportedBy  String       @map("reported_by")
+  reason      String
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  @@map("review_reports")
+}
+
+model PublicPage {
+  id          String     @id @default(uuid())
+  slug        String
+  locale      String     @default("en")
+  title       String
+  body        String
+  version     Int        @default(1)
+  status      PageStatus @default(DRAFT)
+  effectiveAt DateTime?  @map("effective_at")
+  publishedAt DateTime?  @map("published_at")
+
+  @@unique([slug, locale])
+  @@map("public_pages")
+}
+
+model ContactTicket {
+  id         String       @id @default(uuid())
+  name       String
+  email      String
+  phone      String?
+  subject    String
+  message    String
+  sourceIp   String?      @map("source_ip")
+  status     TicketStatus @default(OPEN)
+  assignedTo String?      @map("assigned_to")
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  @@map("contact_tickets")
+}
+
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  payload       Json
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+}

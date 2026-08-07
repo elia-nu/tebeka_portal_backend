@@ -1,0 +1,24 @@
+{
+  "name": "marketplace-service",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/marketplace-service/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/marketplace-service",
+        "main": "apps/marketplace-service/src/main.ts",
+        "tsConfig": "apps/marketplace-service/tsconfig.app.json",
+        "rootDir": "."
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "options": {
+        "buildTarget": "marketplace-service:build"
+      }
+    }
+  }
+}

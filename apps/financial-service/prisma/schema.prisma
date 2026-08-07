@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma/client/financial"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_FINANCIAL")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  TELEBIRR
+  CHAPA
+  CBE_BIRR
+  BOA
+  STRIPE
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSED
+  REJECTED
+}
+
+enum LedgerEntryType {
+  DEBIT
+  CREDIT
+  COMMISSION
+  REFUND
+  PAYOUT
+}
+
+model Payment {
+  id                   String          @id @default(uuid())
+  bookingId            String          @map("booking_id")
+  payerId              String          @map("payer_id")
+  payeeId              String          @map("payee_id")
+  amount               Float
+  currency             String          @default("ETB")
+  commission           Float           @default(0.0)
+  transactionReference String?         @unique @map("transaction_reference")
+  provider             PaymentProvider @default(TELEBIRR)
+  status               PaymentStatus   @default(PENDING)
+  paidAt               DateTime?       @map("paid_at")
+
+  refunds              Refund[]
+  ledgerEntries        LedgerEntry[]
+
+  @@map("payments")
+}
+
+model Refund {
+  id          String       @id @default(uuid())
+  paymentId   String       @map("payment_id")
+  payment     Payment      @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  amount      Float
+  reason      String
+  status      RefundStatus @default(PENDING)
+  processedAt DateTime?    @map("processed_at")
+
+  @@map("refunds")
+}
+
+model LedgerEntry {
+  id           String          @id @default(uuid())
+  paymentId    String          @map("payment_id")
+  payment      Payment         @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  entryType    LedgerEntryType @map("entry_type")
+  amount       Float
+  balanceAfter Float           @map("balance_after")
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  @@map("ledger_entries")
+}
+
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  payload       Json
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+}

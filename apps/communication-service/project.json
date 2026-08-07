@@ -1,0 +1,24 @@
+{
+  "name": "communication-service",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/communication-service/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/communication-service",
+        "main": "apps/communication-service/src/main.ts",
+        "tsConfig": "apps/communication-service/tsconfig.app.json",
+        "rootDir": "."
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "options": {
+        "buildTarget": "communication-service:build"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../dist/apps/user-service",
+    "rootDir": "../../",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "../../libs/**/*.ts"]
+}

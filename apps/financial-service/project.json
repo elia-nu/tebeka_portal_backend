@@ -1,0 +1,24 @@
+{
+  "name": "financial-service",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/financial-service/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/financial-service",
+        "main": "apps/financial-service/src/main.ts",
+        "tsConfig": "apps/financial-service/tsconfig.app.json",
+        "rootDir": "."
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "options": {
+        "buildTarget": "financial-service:build"
+      }
+    }
+  }
+}

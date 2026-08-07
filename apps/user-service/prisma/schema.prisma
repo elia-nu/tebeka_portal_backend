@@ -1,0 +1,521 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_USER")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+  ARCHIVED
+}
+
+enum VerificationStatus {
+  DRAFT
+  SUBMITTED
+  PENDING_REVIEW
+  ADDITIONAL_INFO_REQUIRED
+  APPROVED
+  REJECTED
+  SUSPENDED
+  EXPIRED
+}
+
+enum ChecklistStatus {
+  PENDING
+  PASSED
+  FAILED
+}
+
+enum ProfileStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum FraudStatus {
+  NONE
+  FRAUD_REVIEW
+  CLEARED
+  CONFIRMED
+}
+
+enum MakerCheckerStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum I18nStatus {
+  DRAFT
+  IN_REVIEW
+  LEGAL_REVIEW
+  PUBLISHED
+}
+
+enum I18nReviewDecision {
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+}
+
+model User {
+  id                    String           @id @default(uuid())
+  email                 String           @unique
+  emailVerified         Boolean          @default(false) @map("email_verified")
+  name                  String?
+  displayName           String?          @map("display_name")
+  gender                String?
+  dateOfBirth           DateTime?        @map("date_of_birth")
+  preferredCommunication String?         @default("EMAIL") @map("preferred_communication")
+  emergencyContact      String?          @map("emergency_contact")
+  image                 String?
+  phone                 String?
+  phoneVerified         Boolean          @default(false) @map("phone_verified")
+  passwordHash          String?          @map("password_hash")
+  roleId                String?          @map("role_id")
+  roleRelation          Role?            @relation(fields: [roleId], references: [id])
+  role                  String?          @default("user")
+  banned                Boolean?         @default(false)
+  banReason             String?          @map("ban_reason")
+  banExpires            DateTime?        @map("ban_expires")
+  marketingConsent      Boolean          @default(false) @map("marketing_consent")
+  isArchived            Boolean          @default(false) @map("is_archived")
+  archivedAt            DateTime?        @map("archived_at")
+  status                UserStatus       @default(ACTIVE)
+  locale                String           @default("en")
+  is2faEnabled          Boolean          @default(false) @map("is_2fa_enabled")
+  twoFactorEnabled      Boolean?         @default(false) @map("two_factor_enabled")
+  lastLoginAt           DateTime?        @map("last_login_at")
+  lastLoginIp           String?          @map("last_login_ip")
+  registeredIp          String?          @map("registered_ip")
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+
+  attorneyProfile       AttorneyProfile?
+  sessions              Session[]
+  accounts              Account[]
+  twoFactors            TwoFactor[]
+  otpCodes              OtpCode[]
+  adminActions          AdminAction[]
+  auditLogs             AuditLog[]
+  userPreference        UserPreference?
+
+  @@unique([phone, role])
+  @@map("users")
+}
+
+model Session {
+  id                   String    @id @default(uuid())
+  userId               String    @map("user_id")
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token                String    @unique
+  expiresAt            DateTime  @map("expires_at")
+  ipAddress            String?   @map("ip_address")
+  userAgent            String?   @map("user_agent")
+  browser              String?
+  os                   String?
+  device               String?
+  country              String?
+  refreshFamily        String?   @map("refresh_family")
+  revokedAt            DateTime? @map("revoked_at")
+  activeOrganizationId String?   @map("active_organization_id")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  userId                String    @map("user_id")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("verifications")
+}
+
+model TwoFactor {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  secret      String
+  backupCodes String   @map("backup_codes")
+  enabled     Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("two_factors")
+}
+
+model Role {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  description     String?
+  isSystem        Boolean          @default(false) @map("is_system")
+  hierarchyLevel  Int              @default(1) @map("hierarchy_level")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  module          String
+  description     String?
+  action          String?
+  resource        String?
+  permissionGroup String?          @map("permission_group")
+  
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model OtpCode {
+  id                String    @id @default(uuid())
+  userId            String?   @map("user_id")
+  user              User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone             String
+  purpose           String
+  codeHash          String    @map("code_hash")
+  continuationToken String?   @unique @map("continuation_token")
+  expiresAt         DateTime  @map("expires_at")
+  attempts          Int       @default(0)
+  usedAt            DateTime? @map("used_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  @@map("otp_codes")
+}
+
+model AttorneyProfile {
+  id                    String             @id @default(uuid())
+  userId                String             @unique @map("user_id")
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug                  String?            @unique
+  bioEn                 String?            @map("bio_en")
+  bioAm                 String?            @map("bio_am")
+  photoKey              String?            @map("photo_key")
+  exifStripped          Boolean            @default(true) @map("exif_stripped")
+  city                  String?
+  region                String?
+  country               String?            @default("Ethiopia")
+  officeAddress         String?            @map("office_address")
+  latitude              Float?
+  longitude             Float?
+  videoSupport          Boolean            @default(true) @map("video_support")
+  bufferTimeMinutes     Int                @default(15) @map("buffer_time_minutes")
+  maxBookingsPerDay     Int                @default(8) @map("max_bookings_per_day")
+  languages             String[]           @default(["en", "am"])
+  feeBand               String?            @map("fee_band")
+  consultationFee       Float              @default(0.0) @map("consultation_fee")
+  experienceYears       Int                @default(0) @map("experience_years")
+  barRegistrationNumber String?            @map("bar_registration_number")
+  barAdmissionYear      Int?               @map("bar_admission_year")
+  standingStatus        String?            @map("standing_status")
+  standingCheckedAt     DateTime?          @map("standing_checked_at")
+  standingCheckedBy     String?            @map("standing_checked_by")
+  standingNotes         String?            @map("standing_notes")
+  verificationStatus    VerificationStatus @default(DRAFT) @map("verification_status")
+  hasVerifiedBadge      Boolean            @default(false) @map("has_verified_badge")
+  credentialClaimsMatch Boolean            @default(false) @map("credential_claims_match")
+  profileCompleteness   Int                @default(0) @map("profile_completeness")
+  rating                Float              @default(0.0)
+  reviewCount           Int                @default(0) @map("review_count")
+  totalConsultations    Int                @default(0) @map("total_consultations")
+  completionRate        Float              @default(100.0) @map("completion_rate")
+  responsivenessScore   Float              @default(0.0) @map("responsiveness_score")
+  status                ProfileStatus      @default(DRAFT)
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+  
+  educations            AttorneyEducation[]
+  credentials           Credential[]
+  verificationCases     VerificationCase[]
+  guardedChanges        GuardedChange[]
+
+  @@map("attorney_profiles")
+}
+
+model AttorneyEducation {
+  id           String          @id @default(uuid())
+  attorneyId   String          @map("attorney_id")
+  attorney     AttorneyProfile @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
+  institution  String
+  degree       String
+  fieldOfStudy String?         @map("field_of_study")
+  startYear    Int?            @map("start_year")
+  endYear      Int?            @map("end_year")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  @@map("attorney_educations")
+}
+
+model GuardedChange {
+  id                 String          @id @default(uuid())
+  attorneyId         String          @map("attorney_id")
+  attorney           AttorneyProfile @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
+  field              String
+  oldValue           String?         @map("old_value")
+  newValue           String?         @map("new_value")
+  verificationCaseId String?         @map("verification_case_id")
+  status             String          @default("PENDING")
+  decision           String?
+  decisionBy         String?         @map("decision_by")
+  decisionAt         DateTime?       @map("decision_at")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  @@map("guarded_changes")
+}
+
+model Credential {
+  id                 String               @id @default(uuid())
+  attorneyId         String               @map("attorney_id")
+  attorney           AttorneyProfile      @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
+  credentialType     String               @map("credential_type")
+  issuer             String
+  credentialNumber   String               @map("credential_number")
+  issueDate          DateTime?            @map("issue_date")
+  expiryDate         DateTime?            @map("expiry_date")
+  verificationStatus VerificationStatus   @default(DRAFT) @map("verification_status")
+  verifiedAt         DateTime?            @map("verified_at")
+  
+  documents          CredentialDocument[]
+
+  @@map("credentials")
+}
+
+model CredentialDocument {
+  id           String     @id @default(uuid())
+  credentialId String     @map("credential_id")
+  credential   Credential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+  fileKey      String     @map("file_key")
+  mimeType     String     @map("mime_type")
+  size         Int
+  uploadedAt   DateTime   @default(now()) @map("uploaded_at")
+
+  @@map("credential_documents")
+}
+
+model VerificationCase {
+  id                 String                  @id @default(uuid())
+  attorneyId         String                  @map("attorney_id")
+  attorney           AttorneyProfile         @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
+  status             VerificationStatus      @default(SUBMITTED)
+  fraudStatus        FraudStatus             @default(NONE) @map("fraud_status")
+  assignedReviewerId String?                 @map("assigned_reviewer_id")
+  slaDueDate         DateTime?               @map("sla_due_date")
+  isSlaPaused        Boolean                 @default(false) @map("is_sla_paused")
+  slaPausedAt        DateTime?               @map("sla_paused_at")
+  slaResumedAt       DateTime?               @map("sla_resumed_at")
+  submittedAt        DateTime                @default(now()) @map("submitted_at")
+  verifiedAt         DateTime?               @map("verified_at")
+  rejectedReason     String?                 @map("rejected_reason")
+  isImmutable        Boolean                 @default(true) @map("is_immutable")
+  previousCaseId     String?                 @map("previous_case_id")
+  
+  checklists         VerificationChecklist[]
+
+  @@map("verification_cases")
+}
+
+model VerificationChecklist {
+  id                 String           @id @default(uuid())
+  verificationCaseId String           @map("verification_case_id")
+  verificationCase   VerificationCase @relation(fields: [verificationCaseId], references: [id], onDelete: Cascade)
+  itemName           String           @map("item_name")
+  status             ChecklistStatus  @default(PENDING)
+  remarks            String?
+  completedBy        String?          @map("completed_by")
+  completedAt        DateTime?        @map("completed_at")
+
+  @@map("verification_checklists")
+}
+
+model VerificationDocumentAccessLog {
+  id                 String   @id @default(uuid())
+  reviewerId         String   @map("reviewer_id")
+  verificationCaseId String   @map("verification_case_id")
+  documentId         String   @map("document_id")
+  ipAddress          String?  @map("ip_address")
+  accessedAt         DateTime @default(now()) @map("accessed_at")
+
+  @@map("verification_document_access_logs")
+}
+
+model FraudReviewCase {
+  id                      String      @id @default(uuid())
+  verificationCaseId      String      @map("verification_case_id")
+  flaggedByUserId         String      @map("flagged_by_user_id")
+  assignedSeniorReviewerId String?     @map("assigned_senior_reviewer_id")
+  fraudSignalTypes        String[]    @map("fraud_signal_types")
+  status                  FraudStatus @default(FRAUD_REVIEW)
+  notes                   String?
+  createdAt               DateTime    @default(now()) @map("created_at")
+  updatedAt               DateTime    @updatedAt @map("updated_at")
+
+  @@map("fraud_review_cases")
+}
+
+model MakerCheckerConfigChange {
+  id                 String             @id @default(uuid())
+  key                String
+  proposedValue      Json               @map("proposed_value")
+  oldValue           Json?              @map("old_value")
+  submittedByAdminId String             @map("submitted_by_admin_id")
+  approvedByAdminId  String?            @map("approved_by_admin_id")
+  status             MakerCheckerStatus @default(PENDING_APPROVAL)
+  effectiveAt        DateTime?          @map("effective_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  @@map("maker_checker_config_changes")
+}
+
+model UserPreference {
+  userId                  String   @id @map("user_id")
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locale                  String   @default("en")
+  timezone                String   @default("Africa/Addis_Ababa")
+  theme                   String   @default("light")
+  darkMode                Boolean  @default(false) @map("dark_mode")
+  emailNotifications      Boolean  @default(true) @map("email_notifications")
+  smsNotifications        Boolean  @default(true) @map("sms_notifications")
+  pushNotifications       Boolean  @default(true) @map("push_notifications")
+  notificationPreferences Json?    @map("notification_preferences")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@map("user_preferences")
+}
+
+model AdminAction {
+  id        String   @id @default(uuid())
+  adminId   String   @map("admin_id")
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action    String
+  entity    String
+  entityId  String   @map("entity_id")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("admin_actions")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  userId        String?  @map("user_id")
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action        String
+  entity        String
+  entityId      String   @map("entity_id")
+  oldValue      Json?    @map("old_value")
+  newValue      Json?    @map("new_value")
+  ipAddress     String?  @map("ip_address")
+  browser       String?
+  device        String?
+  sessionId     String?  @map("session_id")
+  correlationId String?  @map("correlation_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
+
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  payload       Json
+  correlationId String?   @map("correlation_id")
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+}
+
+model I18nString {
+  id             String     @id @default(uuid())
+  key            String
+  namespace      String
+  locale         String
+  value          String
+  status         I18nStatus @default(DRAFT)
+  legalSensitive Boolean    @default(false) @map("legal_sensitive")
+  version        Int        @default(1)
+  updatedBy      String?    @map("updated_by")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  @@unique([key, locale, version])
+  @@index([namespace, locale, status])
+  @@map("i18n_strings")
+}
+
+model I18nReview {
+  id         String             @id @default(uuid())
+  stringKey  String             @map("string_key")
+  locale     String
+  reviewerId String             @map("reviewer_id")
+  decision   I18nReviewDecision
+  note       String?
+  createdAt  DateTime           @default(now()) @map("created_at")
+
+  @@index([stringKey, locale])
+  @@map("i18n_reviews")
+}
+
+model I18nMissingKeyLog {
+  id              String   @id @default(uuid())
+  key             String
+  namespace       String
+  locale          String
+  requestedCount  Int      @default(1) @map("requested_count")
+  lastRequestedAt DateTime @default(now()) @map("last_requested_at")
+
+  @@unique([key, locale])
+  @@map("i18n_missing_keys")
+}
