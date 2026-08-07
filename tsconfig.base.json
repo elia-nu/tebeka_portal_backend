@@ -1,0 +1,43 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@workspace/config": ["libs/config/src/index.ts"],
+      "@workspace/common": ["libs/common/src/index.ts"],
+      "@workspace/logger": ["libs/logger/src/index.ts"],
+      "@workspace/database": ["libs/database/src/index.ts"],
+      "@workspace/event-bus": ["libs/event-bus/src/index.ts"],
+      "@workspace/auth": ["libs/auth/src/index.ts"],
+      "@workspace/cache": ["libs/cache/src/index.ts"],
+      "@workspace/storage": ["libs/storage/src/index.ts"],
+      "@workspace/localization": ["libs/localization/src/index.ts"],
+      "@workspace/websocket": ["libs/websocket/src/index.ts"],
+      "@workspace/scheduler": ["libs/scheduler/src/index.ts"],
+      "@tebeka/config": ["libs/config/src/index.ts"],
+      "@tebeka/common": ["libs/common/src/index.ts"],
+      "@tebeka/logger": ["libs/logger/src/index.ts"],
+      "@tebeka/database": ["libs/database/src/index.ts"],
+      "@tebeka/event-bus": ["libs/event-bus/src/index.ts"],
+      "@tebeka/auth": ["libs/auth/src/index.ts"],
+      "@tebeka/cache": ["libs/cache/src/index.ts"],
+      "@tebeka/storage": ["libs/storage/src/index.ts"],
+      "@tebeka/localization": ["libs/localization/src/index.ts"],
+      "@tebeka/websocket": ["libs/websocket/src/index.ts"],
+      "@tebeka/scheduler": ["libs/scheduler/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp", "dist"]
+}
