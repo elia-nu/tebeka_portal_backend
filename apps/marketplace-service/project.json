@@ -10,6 +10,7 @@
       "options": {
         "outputPath": "dist/apps/marketplace-service",
         "main": "apps/marketplace-service/src/main.ts",
+        "outputFileName": "apps/marketplace-service/src/main.js",
         "tsConfig": "apps/marketplace-service/tsconfig.app.json",
         "rootDir": "."
       }
@@ -17,7 +18,9 @@
     "serve": {
       "executor": "@nx/js:node",
       "options": {
-        "buildTarget": "marketplace-service:build"
+        "buildTarget": "marketplace-service:build",
+        "runtimeArgs": ["-r", "ts-node/register/transpile-only", "-r", "tsconfig-paths/register"],
+        "inspect": false
       }
     }
   }

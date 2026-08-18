@@ -8,11 +8,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(AppConfigService);
 
-  app.setGlobalPrefix('api/v1/marketplace');
+  app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new GlobalHttpExceptionFilter());
 
-  await app.listen(config.marketplaceServicePort);
-  console.log(`⚖️ Marketplace Service running on port http://localhost:${config.marketplaceServicePort}`);
+  await app.listen(config.marketplaceServicePort, '0.0.0.0');
+  console.log(`⚖️ Marketplace Service running on port http://localhost:${config.marketplaceServicePort}/api/v1`);
 }
 bootstrap();

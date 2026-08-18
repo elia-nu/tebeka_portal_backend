@@ -156,8 +156,19 @@ model SearchEvent {
   @@map("search_events")
 }
 
+enum DocumentType {
+  CONTRACT
+  AGREEMENT
+  RESOLUTION
+  POWER_OF_ATTORNEY
+  MEMORANDUM_OF_ASSOCIATION
+  CASE_DOCUMENT
+  OTHER
+}
+
 model Booking {
   id               String              @id @default(uuid())
+  referenceNumber  String?             @unique @map("reference_number")
   clientId         String              @map("client_id")
   attorneyId       String              @map("attorney_id")
   availabilityId   String?             @map("availability_id")
@@ -169,13 +180,35 @@ model Booking {
   status           BookingStatus       @default(PENDING)
   paymentStatus    PaymentStatus       @default(UNPAID) @map("payment_status")
   meetingLink      String?             @map("meeting_link")
+  issueBrief       String?             @map("issue_brief")
+  notes            String?
+  rescheduleProposedBy String?         @map("reschedule_proposed_by")
+  proposedBookingDate DateTime?        @map("proposed_booking_date")
+  proposedStartTime String?            @map("proposed_start_time")
+  proposedEndTime   String?            @map("proposed_end_time")
+  rescheduleExpiresAt DateTime?        @map("reschedule_expires_at")
+  rescheduleCount  Int                 @default(0) @map("reschedule_count")
+  noShowReportedBy String?             @map("no_show_reported_by")
+  noShowReason     String?             @map("no_show_reason")
   createdAt        DateTime            @default(now()) @map("created_at")
 
   bookingEvents    BookingEvent[]
+  bookingTimelines BookingTimeline[]
   case             Case?
   review           Review?
 
   @@map("bookings")
+}
+
+model AvailabilityBlackout {
+  id         String   @id @default(uuid())
+  attorneyId String   @map("attorney_id")
+  startDate  DateTime @map("start_date")
+  endDate    DateTime @map("end_date")
+  reason     String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("availability_blackouts")
 }
 
 model BookingEvent {
@@ -190,37 +223,74 @@ model BookingEvent {
   @@map("booking_events")
 }
 
-model Case {
-  id             String        @id @default(uuid())
-  bookingId      String?       @unique @map("booking_id")
-  booking        Booking?      @relation(fields: [bookingId], references: [id])
-  clientId       String        @map("client_id")
-  attorneyId     String        @map("attorney_id")
-  practiceAreaId String?       @map("practice_area_id")
-  practiceArea   PracticeArea? @relation(fields: [practiceAreaId], references: [id])
-  title          String
-  description    String
-  priority       Priority      @default(MEDIUM)
-  status         CaseStatus    @default(OPEN)
-  openedAt       DateTime      @default(now()) @map("opened_at")
-  closedAt       DateTime?     @map("closed_at")
+model BookingTimeline {
+  id          String   @id @default(uuid())
+  bookingId   String   @map("booking_id")
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  eventDate   DateTime @map("event_date")
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  caseDocuments  CaseDocument[]
-  caseMilestones CaseMilestone[]
+  @@map("booking_timelines")
+}
+
+model Case {
+  id              String         @id @default(uuid())
+  referenceNumber String?        @unique @map("reference_number")
+  bookingId       String?        @unique @map("booking_id")
+  booking         Booking?       @relation(fields: [bookingId], references: [id])
+  clientId        String         @map("client_id")
+  attorneyId      String         @map("attorney_id")
+  practiceAreaId  String?        @map("practice_area_id")
+  practiceArea    PracticeArea?  @relation(fields: [practiceAreaId], references: [id])
+  title           String
+  description     String
+  category        String?
+  tags            String[]       @default([])
+  priority        Priority       @default(MEDIUM)
+  status          CaseStatus     @default(OPEN)
+  openedAt        DateTime       @default(now()) @map("opened_at")
+  closedAt        DateTime?      @map("closed_at")
+
+  opposingPartyName      String?   @map("opposing_party_name")
+  involvedOrganization   String?   @map("involved_organization")
+  conflictAcknowledged   Boolean   @default(false) @map("conflict_acknowledged")
+  timeSensitiveDate      DateTime? @map("time_sensitive_date")
+  urgencyReason          String?   @map("urgency_reason")
+
+  caseDocuments   CaseDocument[]
+  caseMilestones  CaseMilestone[]
+  caseTimelines   CaseTimeline[]
 
   @@map("cases")
 }
 
+model CaseTimeline {
+  id          String   @id @default(uuid())
+  caseId      String   @map("case_id")
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  eventDate   DateTime @map("event_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("case_timelines")
+}
+
 model CaseDocument {
-  id         String   @id @default(uuid())
-  caseId     String   @map("case_id")
-  case       Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  uploadedBy String   @map("uploaded_by")
-  fileName   String   @map("file_name")
-  fileKey    String   @map("file_key")
-  mimeType   String   @map("mime_type")
-  size       Int
-  createdAt  DateTime @default(now()) @map("created_at")
+  id           String       @id @default(uuid())
+  caseId       String       @map("case_id")
+  case         Case         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  uploadedBy   String       @map("uploaded_by")
+  fileName     String       @map("file_name")
+  fileKey      String       @map("file_key")
+  mimeType     String       @map("mime_type")
+  size         Int
+  documentType DocumentType @default(CASE_DOCUMENT) @map("document_type")
+  isTemplate   Boolean      @default(false) @map("is_template")
+  version      Int          @default(1)
+  createdAt    DateTime     @default(now()) @map("created_at")
 
   @@map("case_documents")
 }
@@ -245,6 +315,9 @@ model Review {
   attorneyId    String         @map("attorney_id")
   rating        Int
   comment       String?
+  rebuttal      String?
+  rebuttalAt    DateTime?      @map("rebuttal_at")
+  isVerified    Boolean        @default(false) @map("is_verified")
   status        ReviewStatus   @default(PUBLISHED)
   createdAt     DateTime       @default(now()) @map("created_at")
 
