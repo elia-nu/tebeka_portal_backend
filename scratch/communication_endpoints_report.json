@@ -1,0 +1,950 @@
+[
+  {
+    "endpoint": "/api/v1/conversations",
+    "method": "POST",
+    "request": {
+      "title": "Direct Client-Attorney Consultation",
+      "type": "DIRECT",
+      "participantIds": [
+        "00000000-0000-0000-0000-000000000001",
+        "00000000-0000-0000-0000-000000000002"
+      ],
+      "role": "CLIENT"
+    },
+    "response": {
+      "id": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+      "title": "Direct Client-Attorney Consultation",
+      "type": "DIRECT",
+      "status": "ACTIVE",
+      "bookingId": null,
+      "caseId": null,
+      "createdById": "00000000-0000-0000-0000-000000000001",
+      "lastMessageAt": null,
+      "lastMessageText": null,
+      "createdAt": "2026-08-17T12:59:49.858Z",
+      "updatedAt": "2026-08-17T12:59:49.858Z",
+      "participants": [
+        {
+          "id": "664c018e-52d3-423d-87e9-12482c6bac06",
+          "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+          "userId": "00000000-0000-0000-0000-000000000001",
+          "role": "CLIENT",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:49.858Z"
+        },
+        {
+          "id": "06998da3-53e4-472d-a568-fbd0f00f0d04",
+          "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+          "userId": "00000000-0000-0000-0000-000000000002",
+          "role": "ATTORNEY",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:49.858Z"
+        }
+      ]
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations",
+    "method": "GET",
+    "request": {
+      "page": 1,
+      "limit": 10,
+      "status": "ACTIVE"
+    },
+    "response": {
+      "items": [
+        {
+          "id": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+          "title": "Direct Client-Attorney Consultation",
+          "type": "DIRECT",
+          "status": "ACTIVE",
+          "bookingId": null,
+          "caseId": null,
+          "createdById": "00000000-0000-0000-0000-000000000001",
+          "lastMessageAt": null,
+          "lastMessageText": null,
+          "createdAt": "2026-08-17T12:59:49.858Z",
+          "updatedAt": "2026-08-17T12:59:49.858Z",
+          "participants": [
+            {
+              "id": "664c018e-52d3-423d-87e9-12482c6bac06",
+              "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+              "userId": "00000000-0000-0000-0000-000000000001",
+              "role": "CLIENT",
+              "lastReadAt": null,
+              "lastReadMessageId": null,
+              "isMuted": false,
+              "isArchived": false,
+              "joinedAt": "2026-08-17T12:59:49.858Z"
+            },
+            {
+              "id": "06998da3-53e4-472d-a568-fbd0f00f0d04",
+              "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+              "userId": "00000000-0000-0000-0000-000000000002",
+              "role": "ATTORNEY",
+              "lastReadAt": null,
+              "lastReadMessageId": null,
+              "isMuted": false,
+              "isArchived": false,
+              "joinedAt": "2026-08-17T12:59:49.858Z"
+            }
+          ],
+          "messages": [],
+          "unreadCount": 0,
+          "isMuted": false,
+          "isArchived": false
+        }
+      ],
+      "total": 1,
+      "page": 1,
+      "limit": 10,
+      "totalPages": 1
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations/f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+    "method": "GET",
+    "request": {
+      "id": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c"
+    },
+    "response": {
+      "id": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+      "title": "Direct Client-Attorney Consultation",
+      "type": "DIRECT",
+      "status": "ACTIVE",
+      "bookingId": null,
+      "caseId": null,
+      "createdById": "00000000-0000-0000-0000-000000000001",
+      "lastMessageAt": null,
+      "lastMessageText": null,
+      "createdAt": "2026-08-17T12:59:49.858Z",
+      "updatedAt": "2026-08-17T12:59:49.858Z",
+      "participants": [
+        {
+          "id": "664c018e-52d3-423d-87e9-12482c6bac06",
+          "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+          "userId": "00000000-0000-0000-0000-000000000001",
+          "role": "CLIENT",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:49.858Z"
+        },
+        {
+          "id": "06998da3-53e4-472d-a568-fbd0f00f0d04",
+          "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+          "userId": "00000000-0000-0000-0000-000000000002",
+          "role": "ATTORNEY",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:49.858Z"
+        }
+      ],
+      "messages": []
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations/by-booking/11111111-1111-1111-1111-111111111111",
+    "method": "POST",
+    "request": {
+      "clientId": "00000000-0000-0000-0000-000000000001",
+      "attorneyId": "00000000-0000-0000-0000-000000000002",
+      "title": "Consultation Chat CONS-2026-99"
+    },
+    "response": {
+      "id": "f396b511-690a-486b-bd49-db854305984f",
+      "title": "Consultation Chat CONS-2026-99",
+      "type": "BOOKING_CONSULTATION",
+      "status": "ACTIVE",
+      "bookingId": "11111111-1111-1111-1111-111111111111",
+      "caseId": null,
+      "createdById": "00000000-0000-0000-0000-000000000001",
+      "lastMessageAt": null,
+      "lastMessageText": null,
+      "createdAt": "2026-08-17T12:59:50.069Z",
+      "updatedAt": "2026-08-17T12:59:50.069Z",
+      "participants": [
+        {
+          "id": "c1d06cb8-e0ef-4d4e-a122-ffe1064c03f6",
+          "conversationId": "f396b511-690a-486b-bd49-db854305984f",
+          "userId": "00000000-0000-0000-0000-000000000001",
+          "role": "CLIENT",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:50.069Z"
+        },
+        {
+          "id": "a2279b6b-05e9-4b5f-84f9-e1311196c156",
+          "conversationId": "f396b511-690a-486b-bd49-db854305984f",
+          "userId": "00000000-0000-0000-0000-000000000002",
+          "role": "ATTORNEY",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:50.069Z"
+        }
+      ]
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations/by-booking/11111111-1111-1111-1111-111111111111",
+    "method": "GET",
+    "request": {
+      "bookingId": "11111111-1111-1111-1111-111111111111"
+    },
+    "response": {
+      "id": "f396b511-690a-486b-bd49-db854305984f",
+      "title": "Consultation Chat CONS-2026-99",
+      "type": "BOOKING_CONSULTATION",
+      "status": "ACTIVE",
+      "bookingId": "11111111-1111-1111-1111-111111111111",
+      "caseId": null,
+      "createdById": "00000000-0000-0000-0000-000000000001",
+      "lastMessageAt": null,
+      "lastMessageText": null,
+      "createdAt": "2026-08-17T12:59:50.069Z",
+      "updatedAt": "2026-08-17T12:59:50.069Z",
+      "participants": [
+        {
+          "id": "c1d06cb8-e0ef-4d4e-a122-ffe1064c03f6",
+          "conversationId": "f396b511-690a-486b-bd49-db854305984f",
+          "userId": "00000000-0000-0000-0000-000000000001",
+          "role": "CLIENT",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:50.069Z"
+        },
+        {
+          "id": "a2279b6b-05e9-4b5f-84f9-e1311196c156",
+          "conversationId": "f396b511-690a-486b-bd49-db854305984f",
+          "userId": "00000000-0000-0000-0000-000000000002",
+          "role": "ATTORNEY",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:50.069Z"
+        }
+      ],
+      "messages": []
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations/by-case/22222222-2222-2222-2222-222222222222",
+    "method": "POST",
+    "request": {
+      "clientId": "00000000-0000-0000-0000-000000000001",
+      "attorneyId": "00000000-0000-0000-0000-000000000002",
+      "title": "Case Discussion CASE-2026-101"
+    },
+    "response": {
+      "id": "98c65e91-45a8-4170-84f8-7c1ffeccd140",
+      "title": "Case Discussion CASE-2026-101",
+      "type": "CASE_DISCUSSION",
+      "status": "ACTIVE",
+      "bookingId": null,
+      "caseId": "22222222-2222-2222-2222-222222222222",
+      "createdById": "00000000-0000-0000-0000-000000000001",
+      "lastMessageAt": null,
+      "lastMessageText": null,
+      "createdAt": "2026-08-17T12:59:50.125Z",
+      "updatedAt": "2026-08-17T12:59:50.125Z",
+      "participants": [
+        {
+          "id": "97ab2cf9-9b98-4ae3-94b0-b947a6c6b8e6",
+          "conversationId": "98c65e91-45a8-4170-84f8-7c1ffeccd140",
+          "userId": "00000000-0000-0000-0000-000000000001",
+          "role": "CLIENT",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:50.125Z"
+        },
+        {
+          "id": "d2f04e27-36ff-4507-a16a-fc8cb002b682",
+          "conversationId": "98c65e91-45a8-4170-84f8-7c1ffeccd140",
+          "userId": "00000000-0000-0000-0000-000000000002",
+          "role": "ATTORNEY",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:50.125Z"
+        }
+      ]
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations/by-case/22222222-2222-2222-2222-222222222222",
+    "method": "GET",
+    "request": {
+      "caseId": "22222222-2222-2222-2222-222222222222"
+    },
+    "response": {
+      "id": "98c65e91-45a8-4170-84f8-7c1ffeccd140",
+      "title": "Case Discussion CASE-2026-101",
+      "type": "CASE_DISCUSSION",
+      "status": "ACTIVE",
+      "bookingId": null,
+      "caseId": "22222222-2222-2222-2222-222222222222",
+      "createdById": "00000000-0000-0000-0000-000000000001",
+      "lastMessageAt": null,
+      "lastMessageText": null,
+      "createdAt": "2026-08-17T12:59:50.125Z",
+      "updatedAt": "2026-08-17T12:59:50.125Z",
+      "participants": [
+        {
+          "id": "97ab2cf9-9b98-4ae3-94b0-b947a6c6b8e6",
+          "conversationId": "98c65e91-45a8-4170-84f8-7c1ffeccd140",
+          "userId": "00000000-0000-0000-0000-000000000001",
+          "role": "CLIENT",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:50.125Z"
+        },
+        {
+          "id": "d2f04e27-36ff-4507-a16a-fc8cb002b682",
+          "conversationId": "98c65e91-45a8-4170-84f8-7c1ffeccd140",
+          "userId": "00000000-0000-0000-0000-000000000002",
+          "role": "ATTORNEY",
+          "lastReadAt": null,
+          "lastReadMessageId": null,
+          "isMuted": false,
+          "isArchived": false,
+          "joinedAt": "2026-08-17T12:59:50.125Z"
+        }
+      ],
+      "messages": []
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations/f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c/archive",
+    "method": "POST",
+    "request": {
+      "id": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c"
+    },
+    "response": {
+      "id": "664c018e-52d3-423d-87e9-12482c6bac06",
+      "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+      "userId": "00000000-0000-0000-0000-000000000001",
+      "role": "CLIENT",
+      "lastReadAt": null,
+      "lastReadMessageId": null,
+      "isMuted": false,
+      "isArchived": true,
+      "joinedAt": "2026-08-17T12:59:49.858Z"
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations/f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c/close",
+    "method": "POST",
+    "request": {
+      "id": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c"
+    },
+    "response": {
+      "id": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+      "title": "Direct Client-Attorney Consultation",
+      "type": "DIRECT",
+      "status": "CLOSED",
+      "bookingId": null,
+      "caseId": null,
+      "createdById": "00000000-0000-0000-0000-000000000001",
+      "lastMessageAt": null,
+      "lastMessageText": null,
+      "createdAt": "2026-08-17T12:59:49.858Z",
+      "updatedAt": "2026-08-17T12:59:50.171Z"
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations/f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c/block",
+    "method": "POST",
+    "request": {
+      "id": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c"
+    },
+    "response": {
+      "id": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+      "title": "Direct Client-Attorney Consultation",
+      "type": "DIRECT",
+      "status": "BLOCKED",
+      "bookingId": null,
+      "caseId": null,
+      "createdById": "00000000-0000-0000-0000-000000000001",
+      "lastMessageAt": null,
+      "lastMessageText": null,
+      "createdAt": "2026-08-17T12:59:49.858Z",
+      "updatedAt": "2026-08-17T12:59:50.181Z"
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations/f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c/messages",
+    "method": "POST",
+    "request": {
+      "content": "Hello Counselor, I have uploaded the draft agreement for review.",
+      "messageType": "TEXT",
+      "attachments": [
+        {
+          "fileName": "draft_agreement.pdf",
+          "fileKey": "attachments/draft_agreement_178697.pdf",
+          "mimeType": "application/pdf",
+          "sizeBytes": 204800
+        }
+      ]
+    },
+    "response": {
+      "id": "94831818-43e3-4b55-ac82-210770fc15c8",
+      "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+      "senderId": "00000000-0000-0000-0000-000000000001",
+      "messageType": "TEXT",
+      "content": "Hello Counselor, I have uploaded the draft agreement for review.",
+      "status": "SENT",
+      "isEdited": false,
+      "editedAt": null,
+      "deletedAt": null,
+      "deletedForIds": [],
+      "replyToId": null,
+      "metadata": null,
+      "sentAt": "2026-08-17T12:59:50.310Z",
+      "updatedAt": "2026-08-17T12:59:50.310Z",
+      "attachments": [
+        {
+          "id": "27d7eb6c-26f5-4ecb-8e75-e33a1243db7b",
+          "messageId": "94831818-43e3-4b55-ac82-210770fc15c8",
+          "fileName": "draft_agreement.pdf",
+          "fileKey": "attachments/draft_agreement_178697.pdf",
+          "mimeType": "application/pdf",
+          "sizeBytes": 204800,
+          "thumbnailKey": null,
+          "createdAt": "2026-08-17T12:59:50.310Z"
+        }
+      ]
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations/f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c/messages",
+    "method": "GET",
+    "request": {
+      "page": 1,
+      "limit": 50
+    },
+    "response": {
+      "items": [
+        {
+          "id": "94831818-43e3-4b55-ac82-210770fc15c8",
+          "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+          "senderId": "00000000-0000-0000-0000-000000000001",
+          "messageType": "TEXT",
+          "content": "Hello Counselor, I have uploaded the draft agreement for review.",
+          "status": "SENT",
+          "isEdited": false,
+          "editedAt": null,
+          "deletedAt": null,
+          "deletedForIds": [],
+          "replyToId": null,
+          "metadata": null,
+          "sentAt": "2026-08-17T12:59:50.310Z",
+          "updatedAt": "2026-08-17T12:59:50.310Z",
+          "attachments": [
+            {
+              "id": "27d7eb6c-26f5-4ecb-8e75-e33a1243db7b",
+              "messageId": "94831818-43e3-4b55-ac82-210770fc15c8",
+              "fileName": "draft_agreement.pdf",
+              "fileKey": "attachments/draft_agreement_178697.pdf",
+              "mimeType": "application/pdf",
+              "sizeBytes": 204800,
+              "thumbnailKey": null,
+              "createdAt": "2026-08-17T12:59:50.310Z"
+            }
+          ],
+          "reads": []
+        }
+      ],
+      "total": 1,
+      "page": 1,
+      "limit": 50,
+      "totalPages": 1
+    }
+  },
+  {
+    "endpoint": "/api/v1/messages/94831818-43e3-4b55-ac82-210770fc15c8",
+    "method": "PATCH",
+    "request": {
+      "content": "Hello Counselor, I have uploaded the revised draft commercial agreement for review."
+    },
+    "response": {
+      "id": "94831818-43e3-4b55-ac82-210770fc15c8",
+      "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+      "senderId": "00000000-0000-0000-0000-000000000001",
+      "messageType": "TEXT",
+      "content": "Hello Counselor, I have uploaded the revised draft commercial agreement for review.",
+      "status": "SENT",
+      "isEdited": true,
+      "editedAt": "2026-08-17T12:59:50.438Z",
+      "deletedAt": null,
+      "deletedForIds": [],
+      "replyToId": null,
+      "metadata": null,
+      "sentAt": "2026-08-17T12:59:50.310Z",
+      "updatedAt": "2026-08-17T12:59:50.440Z",
+      "attachments": [
+        {
+          "id": "27d7eb6c-26f5-4ecb-8e75-e33a1243db7b",
+          "messageId": "94831818-43e3-4b55-ac82-210770fc15c8",
+          "fileName": "draft_agreement.pdf",
+          "fileKey": "attachments/draft_agreement_178697.pdf",
+          "mimeType": "application/pdf",
+          "sizeBytes": 204800,
+          "thumbnailKey": null,
+          "createdAt": "2026-08-17T12:59:50.310Z"
+        }
+      ]
+    }
+  },
+  {
+    "endpoint": "/api/v1/messages/94831818-43e3-4b55-ac82-210770fc15c8/read",
+    "method": "POST",
+    "request": {
+      "id": "94831818-43e3-4b55-ac82-210770fc15c8"
+    },
+    "response": {
+      "messageId": "94831818-43e3-4b55-ac82-210770fc15c8",
+      "userId": "00000000-0000-0000-0000-000000000002",
+      "readAt": "2026-08-17T12:59:50.462Z"
+    }
+  },
+  {
+    "endpoint": "/api/v1/conversations/f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c/read-all",
+    "method": "POST",
+    "request": {
+      "id": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c"
+    },
+    "response": {
+      "id": "06998da3-53e4-472d-a568-fbd0f00f0d04",
+      "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+      "userId": "00000000-0000-0000-0000-000000000002",
+      "role": "ATTORNEY",
+      "lastReadAt": "2026-08-17T12:59:50.484Z",
+      "lastReadMessageId": "94831818-43e3-4b55-ac82-210770fc15c8",
+      "isMuted": false,
+      "isArchived": false,
+      "joinedAt": "2026-08-17T12:59:49.858Z"
+    }
+  },
+  {
+    "endpoint": "/api/v1/messages/94831818-43e3-4b55-ac82-210770fc15c8",
+    "method": "DELETE",
+    "request": {
+      "mode": "DELETE_FOR_ME"
+    },
+    "response": {
+      "id": "94831818-43e3-4b55-ac82-210770fc15c8",
+      "conversationId": "f371f5cc-3a4e-4512-bbc6-cbbf3cadbc2c",
+      "senderId": "00000000-0000-0000-0000-000000000001",
+      "messageType": "TEXT",
+      "content": "Hello Counselor, I have uploaded the revised draft commercial agreement for review.",
+      "status": "SENT",
+      "isEdited": true,
+      "editedAt": "2026-08-17T12:59:50.438Z",
+      "deletedAt": null,
+      "deletedForIds": [
+        "00000000-0000-0000-0000-000000000001"
+      ],
+      "replyToId": null,
+      "metadata": null,
+      "sentAt": "2026-08-17T12:59:50.310Z",
+      "updatedAt": "2026-08-17T12:59:50.496Z"
+    }
+  },
+  {
+    "endpoint": "/api/v1/notification-templates",
+    "method": "POST",
+    "request": {
+      "key": "custom.hearing.reminder.1786971590502",
+      "name": "Court Hearing Reminder",
+      "description": "Reminder sent 24h prior to court appearance",
+      "channels": [
+        "EMAIL",
+        "SMS",
+        "IN_APP"
+      ],
+      "subjectEn": "Court Hearing Reminder - {{case_number}}",
+      "subjectAm": "የፍርድ ቤት ቀጠሮ ማስታወሻ - {{case_number}}",
+      "bodyEn": "Dear {{user_name}}, your court hearing for {{case_number}} is scheduled at {{hearing_time}}.",
+      "bodyAm": "ክቡር {{user_name}}፣ ለጉዳይ {{case_number}} የፍርድ ቤት ቀጠሮዎ በ {{hearing_time}} ተይዟል።",
+      "variables": [
+        "user_name",
+        "case_number",
+        "hearing_time"
+      ]
+    },
+    "response": {
+      "id": "d24c644c-0cc0-420c-9864-5ecb5f839ff8",
+      "key": "custom.hearing.reminder.1786971590502",
+      "name": "Court Hearing Reminder",
+      "description": "Reminder sent 24h prior to court appearance",
+      "channels": [
+        "EMAIL",
+        "SMS",
+        "IN_APP"
+      ],
+      "subjectEn": "Court Hearing Reminder - {{case_number}}",
+      "subjectAm": "የፍርድ ቤት ቀጠሮ ማስታወሻ - {{case_number}}",
+      "bodyEn": "Dear {{user_name}}, your court hearing for {{case_number}} is scheduled at {{hearing_time}}.",
+      "bodyAm": "ክቡር {{user_name}}፣ ለጉዳይ {{case_number}} የፍርድ ቤት ቀጠሮዎ በ {{hearing_time}} ተይዟል።",
+      "variables": [
+        "user_name",
+        "case_number",
+        "hearing_time"
+      ],
+      "isActive": true,
+      "version": 1,
+      "createdAt": "2026-08-17T12:59:50.507Z",
+      "updatedAt": "2026-08-17T12:59:50.507Z"
+    }
+  },
+  {
+    "endpoint": "/api/v1/notification-templates",
+    "method": "GET",
+    "request": {},
+    "response": [
+      {
+        "id": "d24c644c-0cc0-420c-9864-5ecb5f839ff8",
+        "key": "custom.hearing.reminder.1786971590502",
+        "name": "Court Hearing Reminder",
+        "description": "Reminder sent 24h prior to court appearance",
+        "channels": [
+          "EMAIL",
+          "SMS",
+          "IN_APP"
+        ],
+        "subjectEn": "Court Hearing Reminder - {{case_number}}",
+        "subjectAm": "የፍርድ ቤት ቀጠሮ ማስታወሻ - {{case_number}}",
+        "bodyEn": "Dear {{user_name}}, your court hearing for {{case_number}} is scheduled at {{hearing_time}}.",
+        "bodyAm": "ክቡር {{user_name}}፣ ለጉዳይ {{case_number}} የፍርድ ቤት ቀጠሮዎ በ {{hearing_time}} ተይዟል።",
+        "variables": [
+          "user_name",
+          "case_number",
+          "hearing_time"
+        ],
+        "isActive": true,
+        "version": 1,
+        "createdAt": "2026-08-17T12:59:50.507Z",
+        "updatedAt": "2026-08-17T12:59:50.507Z"
+      },
+      {
+        "id": "56108e6f-266e-4d06-ab1c-48c3d41111f5",
+        "key": "payment.completed",
+        "name": "Payment Receipt",
+        "description": null,
+        "channels": [
+          "EMAIL",
+          "IN_APP"
+        ],
+        "subjectEn": "Payment Receipt - {{transaction_id}}",
+        "subjectAm": "የክፍያ ደረሰኝ - {{transaction_id}}",
+        "bodyEn": "Payment of {{amount}} ETB for {{item_name}} was successfully processed.",
+        "bodyAm": "ለ {{item_name}} የተከፈለው {{amount}} ብር በተሳካ ሁኔታ ተጠናቋል።",
+        "variables": [
+          "user_name",
+          "amount",
+          "item_name",
+          "transaction_id"
+        ],
+        "isActive": true,
+        "version": 1,
+        "createdAt": "2026-08-17T11:39:54.305Z",
+        "updatedAt": "2026-08-17T11:39:54.305Z"
+      },
+      {
+        "id": "f77029e7-dc69-42d6-89e2-88241200125f",
+        "key": "case.created",
+        "name": "Legal Case Created",
+        "description": null,
+        "channels": [
+          "EMAIL",
+          "IN_APP",
+          "WEBSOCKET"
+        ],
+        "subjectEn": "New Legal Case Opened: {{case_reference}}",
+        "subjectAm": "አዲስ የህግ ጉዳይ ተከፍቷል፡ {{case_reference}}",
+        "bodyEn": "A new legal case {{case_reference}} ({{case_title}}) has been assigned.",
+        "bodyAm": "አዲስ የህግ ጉዳይ {{case_reference}} ({{case_title}}) ተመድቧል።",
+        "variables": [
+          "user_name",
+          "case_reference",
+          "case_title"
+        ],
+        "isActive": true,
+        "version": 1,
+        "createdAt": "2026-08-17T11:39:54.301Z",
+        "updatedAt": "2026-08-17T11:39:54.301Z"
+      }
+    ]
+  },
+  {
+    "endpoint": "/api/v1/notification-templates/custom.hearing.reminder.1786971590502",
+    "method": "GET",
+    "request": {
+      "key": "custom.hearing.reminder.1786971590502"
+    },
+    "response": {
+      "id": "d24c644c-0cc0-420c-9864-5ecb5f839ff8",
+      "key": "custom.hearing.reminder.1786971590502",
+      "name": "Court Hearing Reminder",
+      "description": "Reminder sent 24h prior to court appearance",
+      "channels": [
+        "EMAIL",
+        "SMS",
+        "IN_APP"
+      ],
+      "subjectEn": "Court Hearing Reminder - {{case_number}}",
+      "subjectAm": "የፍርድ ቤት ቀጠሮ ማስታወሻ - {{case_number}}",
+      "bodyEn": "Dear {{user_name}}, your court hearing for {{case_number}} is scheduled at {{hearing_time}}.",
+      "bodyAm": "ክቡር {{user_name}}፣ ለጉዳይ {{case_number}} የፍርድ ቤት ቀጠሮዎ በ {{hearing_time}} ተይዟል።",
+      "variables": [
+        "user_name",
+        "case_number",
+        "hearing_time"
+      ],
+      "isActive": true,
+      "version": 1,
+      "createdAt": "2026-08-17T12:59:50.507Z",
+      "updatedAt": "2026-08-17T12:59:50.507Z"
+    }
+  },
+  {
+    "endpoint": "/api/v1/notification-templates/custom.hearing.reminder.1786971590502",
+    "method": "PATCH",
+    "request": {
+      "description": "Updated 24h statutory court reminder"
+    },
+    "response": {
+      "id": "d24c644c-0cc0-420c-9864-5ecb5f839ff8",
+      "key": "custom.hearing.reminder.1786971590502",
+      "name": "Court Hearing Reminder",
+      "description": "Updated 24h statutory court reminder",
+      "channels": [
+        "EMAIL",
+        "SMS",
+        "IN_APP"
+      ],
+      "subjectEn": "Court Hearing Reminder - {{case_number}}",
+      "subjectAm": "የፍርድ ቤት ቀጠሮ ማስታወሻ - {{case_number}}",
+      "bodyEn": "Dear {{user_name}}, your court hearing for {{case_number}} is scheduled at {{hearing_time}}.",
+      "bodyAm": "ክቡር {{user_name}}፣ ለጉዳይ {{case_number}} የፍርድ ቤት ቀጠሮዎ በ {{hearing_time}} ተይዟል።",
+      "variables": [
+        "user_name",
+        "case_number",
+        "hearing_time"
+      ],
+      "isActive": true,
+      "version": 2,
+      "createdAt": "2026-08-17T12:59:50.507Z",
+      "updatedAt": "2026-08-17T12:59:50.530Z"
+    }
+  },
+  {
+    "endpoint": "/api/v1/notification-templates/custom.hearing.reminder.1786971590502/preview",
+    "method": "POST",
+    "request": {
+      "locale": "am",
+      "variables": {
+        "user_name": "አቶ አበበ",
+        "case_number": "F/C-2026-908",
+        "hearing_time": "ነሐሴ 15 ቀን 2026 በ 3:30 ሰዓት"
+      }
+    },
+    "response": {
+      "subject": "የፍርድ ቤት ቀጠሮ ማስታወሻ - F/C-2026-908",
+      "body": "ክቡር አቶ አበበ፣ ለጉዳይ F/C-2026-908 የፍርድ ቤት ቀጠሮዎ በ ነሐሴ 15 ቀን 2026 በ 3:30 ሰዓት ተይዟል።"
+    }
+  },
+  {
+    "endpoint": "/api/v1/notifications/dispatch",
+    "method": "POST",
+    "request": {
+      "recipientId": "00000000-0000-0000-0000-000000000001",
+      "recipientEmail": "client.test@example.com",
+      "recipientPhone": "+251911223344",
+      "templateKey": "booking.confirmed",
+      "variables": {
+        "user_name": "Dawit Getachew",
+        "attorney_name": "Advocate Helen Solomon",
+        "appointment_time": "2026-08-25 10:00 AM EAT",
+        "reference_number": "CONS-2026-0089"
+      },
+      "locale": "en",
+      "category": "BOOKING",
+      "priority": "HIGH",
+      "channels": [
+        "IN_APP",
+        "EMAIL",
+        "SMS"
+      ]
+    },
+    "response": {
+      "id": "977223b7-5997-46d7-a7e9-92f6fe7226bd",
+      "recipientId": "00000000-0000-0000-0000-000000000001",
+      "templateKey": "booking.confirmed",
+      "title": "Consultation Confirmed - CONS-2026-0089",
+      "body": "Hello Dawit Getachew, your consultation with Advocate Helen Solomon is confirmed for 2026-08-25 10:00 AM EAT.",
+      "category": "BOOKING",
+      "priority": "HIGH",
+      "channels": [
+        "IN_APP",
+        "EMAIL",
+        "SMS"
+      ],
+      "status": "SENT",
+      "actionUrl": null,
+      "referenceNumber": null,
+      "metadata": {
+        "user_name": "Dawit Getachew",
+        "attorney_name": "Advocate Helen Solomon",
+        "appointment_time": "2026-08-25 10:00 AM EAT",
+        "reference_number": "CONS-2026-0089"
+      },
+      "sentAt": "2026-08-17T12:59:50.635Z",
+      "readAt": null,
+      "createdAt": "2026-08-17T12:59:50.639Z",
+      "updatedAt": "2026-08-17T12:59:50.639Z"
+    }
+  },
+  {
+    "endpoint": "/api/v1/notifications",
+    "method": "GET",
+    "request": {
+      "page": 1,
+      "limit": 10,
+      "isRead": false
+    },
+    "response": {
+      "items": [
+        {
+          "id": "977223b7-5997-46d7-a7e9-92f6fe7226bd",
+          "recipientId": "00000000-0000-0000-0000-000000000001",
+          "templateKey": "booking.confirmed",
+          "title": "Consultation Confirmed - CONS-2026-0089",
+          "body": "Hello Dawit Getachew, your consultation with Advocate Helen Solomon is confirmed for 2026-08-25 10:00 AM EAT.",
+          "category": "BOOKING",
+          "priority": "HIGH",
+          "channels": [
+            "IN_APP",
+            "EMAIL",
+            "SMS"
+          ],
+          "status": "SENT",
+          "actionUrl": null,
+          "referenceNumber": null,
+          "metadata": {
+            "user_name": "Dawit Getachew",
+            "attorney_name": "Advocate Helen Solomon",
+            "appointment_time": "2026-08-25 10:00 AM EAT",
+            "reference_number": "CONS-2026-0089"
+          },
+          "sentAt": "2026-08-17T12:59:50.635Z",
+          "readAt": null,
+          "createdAt": "2026-08-17T12:59:50.639Z",
+          "updatedAt": "2026-08-17T12:59:50.639Z"
+        }
+      ],
+      "total": 1,
+      "unreadCount": 1,
+      "page": 1,
+      "limit": 10,
+      "totalPages": 1
+    }
+  },
+  {
+    "endpoint": "/api/v1/notifications/977223b7-5997-46d7-a7e9-92f6fe7226bd/read",
+    "method": "POST",
+    "request": {
+      "id": "977223b7-5997-46d7-a7e9-92f6fe7226bd"
+    },
+    "response": {
+      "id": "977223b7-5997-46d7-a7e9-92f6fe7226bd",
+      "recipientId": "00000000-0000-0000-0000-000000000001",
+      "templateKey": "booking.confirmed",
+      "title": "Consultation Confirmed - CONS-2026-0089",
+      "body": "Hello Dawit Getachew, your consultation with Advocate Helen Solomon is confirmed for 2026-08-25 10:00 AM EAT.",
+      "category": "BOOKING",
+      "priority": "HIGH",
+      "channels": [
+        "IN_APP",
+        "EMAIL",
+        "SMS"
+      ],
+      "status": "READ",
+      "actionUrl": null,
+      "referenceNumber": null,
+      "metadata": {
+        "user_name": "Dawit Getachew",
+        "attorney_name": "Advocate Helen Solomon",
+        "appointment_time": "2026-08-25 10:00 AM EAT",
+        "reference_number": "CONS-2026-0089"
+      },
+      "sentAt": "2026-08-17T12:59:50.635Z",
+      "readAt": "2026-08-17T12:59:51.063Z",
+      "createdAt": "2026-08-17T12:59:50.639Z",
+      "updatedAt": "2026-08-17T12:59:51.065Z"
+    }
+  },
+  {
+    "endpoint": "/api/v1/notifications/read-all",
+    "method": "POST",
+    "request": {},
+    "response": {
+      "count": 0
+    }
+  },
+  {
+    "endpoint": "/api/v1/notifications/977223b7-5997-46d7-a7e9-92f6fe7226bd",
+    "method": "DELETE",
+    "request": {
+      "id": "977223b7-5997-46d7-a7e9-92f6fe7226bd"
+    },
+    "response": {
+      "id": "977223b7-5997-46d7-a7e9-92f6fe7226bd",
+      "recipientId": "00000000-0000-0000-0000-000000000001",
+      "templateKey": "booking.confirmed",
+      "title": "Consultation Confirmed - CONS-2026-0089",
+      "body": "Hello Dawit Getachew, your consultation with Advocate Helen Solomon is confirmed for 2026-08-25 10:00 AM EAT.",
+      "category": "BOOKING",
+      "priority": "HIGH",
+      "channels": [
+        "IN_APP",
+        "EMAIL",
+        "SMS"
+      ],
+      "status": "READ",
+      "actionUrl": null,
+      "referenceNumber": null,
+      "metadata": {
+        "user_name": "Dawit Getachew",
+        "attorney_name": "Advocate Helen Solomon",
+        "appointment_time": "2026-08-25 10:00 AM EAT",
+        "reference_number": "CONS-2026-0089"
+      },
+      "sentAt": "2026-08-17T12:59:50.635Z",
+      "readAt": "2026-08-17T12:59:51.063Z",
+      "createdAt": "2026-08-17T12:59:50.639Z",
+      "updatedAt": "2026-08-17T12:59:51.065Z"
+    }
+  }
+]

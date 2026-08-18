@@ -1,0 +1,1352 @@
+[
+  {
+    "num": 1,
+    "name": "1.1.1 POST Register Client Account",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/register/client",
+    "status": 400,
+    "durationMs": 1247,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Validation failed: \\\"name\\\" is required\",\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"Valid"
+  },
+  {
+    "num": 2,
+    "name": "1.1.2 POST Register Attorney Account",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/register/attorney",
+    "status": 400,
+    "durationMs": 378,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Validation failed: \\\"name\\\" is required\",\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"Valid"
+  },
+  {
+    "num": 3,
+    "name": "1.1.3 POST Request Phone OTP",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/request-otp",
+    "status": 201,
+    "durationMs": 1244,
+    "passed": true,
+    "responseSnippet": "{\"status\":\"success\",\"purpose\":\"REGISTRATION\",\"expiresInSeconds\":300,\"resendCooldownSeconds\":60}"
+  },
+  {
+    "num": 4,
+    "name": "1.1.4 POST Verify Phone OTP",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/verify-otp",
+    "status": 201,
+    "durationMs": 278,
+    "passed": true,
+    "responseSnippet": "{\"status\":\"success\",\"message\":\"OTP verified successfully\",\"otpContinuationToken\":\"otp_cont_1786610493406_bwqsgowf\",\"expi"
+  },
+  {
+    "num": 5,
+    "name": "1.1.5 POST Request Email OTP (Send Verification Code)",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/email/request-otp",
+    "status": 404,
+    "durationMs": 276,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot POST /api/v1/auth/email/request-otp\",\"error\":{\"message\":\"Cannot POST /api/v1/auth/ema"
+  },
+  {
+    "num": 6,
+    "name": "1.1.6 POST Verify Email OTP",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/email/verify-otp",
+    "status": 404,
+    "durationMs": 240,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot POST /api/v1/auth/email/verify-otp\",\"error\":{\"message\":\"Cannot POST /api/v1/auth/emai"
+  },
+  {
+    "num": 7,
+    "name": "1.1.7 POST Resend Email OTP",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/email/resend-otp",
+    "status": 404,
+    "durationMs": 249,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot POST /api/v1/auth/email/resend-otp\",\"error\":{\"message\":\"Cannot POST /api/v1/auth/emai"
+  },
+  {
+    "num": 8,
+    "name": "1.1.8 POST Sign In (Email or Phone)",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/sign-in",
+    "status": 400,
+    "durationMs": 318,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"No account found with email address or phone number: user@example.com\",\"error\":{\"message\":\"N"
+  },
+  {
+    "num": 9,
+    "name": "1.1.9 POST Refresh / Validate Token",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/password/validate",
+    "status": 201,
+    "durationMs": 298,
+    "passed": true,
+    "responseSnippet": "{\"valid\":true,\"score\":4,\"policy\":{\"minCharacters\":10,\"characterClassesRequired\":3,\"characterClassesFound\":4,\"hasMinLengt"
+  },
+  {
+    "num": 10,
+    "name": "1.1.10 POST Sign Out Session",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/sign-out",
+    "status": 401,
+    "durationMs": 413,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 11,
+    "name": "1.1.11 POST Forgot Password Request",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/password/forgot",
+    "status": 201,
+    "durationMs": 242,
+    "passed": true,
+    "responseSnippet": "{\"status\":\"success\",\"message\":\"Password reset link sent to user@example.com\"}"
+  },
+  {
+    "num": 12,
+    "name": "1.1.12 POST Reset Password with Token",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/password/reset",
+    "status": 500,
+    "durationMs": 670,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Invalid token\",\"error\":null,\"timestamp\":\"2026-08-13T08:41:36.125Z\"}"
+  },
+  {
+    "num": 13,
+    "name": "1.1.13 POST Change Password (Authenticated)",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/password/change",
+    "status": 401,
+    "durationMs": 340,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 14,
+    "name": "1.1.14 POST Enable 2FA",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/2fa/enable",
+    "status": 401,
+    "durationMs": 277,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 15,
+    "name": "1.1.15 GET 2FA QR Code",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/2fa/qrcode",
+    "status": 401,
+    "durationMs": 498,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 16,
+    "name": "1.1.16 POST Verify 2FA Code",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/2fa/verify",
+    "status": 401,
+    "durationMs": 227,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 17,
+    "name": "1.1.17 POST Disable 2FA",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/2fa/disable",
+    "status": 401,
+    "durationMs": 215,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 18,
+    "name": "1.1.18 GET User Active Sessions",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/sessions",
+    "status": 401,
+    "durationMs": 422,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 19,
+    "name": "1.1.19 DELETE Specific User Session",
+    "method": "DELETE",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/sessions/{{id}}",
+    "status": 401,
+    "durationMs": 249,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 20,
+    "name": "1.1.20 DELETE All User Sessions",
+    "method": "DELETE",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/auth/sessions",
+    "status": 401,
+    "durationMs": 415,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 21,
+    "name": "1.2.1 GET Public CMS Pages",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/public/pages",
+    "status": 200,
+    "durationMs": 528,
+    "passed": true,
+    "responseSnippet": "[{\"id\":\"page-1\",\"slug\":\"terms-of-service\",\"locale\":\"en\",\"title\":\"Terms of Service\",\"body\":\"Tebeka Terms of Service conte"
+  },
+  {
+    "num": 22,
+    "name": "1.2.2 GET Specific Public Page by Slug",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/public/pages/{{slug}}",
+    "status": 404,
+    "durationMs": 545,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Public page with slug {{slug}} not found\",\"error\":{\"message\":\"Public page with slug {{slug}}"
+  },
+  {
+    "num": 23,
+    "name": "1.2.3 GET Public Blog Post by Slug",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/public/blog-posts/{{slug}}",
+    "status": 404,
+    "durationMs": 463,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Blog post with slug \\\"{{slug}}\\\" not found\",\"error\":{\"message\":\"Blog post with slug \\\"{{slug"
+  },
+  {
+    "num": 24,
+    "name": "1.3.1 GET Search Attorneys (Public)",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/discovery/attorneys",
+    "status": 200,
+    "durationMs": 716,
+    "passed": true,
+    "responseSnippet": "{\"items\":[{\"attorneyId\":\"attorney_int_1786367748539\",\"practiceAreaIds\":[],\"city\":\"Addis Ababa\",\"languages\":[\"en\",\"am\"],\""
+  },
+  {
+    "num": 25,
+    "name": "1.3.2 GET Attorney Profile by Slug",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/discovery/attorneys/{{slug}}",
+    "status": 404,
+    "durationMs": 619,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Verified attorney profile with ID {{slug}} not found\",\"error\":{\"message\":\"Verified attorney "
+  },
+  {
+    "num": 26,
+    "name": "1.3.3 GET Attorney Search Index",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/discovery/search-index",
+    "status": 404,
+    "durationMs": 492,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot GET /api/v1/discovery/search-index\",\"error\":{\"message\":\"Cannot GET /api/v1/discovery/"
+  },
+  {
+    "num": 27,
+    "name": "1.3.4 GET Ranking Explanation",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/discovery/ranking-explanation",
+    "status": 404,
+    "durationMs": 531,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot GET /api/v1/discovery/ranking-explanation\",\"error\":{\"message\":\"Cannot GET /api/v1/dis"
+  },
+  {
+    "num": 28,
+    "name": "1.3.5 POST Legal Questionnaire Matching",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/discovery/questionnaire",
+    "status": 404,
+    "durationMs": 218,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot POST /api/v1/discovery/questionnaire\",\"error\":{\"message\":\"Cannot POST /api/v1/discove"
+  },
+  {
+    "num": 29,
+    "name": "1.3.6 GET Search Practice Areas",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/search/practice-areas",
+    "status": 404,
+    "durationMs": 598,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot GET /api/v1/search/practice-areas\",\"error\":{\"message\":\"Cannot GET /api/v1/search/prac"
+  },
+  {
+    "num": 30,
+    "name": "1.4.1 GET Supported Languages",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/localization/languages",
+    "status": 200,
+    "durationMs": 527,
+    "passed": true,
+    "responseSnippet": "[{\"code\":\"en\",\"name\":\"English\",\"direction\":\"LTR\",\"isDefault\":true,\"isActive\":true},{\"code\":\"am\",\"name\":\"Amharic (አማርኛ)\","
+  },
+  {
+    "num": 31,
+    "name": "1.4.2 GET i18n Published Catalog for Locale",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/i18n/catalog/{{locale}}",
+    "status": 200,
+    "durationMs": 842,
+    "passed": true,
+    "responseSnippet": "{\"locale\":\"{{locale}}\",\"namespace\":\"all\",\"version\":1,\"catalog\":{\"common.welcome\":\"Welcome to Tebeka Legal Portal\",\"terms"
+  },
+  {
+    "num": 32,
+    "name": "1.4.3 PUT User Locale Preference",
+    "method": "PUT",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/users/me/preferences/locale",
+    "status": 401,
+    "durationMs": 598,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 33,
+    "name": "2.1.1 GET My Profile",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/users/me/profile",
+    "status": 200,
+    "durationMs": 629,
+    "passed": true,
+    "responseSnippet": "{\"id\":\"c0d9c2cc-08b0-4e88-a93b-d701018e0ac2\",\"email\":\"new.user@tebeka.et\",\"emailVerified\":true,\"name\":\"Admin Created Use"
+  },
+  {
+    "num": 34,
+    "name": "2.1.2 PATCH Update Profile Data",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/users/me/profile",
+    "status": 200,
+    "durationMs": 262,
+    "passed": true,
+    "responseSnippet": "{\"id\":\"c0d9c2cc-08b0-4e88-a93b-d701018e0ac2\",\"email\":\"new.user@tebeka.et\",\"emailVerified\":true,\"name\":\"Admin Created Use"
+  },
+  {
+    "num": 35,
+    "name": "2.1.3 PATCH Update Phone Number",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/users/me/phone",
+    "status": 200,
+    "durationMs": 270,
+    "passed": true,
+    "responseSnippet": "{\"id\":\"c0d9c2cc-08b0-4e88-a93b-d701018e0ac2\",\"email\":\"new.user@tebeka.et\",\"emailVerified\":true,\"name\":\"Admin Created Use"
+  },
+  {
+    "num": 36,
+    "name": "2.1.4 PATCH Update Email Address",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/users/me/email",
+    "status": 200,
+    "durationMs": 234,
+    "passed": true,
+    "responseSnippet": "{\"id\":\"c0d9c2cc-08b0-4e88-a93b-d701018e0ac2\",\"email\":\"client_new@example.com\",\"emailVerified\":false,\"name\":\"Admin Create"
+  },
+  {
+    "num": 37,
+    "name": "2.1.5 PATCH Update Address",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/users/me/address",
+    "status": 200,
+    "durationMs": 236,
+    "passed": true,
+    "responseSnippet": "{\"status\":\"success\",\"message\":\"Address updated\",\"address\":{\"street\":\"Bole Road\",\"city\":\"Addis Ababa\",\"country\":\"Ethiopia"
+  },
+  {
+    "num": 38,
+    "name": "2.1.6 GET My Preferences",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/users/me/preferences",
+    "status": 200,
+    "durationMs": 463,
+    "passed": true,
+    "responseSnippet": "{\"userId\":\"c0d9c2cc-08b0-4e88-a93b-d701018e0ac2\",\"locale\":\"en\",\"timezone\":\"Africa/Addis_Ababa\",\"theme\":\"light\"}"
+  },
+  {
+    "num": 39,
+    "name": "2.1.7 PATCH Update Preferences",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/users/me/preferences",
+    "status": 500,
+    "durationMs": 279,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"\\nInvalid `prisma.userPreference.upsert()` invocation in\\nC:\\\\Users\\\\X1\\\\pro\\\\1_Active\\\\Tebe"
+  },
+  {
+    "num": 40,
+    "name": "2.2.1 POST Create Consultation Booking",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/bookings",
+    "status": 400,
+    "durationMs": 207,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Validation failed: \\\"attorneyId\\\" must be a valid GUID, \\\"bookingDate\\\" is required, \\\"start"
+  },
+  {
+    "num": 41,
+    "name": "2.2.2 GET My Bookings List",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/bookings",
+    "status": 500,
+    "durationMs": 864,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"\\nInvalid `prisma.booking.findMany()` invocation in\\nC:\\\\Users\\\\X1\\\\pro\\\\1_Active\\\\Tebeka_po"
+  },
+  {
+    "num": 42,
+    "name": "2.2.3 GET Booking Details by ID",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/bookings/{{id}}",
+    "status": 500,
+    "durationMs": 432,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"\\nInvalid `prisma.booking.findUnique()` invocation in\\nC:\\\\Users\\\\X1\\\\pro\\\\1_Active\\\\Tebeka_"
+  },
+  {
+    "num": 43,
+    "name": "2.2.4 PATCH Update Booking Status",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/bookings/{{id}}/status",
+    "status": 400,
+    "durationMs": 280,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Validation failed: \\\"value\\\" must be of type object\",\"error\":{\"code\":\"VALIDATION_ERROR\",\"mes"
+  },
+  {
+    "num": 44,
+    "name": "2.2.5 POST Reschedule Booking",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/bookings/{{id}}/reschedule",
+    "status": 400,
+    "durationMs": 215,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Validation failed: \\\"bookingDate\\\" is required, \\\"startTime\\\" is required, \\\"endTime\\\" is re"
+  },
+  {
+    "num": 45,
+    "name": "2.2.6 POST Cancel Booking",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/bookings/{{id}}/cancel",
+    "status": 500,
+    "durationMs": 314,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"\\nInvalid `tx.booking.findUnique()` invocation in\\nC:\\\\Users\\\\X1\\\\pro\\\\1_Active\\\\Tebeka_port"
+  },
+  {
+    "num": 46,
+    "name": "2.3.1 POST Create Legal Case",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/cases",
+    "status": 400,
+    "durationMs": 406,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Validation failed: \\\"attorneyId\\\" is required, \\\"practiceAreaId\\\" must be a valid GUID\",\"err"
+  },
+  {
+    "num": 47,
+    "name": "2.3.2 GET My Cases List",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/cases",
+    "status": 500,
+    "durationMs": 608,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"\\nInvalid `prisma.case.findMany()` invocation in\\nC:\\\\Users\\\\X1\\\\pro\\\\1_Active\\\\Tebeka_porta"
+  },
+  {
+    "num": 48,
+    "name": "2.3.3 GET Case Details by ID",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/cases/{{id}}",
+    "status": 500,
+    "durationMs": 425,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"\\nInvalid `prisma.case.findUnique()` invocation in\\nC:\\\\Users\\\\X1\\\\pro\\\\1_Active\\\\Tebeka_por"
+  },
+  {
+    "num": 49,
+    "name": "2.3.4 PATCH Update Case Status",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/cases/{{id}}/status",
+    "status": 400,
+    "durationMs": 223,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Validation failed: \\\"value\\\" must be of type object\",\"error\":{\"code\":\"VALIDATION_ERROR\",\"mes"
+  },
+  {
+    "num": 50,
+    "name": "2.3.5 POST Upload Case Document",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/cases/{{caseId}}/documents",
+    "status": 400,
+    "durationMs": 300,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Validation failed: \\\"value\\\" must be of type object\",\"error\":{\"code\":\"VALIDATION_ERROR\",\"mes"
+  },
+  {
+    "num": 51,
+    "name": "2.3.6 GET Case Documents",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/cases/{{caseId}}/documents",
+    "status": 400,
+    "durationMs": 666,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Validation failed: \\\"value\\\" must be of type object\",\"error\":{\"code\":\"VALIDATION_ERROR\",\"mes"
+  },
+  {
+    "num": 52,
+    "name": "2.3.7 GET Download Case Document",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/cases/{{caseId}}/documents/{{docId}}/download",
+    "status": 500,
+    "durationMs": 648,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"\\nInvalid `prisma.case.findUnique()` invocation in\\nC:\\\\Users\\\\X1\\\\pro\\\\1_Active\\\\Tebeka_por"
+  },
+  {
+    "num": 53,
+    "name": "3.1.1 GET My Attorney Profile",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me",
+    "status": 401,
+    "durationMs": 478,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 54,
+    "name": "3.1.2 PATCH Update My Attorney Profile",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me",
+    "status": 401,
+    "durationMs": 209,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 55,
+    "name": "3.1.3 PATCH Publish Profile",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/publish",
+    "status": 401,
+    "durationMs": 207,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 56,
+    "name": "3.1.4 PATCH Hide Profile",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/hide",
+    "status": 401,
+    "durationMs": 216,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 57,
+    "name": "3.1.5 POST Submit Profile Amendment Response",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/submit-amendment",
+    "status": 401,
+    "durationMs": 226,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 58,
+    "name": "3.1.6 POST Request Profile Change (Guarded)",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/request-profile-change",
+    "status": 401,
+    "durationMs": 312,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 59,
+    "name": "3.1.7 GET My Pending Profile Changes",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/pending-profile-changes",
+    "status": 401,
+    "durationMs": 410,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 60,
+    "name": "3.2.1 GET My Education List",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/education",
+    "status": 401,
+    "durationMs": 681,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 61,
+    "name": "3.2.2 POST Add Education Record",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/education",
+    "status": 401,
+    "durationMs": 269,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 62,
+    "name": "3.2.3 DELETE Remove Education Record",
+    "method": "DELETE",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/education/{{eduId}}",
+    "status": 401,
+    "durationMs": 227,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 63,
+    "name": "3.2.4 GET Public Credentials View",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/credentials-public",
+    "status": 401,
+    "durationMs": 577,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 64,
+    "name": "3.3.1 GET My Availability Schedule",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/availability",
+    "status": 401,
+    "durationMs": 424,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 65,
+    "name": "3.3.2 POST Set Weekly Availability Slot",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/availability",
+    "status": 401,
+    "durationMs": 315,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 66,
+    "name": "3.3.3 PATCH Update Availability Slot",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/availability/{{availId}}",
+    "status": 401,
+    "durationMs": 279,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 67,
+    "name": "3.3.4 DELETE Remove Availability Slot",
+    "method": "DELETE",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/availability/{{availId}}",
+    "status": 401,
+    "durationMs": 283,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 68,
+    "name": "3.3.5 POST Block Specific Date",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/block-date",
+    "status": 401,
+    "durationMs": 242,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 69,
+    "name": "3.3.6 POST Set Vacation Period",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/attorneys/me/vacation",
+    "status": 401,
+    "durationMs": 214,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 70,
+    "name": "3.4.1 GET My Verification Case Status",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/my-case",
+    "status": 401,
+    "durationMs": 435,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 71,
+    "name": "3.4.2 GET Verification Case View Details",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/cases/{{id}}/attorney-view",
+    "status": 401,
+    "durationMs": 853,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 72,
+    "name": "3.4.3 POST Respond to Information Request",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/{{id}}/respond-more-info",
+    "status": 401,
+    "durationMs": 274,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 73,
+    "name": "4.1.1 GET All Registered Users",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/users",
+    "status": 401,
+    "durationMs": 431,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 74,
+    "name": "4.1.2 GET User Statistics",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/users/statistics",
+    "status": 401,
+    "durationMs": 692,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 75,
+    "name": "4.1.3 GET User Details by ID",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/users/{{id}}",
+    "status": 404,
+    "durationMs": 594,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"User with ID {{id}} not found\",\"error\":{\"message\":\"User with ID {{id}} not found\",\"error\":\"N"
+  },
+  {
+    "num": 76,
+    "name": "4.1.4 PATCH Suspend User with Reason",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/users/{{id}}/suspend-reasoned",
+    "status": 401,
+    "durationMs": 237,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 77,
+    "name": "4.1.5 PATCH Admin Reset User Password",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/users/{{id}}/reset-password",
+    "status": 401,
+    "durationMs": 221,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 78,
+    "name": "4.1.6 POST Impersonate User Session",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/users/{{id}}/impersonate",
+    "status": 401,
+    "durationMs": 234,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 79,
+    "name": "4.1.7 GET User Login History",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/users/{{id}}/login-history",
+    "status": 401,
+    "durationMs": 417,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 80,
+    "name": "4.1.8 GET All Registered Attorneys (Admin View)",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/attorneys",
+    "status": 401,
+    "durationMs": 483,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 81,
+    "name": "4.1.9 GET Attorney Statistics",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/attorneys/statistics",
+    "status": 401,
+    "durationMs": 428,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 82,
+    "name": "4.1.10 PATCH Admin Verify Attorney Profile",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/attorneys/{{id}}/verify",
+    "status": 401,
+    "durationMs": 215,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 83,
+    "name": "4.1.11 PATCH Admin Reject Attorney Profile",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/attorneys/{{id}}/reject",
+    "status": 401,
+    "durationMs": 207,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 84,
+    "name": "4.1.12 PATCH Admin Suspend Attorney Profile",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/attorneys/{{id}}/suspend",
+    "status": 401,
+    "durationMs": 211,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 85,
+    "name": "4.2.1 GET All Verification Cases",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications",
+    "status": 401,
+    "durationMs": 408,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 86,
+    "name": "4.2.2 GET Specific Verification Case",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/{{id}}",
+    "status": 401,
+    "durationMs": 667,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 87,
+    "name": "4.2.3 PATCH Update Verification Checklist Item",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/{{id}}/checklist/{{itemId}}",
+    "status": 401,
+    "durationMs": 216,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 88,
+    "name": "4.2.4 PATCH Update Bar Standing Status",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/standing-check/{{attorneyId}}",
+    "status": 401,
+    "durationMs": 210,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 89,
+    "name": "4.2.5 PATCH Approve Verification Case",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/{{id}}/approve",
+    "status": 401,
+    "durationMs": 265,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 90,
+    "name": "4.2.6 PATCH Reject Verification Case",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/{{id}}/reject",
+    "status": 401,
+    "durationMs": 217,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 91,
+    "name": "4.2.7 POST Request Verification Amendment",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/{{id}}/request-amendment",
+    "status": 401,
+    "durationMs": 597,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 92,
+    "name": "4.2.8 POST Flag Verification Case for Fraud",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/{{id}}/flag-fraud",
+    "status": 401,
+    "durationMs": 215,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 93,
+    "name": "4.2.9 GET Fraud Workspace Case View",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/fraud-workspace/{{id}}",
+    "status": 401,
+    "durationMs": 425,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 94,
+    "name": "4.2.10 POST Approve Guarded Profile Change",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/{{id}}/guarded-changes/{{changeId}}/approve",
+    "status": 401,
+    "durationMs": 233,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 95,
+    "name": "4.2.11 POST Reject Guarded Profile Change",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/verifications/{{id}}/guarded-changes/{{changeId}}/reject",
+    "status": 401,
+    "durationMs": 221,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 96,
+    "name": "4.3.1 GET System Settings",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/settings",
+    "status": 401,
+    "durationMs": 481,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 97,
+    "name": "4.3.2 PATCH Update System Settings",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/settings",
+    "status": 401,
+    "durationMs": 390,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 98,
+    "name": "4.3.3 POST Propose Config Change (Maker-Checker)",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/settings/propose-change",
+    "status": 401,
+    "durationMs": 210,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 99,
+    "name": "4.3.4 GET Pending Config Proposals",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/settings/pending-proposals",
+    "status": 401,
+    "durationMs": 416,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 100,
+    "name": "4.3.5 POST Approve Config Proposal",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/settings/approve-change/{{proposalId}}",
+    "status": 401,
+    "durationMs": 313,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 101,
+    "name": "4.3.6 GET Settings Audit History",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/settings/history",
+    "status": 401,
+    "durationMs": 512,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 102,
+    "name": "4.3.7 POST Restore Settings Version",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/settings/restore/{{version}}",
+    "status": 401,
+    "durationMs": 319,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 103,
+    "name": "4.4.1 GET Audit Logs",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/audit-logs",
+    "status": 401,
+    "durationMs": 427,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 104,
+    "name": "4.4.2 GET Audit Log Details by ID",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/audit-logs/{{id}}",
+    "status": 401,
+    "durationMs": 748,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 105,
+    "name": "4.4.3 GET Export Audit Logs CSV",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/audit-logs/export",
+    "status": 401,
+    "durationMs": 519,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 106,
+    "name": "4.4.4 GET Platform Health Metrics",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/platform-health",
+    "status": 401,
+    "durationMs": 428,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 107,
+    "name": "4.4.5 GET Business Queues Status",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/business-queues",
+    "status": 401,
+    "durationMs": 427,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 108,
+    "name": "4.4.6 GET Background Queues List",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/queues",
+    "status": 401,
+    "durationMs": 724,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 109,
+    "name": "4.4.7 GET Queue Statistics",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/queues/statistics",
+    "status": 401,
+    "durationMs": 533,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 110,
+    "name": "4.4.8 POST Retry Failed Queue Job",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/queues/retry/{{jobId}}",
+    "status": 401,
+    "durationMs": 383,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 111,
+    "name": "4.4.9 DELETE Cancel Queue Job",
+    "method": "DELETE",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/queues/{{jobId}}",
+    "status": 401,
+    "durationMs": 268,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 112,
+    "name": "4.5.1 GET All Roles",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/rbac/roles",
+    "status": 404,
+    "durationMs": 434,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot GET /api/v1/rbac/roles\",\"error\":{\"message\":\"Cannot GET /api/v1/rbac/roles\",\"error\":\"N"
+  },
+  {
+    "num": 113,
+    "name": "4.5.2 POST Create New Role",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/rbac/roles",
+    "status": 404,
+    "durationMs": 310,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot POST /api/v1/rbac/roles\",\"error\":{\"message\":\"Cannot POST /api/v1/rbac/roles\",\"error\":"
+  },
+  {
+    "num": 114,
+    "name": "4.5.3 GET Role Details by ID",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/roles/{{id}}",
+    "status": 404,
+    "durationMs": 519,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot GET /api/v1/roles/%7B%7Bid%7D%7D\",\"error\":{\"message\":\"Cannot GET /api/v1/roles/%7B%7B"
+  },
+  {
+    "num": 115,
+    "name": "4.5.4 PATCH Update Role",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/roles/{{id}}",
+    "status": 404,
+    "durationMs": 212,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot PATCH /api/v1/roles/%7B%7Bid%7D%7D\",\"error\":{\"message\":\"Cannot PATCH /api/v1/roles/%7"
+  },
+  {
+    "num": 116,
+    "name": "4.5.5 DELETE Delete Role",
+    "method": "DELETE",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/roles/{{id}}",
+    "status": 404,
+    "durationMs": 210,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot DELETE /api/v1/roles/%7B%7Bid%7D%7D\",\"error\":{\"message\":\"Cannot DELETE /api/v1/roles/"
+  },
+  {
+    "num": 117,
+    "name": "4.5.6 GET All Permissions",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/permissions",
+    "status": 404,
+    "durationMs": 437,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot GET /api/v1/permissions\",\"error\":{\"message\":\"Cannot GET /api/v1/permissions\",\"error\":"
+  },
+  {
+    "num": 118,
+    "name": "4.5.7 POST Create Permission",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/permissions",
+    "status": 404,
+    "durationMs": 222,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot POST /api/v1/permissions\",\"error\":{\"message\":\"Cannot POST /api/v1/permissions\",\"error"
+  },
+  {
+    "num": 119,
+    "name": "4.5.8 POST Assign Role to User",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/users/{{id}}/roles",
+    "status": 404,
+    "durationMs": 236,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot POST /api/v1/users/%7B%7Bid%7D%7D/roles\",\"error\":{\"message\":\"Cannot POST /api/v1/user"
+  },
+  {
+    "num": 120,
+    "name": "4.5.9 DELETE Remove Role from User",
+    "method": "DELETE",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/users/{{id}}/roles/{{roleId}}",
+    "status": 404,
+    "durationMs": 282,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot DELETE /api/v1/users/%7B%7Bid%7D%7D/roles/%7B%7BroleId%7D%7D\",\"error\":{\"message\":\"Can"
+  },
+  {
+    "num": 121,
+    "name": "4.6.1 GET i18n Translation Coverage Metrics",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/i18n/coverage",
+    "status": 401,
+    "durationMs": 575,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 122,
+    "name": "4.6.2 PUT Create/Update i18n Translation String",
+    "method": "PUT",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/i18n/strings/{{key}}",
+    "status": 401,
+    "durationMs": 352,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 123,
+    "name": "4.6.3 POST Record Legal Translation Review",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/admin/i18n/strings/{{key}}/review",
+    "status": 401,
+    "durationMs": 607,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 124,
+    "name": "4.6.4 PATCH Approve Legal Translation",
+    "method": "PATCH",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/translations/{{id}}/approve-legal",
+    "status": 401,
+    "durationMs": 476,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 125,
+    "name": "5.1.1 POST Upload File",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/files/upload",
+    "status": 401,
+    "durationMs": 225,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 126,
+    "name": "5.1.2 GET File Metadata by ID",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/files/{{id}}",
+    "status": 401,
+    "durationMs": 406,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 127,
+    "name": "5.1.3 GET Download File",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/files/{{id}}/download",
+    "status": 401,
+    "durationMs": 805,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 128,
+    "name": "5.1.4 GET Get Presigned S3/Local Download URL",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/files/{{id}}/signed-url",
+    "status": 401,
+    "durationMs": 480,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 129,
+    "name": "5.1.5 DELETE Delete File",
+    "method": "DELETE",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/files/{{id}}",
+    "status": 401,
+    "durationMs": 300,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Unauthorized\",\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Unauthorized\"},\"timestamp\":\"2026-08-"
+  },
+  {
+    "num": 130,
+    "name": "5.2.1 POST Create Payment Intent",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/payments",
+    "status": 404,
+    "durationMs": 314,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot POST /api/v1/payments\",\"error\":{\"message\":\"Cannot POST /api/v1/payments\",\"error\":\"Not"
+  },
+  {
+    "num": 131,
+    "name": "5.2.2 POST Request Payment from Client",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/payments/request",
+    "status": 404,
+    "durationMs": 297,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot POST /api/v1/payments/request\",\"error\":{\"message\":\"Cannot POST /api/v1/payments/reque"
+  },
+  {
+    "num": 132,
+    "name": "5.2.3 POST Approve Payment",
+    "method": "POST",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/payments/approve",
+    "status": 404,
+    "durationMs": 207,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot POST /api/v1/payments/approve\",\"error\":{\"message\":\"Cannot POST /api/v1/payments/appro"
+  },
+  {
+    "num": 133,
+    "name": "5.2.4 GET My Payments History",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/payments",
+    "status": 404,
+    "durationMs": 424,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot GET /api/v1/payments\",\"error\":{\"message\":\"Cannot GET /api/v1/payments\",\"error\":\"Not F"
+  },
+  {
+    "num": 134,
+    "name": "5.3.1 GET API Gateway Health Check",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/health",
+    "status": 200,
+    "durationMs": 504,
+    "passed": true,
+    "responseSnippet": "{\"success\":true,\"message\":\"API Gateway is up\",\"data\":{\"status\":\"healthy\",\"timestamp\":\"2026-08-13T08:42:24.258Z\"},\"timest"
+  },
+  {
+    "num": 135,
+    "name": "5.3.2 GET User Service Health Check",
+    "method": "GET",
+    "url": "https://jones-homeland-sentence-urgent.trycloudflare.com/api/v1/health/user-service",
+    "status": 404,
+    "durationMs": 418,
+    "passed": false,
+    "responseSnippet": "{\"success\":false,\"message\":\"Cannot GET /api/v1/health/user-service\",\"error\":{\"message\":\"Cannot GET /api/v1/health/user-s"
+  }
+]

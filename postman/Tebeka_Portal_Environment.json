@@ -1,0 +1,126 @@
+{
+  "id": "tebeka-portal-env",
+  "name": "Tebeka Portal Local Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "enabled": true
+    },
+    {
+      "key": "marketplaceUrl",
+      "value": "http://localhost:3000/api/v1",
+      "enabled": true
+    },
+    {
+      "key": "clientAuthToken",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "attorneyAuthToken",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "adminAuthToken",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "superAdminAuthToken",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "otpContinuationToken",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "attorneyProfileId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "verificationCaseId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "checkItemId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "proposalId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "contactTicketId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "emailOtpCode",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "bookingId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "caseId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "documentId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "reviewId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "educationId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "availabilityId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "practiceAreaId",
+      "value": "pa-1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "credentialDocumentId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

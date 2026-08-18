@@ -1,0 +1,973 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Tebeka Marketplace Service ⚖️ (Role-Based & Functional)",
+    "description": "Comprehensive Postman collection for the Tebeka Marketplace Service.\n\nOrganized into:\n- **Role-Based Superfolders**: Public/Anonymous, Client, Attorney, Admin\n- **Functional Subfolders**: Discovery, Search, Bookings, Cases, Documents, Reviews, Ranking\n\nAll requests route through the API Gateway at {{marketplaceUrl}} (default: http://localhost:3000/api/v1).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "marketplaceUrl",
+      "value": "{{marketplaceUrl}}",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Public & Anonymous (No Auth Required)",
+      "description": "Endpoints accessible without authentication. Discovery, search, public reviews, and ranking weights.",
+      "item": [
+        {
+          "name": "Discovery",
+          "description": "Browse and discover verified attorneys on the marketplace.",
+          "item": [
+            {
+              "name": "Browse Attorneys (Public Directory)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/discovery/attorneys?page=1&limit=20&sortBy=searchScore&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["discovery", "attorneys"],
+                  "query": [
+                    { "key": "page", "value": "1", "description": "Page number (default: 1)" },
+                    { "key": "limit", "value": "20", "description": "Items per page (1-100, default: 20)" },
+                    { "key": "city", "value": "", "description": "Filter by city", "disabled": true },
+                    { "key": "feeBand", "value": "", "description": "Filter by fee band", "disabled": true },
+                    { "key": "practiceAreaId", "value": "{{practiceAreaId}}", "description": "Filter by practice area UUID", "disabled": true },
+                    { "key": "language", "value": "", "description": "Filter by language (e.g. en, am)", "disabled": true },
+                    { "key": "minRating", "value": "3", "description": "Minimum rating (0-5)", "disabled": true },
+                    { "key": "minExperience", "value": "2", "description": "Minimum experience years", "disabled": true },
+                    { "key": "minResponsiveness", "value": "", "description": "Minimum responsiveness score", "disabled": true },
+                    { "key": "sortBy", "value": "searchScore", "description": "Sort: searchScore | rating | experienceScore | responsivenessScore" },
+                    { "key": "sortOrder", "value": "desc", "description": "Sort order: asc | desc" }
+                  ]
+                },
+                "description": "Public directory of verified attorneys. No auth required. Supports filtering by city, fee band, practice area, language, rating, and experience."
+              }
+            },
+            {
+              "name": "Get Attorney Details (Public Profile)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/discovery/attorneys/{{attorneyProfileId}}",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["discovery", "attorneys", "{{attorneyProfileId}}"]
+                },
+                "description": "Retrieve the full public profile of a specific attorney by their profile ID. No auth required."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search",
+          "description": "Full-text attorney search (public, anonymous-friendly).",
+          "item": [
+            {
+              "name": "Search Attorneys (Full-Text)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/search/attorneys?q=family law&page=1&limit=20&sortBy=searchScore&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["search", "attorneys"],
+                  "query": [
+                    { "key": "q", "value": "family law", "description": "Search query string" },
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "city", "value": "", "description": "Filter by city", "disabled": true },
+                    { "key": "feeBand", "value": "", "description": "Filter by fee band", "disabled": true },
+                    { "key": "practiceAreaId", "value": "", "description": "Filter by practice area UUID", "disabled": true },
+                    { "key": "language", "value": "", "description": "Filter by language", "disabled": true },
+                    { "key": "minRating", "value": "", "description": "Minimum rating (0-5)", "disabled": true },
+                    { "key": "minExperience", "value": "", "description": "Minimum experience years", "disabled": true },
+                    { "key": "sortBy", "value": "searchScore" },
+                    { "key": "sortOrder", "value": "desc" }
+                  ]
+                },
+                "description": "Search attorneys by keyword with optional filters. If a user is logged in, search is recorded in history."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reviews (Public)",
+          "description": "Publicly viewable attorney reviews.",
+          "item": [
+            {
+              "name": "Get Attorney Reviews (Public)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/attorneys/{{attorneyProfileId}}/reviews?page=1&limit=20&status=PUBLISHED&sortBy=createdAt&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["attorneys", "{{attorneyProfileId}}", "reviews"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "status", "value": "PUBLISHED", "description": "PENDING | PUBLISHED | FLAGGED | HIDDEN" },
+                    { "key": "rating", "value": "", "description": "Exact rating (1-5)", "disabled": true },
+                    { "key": "minRating", "value": "", "description": "Minimum rating (1-5)", "disabled": true },
+                    { "key": "sortBy", "value": "createdAt", "description": "createdAt | rating" },
+                    { "key": "sortOrder", "value": "desc" }
+                  ]
+                },
+                "description": "Get published reviews for a specific attorney. No auth required."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ranking",
+          "description": "Attorney ranking weights configuration (read-only for public).",
+          "item": [
+            {
+              "name": "Get Active Ranking Weights",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/ranking/weights",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["ranking", "weights"]
+                },
+                "description": "Retrieve the currently active ranking weights (verification, rating, experience, responsiveness). No auth required."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02. Client Role Superfolder",
+      "description": "Endpoints used by authenticated Clients: booking consultations, managing cases, uploading documents, writing reviews, search history.",
+      "item": [
+        {
+          "name": "Bookings",
+          "description": "Create, view, cancel, and reschedule consultation bookings.",
+          "item": [
+            {
+              "name": "Create Booking",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201 || pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  if (body.id) pm.environment.set('bookingId', body.id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"attorneyId\": \"{{attorneyProfileId}}\",\n  \"bookingDate\": \"2026-08-20\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"11:00\",\n  \"consultationType\": \"VIDEO\",\n  \"paymentStatus\": \"UNPAID\"\n}"
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings"]
+                },
+                "description": "Create a new consultation booking with an attorney. Requires client auth.\n\n**consultationType**: IN_PERSON | VIDEO | PHONE\n**paymentStatus**: UNPAID | PAID | REFUNDED\n**startTime/endTime**: HH:mm format (e.g. 09:30, 14:00)"
+              }
+            },
+            {
+              "name": "Get My Bookings (Client)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings?page=1&limit=20&role=CLIENT&sortBy=bookingDate&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "role", "value": "CLIENT", "description": "CLIENT | ATTORNEY | ADMIN" },
+                    { "key": "status", "value": "", "description": "PENDING | CONFIRMED | CANCELLED | COMPLETED | NOSHOW | EXPIRED", "disabled": true },
+                    { "key": "paymentStatus", "value": "", "description": "UNPAID | PAID | REFUNDED", "disabled": true },
+                    { "key": "consultationType", "value": "", "description": "IN_PERSON | VIDEO | PHONE", "disabled": true },
+                    { "key": "fromDate", "value": "", "description": "ISO date filter start", "disabled": true },
+                    { "key": "toDate", "value": "", "description": "ISO date filter end", "disabled": true },
+                    { "key": "sortBy", "value": "bookingDate", "description": "bookingDate | createdAt | status | paymentStatus" },
+                    { "key": "sortOrder", "value": "desc" }
+                  ]
+                },
+                "description": "List all bookings for the authenticated client. Supports filtering by status, payment, consultation type, and date range."
+              }
+            },
+            {
+              "name": "Get Booking by ID",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings/{{bookingId}}",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings", "{{bookingId}}"]
+                },
+                "description": "Retrieve a specific booking by its ID."
+              }
+            },
+            {
+              "name": "Cancel Booking",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Schedule conflict - need to reschedule\"\n}"
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings/{{bookingId}}/cancel",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings", "{{bookingId}}", "cancel"]
+                },
+                "description": "Cancel an existing booking. Reason is optional."
+              }
+            },
+            {
+              "name": "Reschedule Booking",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"bookingDate\": \"2026-08-22\",\n  \"startTime\": \"14:00\",\n  \"endTime\": \"15:00\"\n}"
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings/{{bookingId}}/reschedule",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings", "{{bookingId}}", "reschedule"]
+                },
+                "description": "Reschedule a booking to a new date/time.\n\n**bookingDate**: ISO date (YYYY-MM-DD)\n**startTime/endTime**: HH:mm format"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cases",
+          "description": "Create and manage legal cases.",
+          "item": [
+            {
+              "name": "Create Case",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201 || pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  if (body.id) pm.environment.set('caseId', body.id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Property Dispute - Bole Sub City\",\n  \"description\": \"Legal consultation regarding a property ownership dispute in Bole sub city, Addis Ababa. Need help reviewing land title deeds and representing in court.\",\n  \"attorneyId\": \"{{attorneyProfileId}}\",\n  \"bookingId\": \"{{bookingId}}\",\n  \"practiceAreaId\": \"{{practiceAreaId}}\",\n  \"priority\": \"MEDIUM\"\n}"
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases"]
+                },
+                "description": "Create a new legal case linked to a booking and attorney.\n\n**priority**: LOW | MEDIUM | HIGH | URGENT"
+              }
+            },
+            {
+              "name": "Get My Cases (Client)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases?page=1&limit=20&role=CLIENT&sortBy=openedAt&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "role", "value": "CLIENT" },
+                    { "key": "status", "value": "", "description": "OPEN | IN_PROGRESS | PENDING_REVIEW | CLOSED | ARCHIVED", "disabled": true },
+                    { "key": "priority", "value": "", "description": "LOW | MEDIUM | HIGH | URGENT", "disabled": true },
+                    { "key": "q", "value": "", "description": "Search query", "disabled": true },
+                    { "key": "practiceAreaId", "value": "", "disabled": true },
+                    { "key": "fromOpenedAt", "value": "", "disabled": true },
+                    { "key": "toOpenedAt", "value": "", "disabled": true },
+                    { "key": "sortBy", "value": "openedAt", "description": "openedAt | closedAt | priority | title" },
+                    { "key": "sortOrder", "value": "desc" }
+                  ]
+                },
+                "description": "List all cases belonging to the authenticated client."
+              }
+            },
+            {
+              "name": "Get Case by ID",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases/{{caseId}}",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases", "{{caseId}}"]
+                },
+                "description": "Get details of a specific case by ID."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Case Documents",
+          "description": "Upload and manage documents for a legal case.",
+          "item": [
+            {
+              "name": "Upload Case Document",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201 || pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  if (body.id) pm.environment.set('documentId', body.id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "file", "type": "file", "src": "", "description": "Document file (PDF, images)" },
+                    { "key": "fileName", "value": "property_deed.pdf", "type": "text", "description": "Optional file name override" },
+                    { "key": "mimeType", "value": "application/pdf", "type": "text" }
+                  ]
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases/{{caseId}}/documents",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases", "{{caseId}}", "documents"]
+                },
+                "description": "Upload a document to a case. Use form-data with a file attachment."
+              }
+            },
+            {
+              "name": "Get Case Documents",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases/{{caseId}}/documents?page=1&limit=20&sortBy=createdAt&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases", "{{caseId}}", "documents"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "mimeType", "value": "", "description": "Filter by MIME type", "disabled": true },
+                    { "key": "q", "value": "", "description": "Search in file names", "disabled": true },
+                    { "key": "sortBy", "value": "createdAt", "description": "createdAt | size | fileName" },
+                    { "key": "sortOrder", "value": "desc" }
+                  ]
+                },
+                "description": "List all documents attached to a specific case."
+              }
+            },
+            {
+              "name": "Download Case Document",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases/{{caseId}}/documents/{{documentId}}/download",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases", "{{caseId}}", "documents", "{{documentId}}", "download"]
+                },
+                "description": "Download a specific document from a case. Returns the file as a binary stream with Content-Disposition header."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reviews",
+          "description": "Write reviews for completed consultations.",
+          "item": [
+            {
+              "name": "Create Review (After Booking)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201 || pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  if (body.id) pm.environment.set('reviewId', body.id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Excellent attorney, very professional and knowledgeable about property law. Highly recommended!\"\n}"
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings/{{bookingId}}/reviews",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings", "{{bookingId}}", "reviews"]
+                },
+                "description": "Leave a review after a completed booking.\n\n**rating**: 1-5 (required)\n**comment**: Up to 1000 characters (optional)"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search History",
+          "description": "Client's search history management.",
+          "item": [
+            {
+              "name": "Get My Search History",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/search/history?page=1&limit=20",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["search", "history"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" }
+                  ]
+                },
+                "description": "Retrieve the authenticated user's search history."
+              }
+            },
+            {
+              "name": "Clear My Search History",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{clientAuthToken}}", "type": "string" }]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/search/history",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["search", "history"]
+                },
+                "description": "Clear all search history for the authenticated user."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03. Attorney Role Superfolder",
+      "description": "Endpoints used by authenticated Attorneys: viewing their bookings, managing cases, uploading documents.",
+      "item": [
+        {
+          "name": "Bookings",
+          "description": "View and manage bookings assigned to the attorney.",
+          "item": [
+            {
+              "name": "Get My Bookings (Attorney)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{attorneyAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings?page=1&limit=20&role=ATTORNEY&sortBy=bookingDate&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "role", "value": "ATTORNEY" },
+                    { "key": "status", "value": "", "description": "PENDING | CONFIRMED | CANCELLED | COMPLETED | NOSHOW | EXPIRED", "disabled": true },
+                    { "key": "paymentStatus", "value": "", "disabled": true },
+                    { "key": "consultationType", "value": "", "disabled": true },
+                    { "key": "fromDate", "value": "", "disabled": true },
+                    { "key": "toDate", "value": "", "disabled": true },
+                    { "key": "sortBy", "value": "bookingDate" },
+                    { "key": "sortOrder", "value": "desc" }
+                  ]
+                },
+                "description": "List all bookings assigned to the authenticated attorney."
+              }
+            },
+            {
+              "name": "Get Booking by ID (Attorney)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{attorneyAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings/{{bookingId}}",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings", "{{bookingId}}"]
+                },
+                "description": "Attorney views a specific booking detail."
+              }
+            },
+            {
+              "name": "Update Booking Status (Confirm/Complete)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{attorneyAuthToken}}", "type": "string" }]
+                },
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"CONFIRMED\",\n  \"reason\": \"Confirmed by attorney\"\n}"
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings/{{bookingId}}/status",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings", "{{bookingId}}", "status"]
+                },
+                "description": "Attorney updates a booking's status.\n\n**status**: PENDING | CONFIRMED | CANCELLED | COMPLETED | NOSHOW | EXPIRED\n**reason**: Optional explanation (max 500 chars)"
+              }
+            },
+            {
+              "name": "Cancel Booking (Attorney)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{attorneyAuthToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Attorney unavailable - referring to colleague\"\n}"
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings/{{bookingId}}/cancel",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings", "{{bookingId}}", "cancel"]
+                },
+                "description": "Attorney cancels a booking with a reason."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cases",
+          "description": "View and manage cases assigned to the attorney.",
+          "item": [
+            {
+              "name": "Get My Cases (Attorney)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{attorneyAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases?page=1&limit=20&role=ATTORNEY&sortBy=openedAt&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "role", "value": "ATTORNEY" },
+                    { "key": "status", "value": "", "disabled": true },
+                    { "key": "priority", "value": "", "disabled": true },
+                    { "key": "q", "value": "", "disabled": true },
+                    { "key": "sortBy", "value": "openedAt" },
+                    { "key": "sortOrder", "value": "desc" }
+                  ]
+                },
+                "description": "List all cases assigned to the authenticated attorney."
+              }
+            },
+            {
+              "name": "Get Case by ID (Attorney)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{attorneyAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases/{{caseId}}",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases", "{{caseId}}"]
+                },
+                "description": "Attorney views a specific case detail."
+              }
+            },
+            {
+              "name": "Update Case Status",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{attorneyAuthToken}}", "type": "string" }]
+                },
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases/{{caseId}}/status",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases", "{{caseId}}", "status"]
+                },
+                "description": "Attorney updates a case status.\n\n**status**: OPEN | IN_PROGRESS | PENDING_REVIEW | CLOSED | ARCHIVED"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Case Documents",
+          "description": "Upload and view documents for cases the attorney is handling.",
+          "item": [
+            {
+              "name": "Upload Case Document (Attorney)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{attorneyAuthToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "file", "type": "file", "src": "", "description": "Legal document file" },
+                    { "key": "fileName", "value": "legal_opinion.pdf", "type": "text" },
+                    { "key": "mimeType", "value": "application/pdf", "type": "text" }
+                  ]
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases/{{caseId}}/documents",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases", "{{caseId}}", "documents"]
+                },
+                "description": "Attorney uploads a document to a case they are handling."
+              }
+            },
+            {
+              "name": "Get Case Documents (Attorney)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{attorneyAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases/{{caseId}}/documents?page=1&limit=20&sortBy=createdAt&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases", "{{caseId}}", "documents"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "sortBy", "value": "createdAt" },
+                    { "key": "sortOrder", "value": "desc" }
+                  ]
+                },
+                "description": "Attorney lists all documents in a case."
+              }
+            },
+            {
+              "name": "Download Case Document (Attorney)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{attorneyAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases/{{caseId}}/documents/{{documentId}}/download",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases", "{{caseId}}", "documents", "{{documentId}}", "download"]
+                },
+                "description": "Attorney downloads a document from a case."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04. Administrator Role Superfolder",
+      "description": "Admin-level endpoints: manage all bookings/cases, configure ranking weights, moderate reviews.",
+      "item": [
+        {
+          "name": "Bookings (Admin)",
+          "description": "Admin can view and manage all bookings across the platform.",
+          "item": [
+            {
+              "name": "List All Bookings (Admin)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{adminAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings?page=1&limit=20&role=ADMIN&sortBy=bookingDate&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "role", "value": "ADMIN" },
+                    { "key": "clientId", "value": "", "description": "Filter by client UUID", "disabled": true },
+                    { "key": "attorneyId", "value": "", "description": "Filter by attorney UUID", "disabled": true },
+                    { "key": "status", "value": "", "disabled": true },
+                    { "key": "paymentStatus", "value": "", "disabled": true },
+                    { "key": "consultationType", "value": "", "disabled": true },
+                    { "key": "fromDate", "value": "", "disabled": true },
+                    { "key": "toDate", "value": "", "disabled": true },
+                    { "key": "sortBy", "value": "bookingDate" },
+                    { "key": "sortOrder", "value": "desc" }
+                  ]
+                },
+                "description": "Admin lists all bookings platform-wide with full filtering."
+              }
+            },
+            {
+              "name": "Update Booking Status (Admin Override)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{adminAuthToken}}", "type": "string" }]
+                },
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"CANCELLED\",\n  \"reason\": \"Admin override: policy violation\"\n}"
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings/{{bookingId}}/status",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings", "{{bookingId}}", "status"]
+                },
+                "description": "Admin can force-update any booking's status."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cases (Admin)",
+          "description": "Admin can view and manage all cases across the platform.",
+          "item": [
+            {
+              "name": "List All Cases (Admin)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{adminAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases?page=1&limit=20&role=ADMIN&sortBy=openedAt&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "role", "value": "ADMIN" },
+                    { "key": "clientId", "value": "", "disabled": true },
+                    { "key": "attorneyId", "value": "", "disabled": true },
+                    { "key": "status", "value": "", "disabled": true },
+                    { "key": "priority", "value": "", "disabled": true },
+                    { "key": "q", "value": "", "disabled": true },
+                    { "key": "practiceAreaId", "value": "", "disabled": true },
+                    { "key": "fromOpenedAt", "value": "", "disabled": true },
+                    { "key": "toOpenedAt", "value": "", "disabled": true },
+                    { "key": "sortBy", "value": "openedAt" },
+                    { "key": "sortOrder", "value": "desc" }
+                  ]
+                },
+                "description": "Admin lists all cases platform-wide."
+              }
+            },
+            {
+              "name": "Update Case Status (Admin Override)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{adminAuthToken}}", "type": "string" }]
+                },
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"ARCHIVED\"\n}"
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/cases/{{caseId}}/status",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["cases", "{{caseId}}", "status"]
+                },
+                "description": "Admin can force-update any case status."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ranking (Admin)",
+          "description": "Configure the marketplace's attorney ranking algorithm weights.",
+          "item": [
+            {
+              "name": "Get Active Ranking Weights",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{adminAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/ranking/weights",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["ranking", "weights"]
+                },
+                "description": "View the current ranking weights used in attorney discovery."
+              }
+            },
+            {
+              "name": "Create/Update Ranking Weights",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{adminAuthToken}}", "type": "string" }]
+                },
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"verificationWeight\": 30,\n  \"ratingWeight\": 30,\n  \"experienceWeight\": 25,\n  \"responsivenessWeight\": 15\n}"
+                },
+                "url": {
+                  "raw": "{{marketplaceUrl}}/ranking/weights",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["ranking", "weights"]
+                },
+                "description": "Set new ranking weights. All four weights must sum to exactly 100.\n\n**verificationWeight**: 0-100\n**ratingWeight**: 0-100\n**experienceWeight**: 0-100\n**responsivenessWeight**: 0-100"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

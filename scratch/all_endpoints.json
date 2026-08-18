@@ -1,0 +1,2292 @@
+[
+  {
+    "file": "apps/api-gateway/src/app.controller.ts",
+    "service": "api-gateway",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/health",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/api-gateway/src/health.controller.ts",
+    "service": "api-gateway",
+    "controller": "health",
+    "method": "GET",
+    "path": "/health",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+    "service": "financial-service",
+    "controller": "payments",
+    "method": "POST",
+    "path": "/payments",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+    "service": "financial-service",
+    "controller": "payments",
+    "method": "GET",
+    "path": "/payments",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+    "service": "financial-service",
+    "controller": "payments",
+    "method": "POST",
+    "path": "/payments/approve",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+    "service": "financial-service",
+    "controller": "payments",
+    "method": "POST",
+    "path": "/payments/request",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/review/review.controller.ts",
+    "service": "marketplace-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys/:attorneyId/reviews",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+    "service": "marketplace-service",
+    "controller": "bookings",
+    "method": "POST",
+    "path": "/bookings",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+    "service": "marketplace-service",
+    "controller": "bookings",
+    "method": "GET",
+    "path": "/bookings",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/review/review.controller.ts",
+    "service": "marketplace-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/bookings/:bookingId/reviews",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+    "service": "marketplace-service",
+    "controller": "bookings",
+    "method": "GET",
+    "path": "/bookings/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+    "service": "marketplace-service",
+    "controller": "bookings",
+    "method": "POST",
+    "path": "/bookings/:id/cancel",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+    "service": "marketplace-service",
+    "controller": "bookings",
+    "method": "POST",
+    "path": "/bookings/:id/reschedule",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+    "service": "marketplace-service",
+    "controller": "bookings",
+    "method": "PATCH",
+    "path": "/bookings/:id/status",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+    "service": "marketplace-service",
+    "controller": "cases",
+    "method": "POST",
+    "path": "/cases",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+    "service": "marketplace-service",
+    "controller": "cases",
+    "method": "GET",
+    "path": "/cases",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/document/document.controller.ts",
+    "service": "marketplace-service",
+    "controller": "cases/:caseId/documents",
+    "method": "POST",
+    "path": "/cases/:caseId/documents",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/document/document.controller.ts",
+    "service": "marketplace-service",
+    "controller": "cases/:caseId/documents",
+    "method": "GET",
+    "path": "/cases/:caseId/documents",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/document/document.controller.ts",
+    "service": "marketplace-service",
+    "controller": "cases/:caseId/documents",
+    "method": "GET",
+    "path": "/cases/:caseId/documents/:docId/download",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+    "service": "marketplace-service",
+    "controller": "cases",
+    "method": "GET",
+    "path": "/cases/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+    "service": "marketplace-service",
+    "controller": "cases",
+    "method": "PATCH",
+    "path": "/cases/:id/status",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/discovery/discovery.controller.ts",
+    "service": "marketplace-service",
+    "controller": "discovery",
+    "method": "GET",
+    "path": "/discovery/attorneys",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/discovery/discovery.controller.ts",
+    "service": "marketplace-service",
+    "controller": "discovery",
+    "method": "GET",
+    "path": "/discovery/attorneys/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/ranking/ranking.controller.ts",
+    "service": "marketplace-service",
+    "controller": "ranking",
+    "method": "GET",
+    "path": "/ranking/weights",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/ranking/ranking.controller.ts",
+    "service": "marketplace-service",
+    "controller": "ranking",
+    "method": "POST",
+    "path": "/ranking/weights",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/search/search.controller.ts",
+    "service": "marketplace-service",
+    "controller": "search",
+    "method": "GET",
+    "path": "/search/attorneys",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/search/search.controller.ts",
+    "service": "marketplace-service",
+    "controller": "search",
+    "method": "GET",
+    "path": "/search/history",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/marketplace-service/src/modules/search/search.controller.ts",
+    "service": "marketplace-service",
+    "controller": "search",
+    "method": "DELETE",
+    "path": "/search/history",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/[admin/i18n/coverage, api/v1/admin/i18n/coverage, localization/dashboard]",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PUT",
+    "path": "/[admin/i18n/strings/:key, api/v1/admin/i18n/strings/:key]",
+    "functionName": "Put",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/[admin/i18n/strings/:key/review, api/v1/admin/i18n/strings/:key/review]",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/[i18n/catalog/:locale, api/v1/i18n/catalog/:locale]",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/[translations/:id/approve-legal, api/v1/translations/:id/approve-legal]",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PUT",
+    "path": "/[users/me/preferences/locale, api/v1/users/me/preferences/locale, user/preferences/locale]",
+    "functionName": "Put",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "GET",
+    "path": "/admin/attorneys",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "PATCH",
+    "path": "/admin/attorneys/:id/reject",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "PATCH",
+    "path": "/admin/attorneys/:id/suspend",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "PATCH",
+    "path": "/admin/attorneys/:id/verify",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "GET",
+    "path": "/admin/attorneys/statistics",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/admin/blog-posts",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "GET",
+    "path": "/admin/business-queues",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/admin/contact",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/admin/contact/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/admin/contact/:id",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/admin/contact/:id/reply",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/admin/legal-resources",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/admin/pages",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/admin/pages/:id",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/admin/pages/:id",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "GET",
+    "path": "/admin/platform-health",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "GET",
+    "path": "/admin/users",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "POST",
+    "path": "/admin/users/:id/impersonate",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "GET",
+    "path": "/admin/users/:id/login-history",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "PATCH",
+    "path": "/admin/users/:id/reset-password",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "PATCH",
+    "path": "/admin/users/:id/suspend-reasoned",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+    "service": "user-service",
+    "controller": "admin",
+    "method": "GET",
+    "path": "/admin/users/statistics",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/attorney-documents/:id",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/attorneys/:id",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/attorneys/:id",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys/:id/availability",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys/:id/availability",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys/:id/credentials-public",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys/:id/documents",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys/:id/education",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys/:id/education",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/attorneys/:id/education/:eduId",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/attorneys/:id/hide",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/attorneys/:id/moderate",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys/:id/pending-profile-changes",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/attorneys/:id/publish",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys/:id/request-profile-change",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys/me",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/attorneys/me",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys/me/availability",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys/me/availability",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/attorneys/me/availability/:availId",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/attorneys/me/availability/:availId",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys/me/block-date",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys/me/credentials-public",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys/me/education",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys/me/education",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/attorneys/me/education/:eduId",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/attorneys/me/hide",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/attorneys/me/pending-profile-changes",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys/me/practice-areas",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/attorneys/me/practice-areas/:paId",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/attorneys/me/publish",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys/me/request-profile-change",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys/me/submit-amendment",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/attorneys/me/vacation",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/attorneys/profile-changes/:changeId/approve",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/attorneys/profile-changes/:changeId/reject",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/audit/audit.controller.ts",
+    "service": "user-service",
+    "controller": "audit-logs",
+    "method": "GET",
+    "path": "/audit-logs",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/audit/audit.controller.ts",
+    "service": "user-service",
+    "controller": "audit-logs",
+    "method": "GET",
+    "path": "/audit-logs/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/audit/audit.controller.ts",
+    "service": "user-service",
+    "controller": "audit-logs",
+    "method": "GET",
+    "path": "/audit-logs/export",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/2fa/disable",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/2fa/enable",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "GET",
+    "path": "/auth/2fa/qrcode",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/2fa/recovery-codes",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/2fa/verify",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/login",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/logout",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/otp/cancel",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/otp/request",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/otp/resend",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/otp/verify",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/password/change",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/password/forgot",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/password/reset",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/password/validate",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/register",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/register/admin",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/register/attorney",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/register/client",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/register/invite",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "GET",
+    "path": "/auth/reports/funnel",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "GET",
+    "path": "/auth/reports/otp-success",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "GET",
+    "path": "/auth/reports/security-events",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/request-otp",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "GET",
+    "path": "/auth/sessions",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "DELETE",
+    "path": "/auth/sessions",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "DELETE",
+    "path": "/auth/sessions/:id",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/sign-in",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/sign-out",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+    "service": "user-service",
+    "controller": "auth",
+    "method": "POST",
+    "path": "/auth/verify-otp",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/availability/vacation",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/bookings",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/bookings",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/bookings/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/cases",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/cases",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/cases/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/cases/:id/documents",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/conversations",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/conversations/:id/messages",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+    "service": "user-service",
+    "controller": "discovery",
+    "method": "GET",
+    "path": "/discovery/attorneys",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+    "service": "user-service",
+    "controller": "discovery",
+    "method": "GET",
+    "path": "/discovery/attorneys/:slug",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+    "service": "user-service",
+    "controller": "discovery",
+    "method": "GET",
+    "path": "/discovery/attorneys/search",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+    "service": "user-service",
+    "controller": "discovery",
+    "method": "POST",
+    "path": "/discovery/questionnaire",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+    "service": "user-service",
+    "controller": "discovery",
+    "method": "GET",
+    "path": "/discovery/ranking-explanation",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+    "service": "user-service",
+    "controller": "discovery",
+    "method": "GET",
+    "path": "/discovery/search-index",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/files/:id",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/files/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/files/:id/download",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/files/:id/signed-url",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/files/upload",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/localization/language",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/localization/languages",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/notifications",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/payments",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/permissions",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/permissions",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/permissions/:id",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/permissions/:id",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/public/blog-posts",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/public/blog-posts/:slug",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/public/contact",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/public/legal-resources",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/public/pages",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/public/pages/:slug",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/public/site-metadata",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/public/sitemap.xml",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/queues/queues.controller.ts",
+    "service": "user-service",
+    "controller": "queues",
+    "method": "GET",
+    "path": "/queues",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/queues/queues.controller.ts",
+    "service": "user-service",
+    "controller": "queues",
+    "method": "DELETE",
+    "path": "/queues/:jobId",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/queues/queues.controller.ts",
+    "service": "user-service",
+    "controller": "queues",
+    "method": "POST",
+    "path": "/queues/retry/:jobId",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/queues/queues.controller.ts",
+    "service": "user-service",
+    "controller": "queues",
+    "method": "GET",
+    "path": "/queues/statistics",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/rbac/roles",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/rbac/roles",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/reviews",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/roles",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/roles",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "GET",
+    "path": "/roles/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "PATCH",
+    "path": "/roles/:id",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/roles/:id",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/roles/:id/permissions",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/roles/:id/permissions/:permissionId",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/search/search.controller.ts",
+    "service": "user-service",
+    "controller": "search",
+    "method": "GET",
+    "path": "/search/attorneys",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/search/search.controller.ts",
+    "service": "user-service",
+    "controller": "search",
+    "method": "GET",
+    "path": "/search/practice-areas",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/search/search.controller.ts",
+    "service": "user-service",
+    "controller": "search",
+    "method": "GET",
+    "path": "/search/users",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+    "service": "user-service",
+    "controller": "settings",
+    "method": "GET",
+    "path": "/settings",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+    "service": "user-service",
+    "controller": "settings",
+    "method": "PATCH",
+    "path": "/settings",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+    "service": "user-service",
+    "controller": "settings",
+    "method": "POST",
+    "path": "/settings/approve-change/:proposalId",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+    "service": "user-service",
+    "controller": "settings",
+    "method": "GET",
+    "path": "/settings/history",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+    "service": "user-service",
+    "controller": "settings",
+    "method": "GET",
+    "path": "/settings/pending-proposals",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+    "service": "user-service",
+    "controller": "settings",
+    "method": "POST",
+    "path": "/settings/propose-change",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+    "service": "user-service",
+    "controller": "settings",
+    "method": "POST",
+    "path": "/settings/restore/:version",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "POST",
+    "path": "/users",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "GET",
+    "path": "/users",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "GET",
+    "path": "/users/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "PATCH",
+    "path": "/users/:id",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "POST",
+    "path": "/users/:id/roles",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+    "service": "user-service",
+    "controller": "(root)",
+    "method": "DELETE",
+    "path": "/users/:id/roles/:roleId",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "PATCH",
+    "path": "/users/:id/status",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "PATCH",
+    "path": "/users/me/address",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "POST",
+    "path": "/users/me/avatar",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "DELETE",
+    "path": "/users/me/avatar",
+    "functionName": "Delete",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "PATCH",
+    "path": "/users/me/email",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "PATCH",
+    "path": "/users/me/phone",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "GET",
+    "path": "/users/me/preferences",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "PATCH",
+    "path": "/users/me/preferences",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "GET",
+    "path": "/users/me/profile",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/users/users.controller.ts",
+    "service": "user-service",
+    "controller": "users",
+    "method": "PATCH",
+    "path": "/users/me/profile",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "POST",
+    "path": "/verifications",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "GET",
+    "path": "/verifications",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "GET",
+    "path": "/verifications/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "PATCH",
+    "path": "/verifications/:id/approve",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "POST",
+    "path": "/verifications/:id/approve",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "PATCH",
+    "path": "/verifications/:id/checklist/:itemId",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "POST",
+    "path": "/verifications/:id/flag-fraud",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "POST",
+    "path": "/verifications/:id/guarded-changes/:changeId/approve",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "POST",
+    "path": "/verifications/:id/guarded-changes/:changeId/reject",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "PATCH",
+    "path": "/verifications/:id/reject",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "POST",
+    "path": "/verifications/:id/reject",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "POST",
+    "path": "/verifications/:id/request-amendment",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "PATCH",
+    "path": "/verifications/:id/request-docs",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "PATCH",
+    "path": "/verifications/:id/request-documents",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "POST",
+    "path": "/verifications/:id/request-info",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "PATCH",
+    "path": "/verifications/:id/respond-info",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "POST",
+    "path": "/verifications/:id/respond-more-info",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "POST",
+    "path": "/verifications/bulk-claim",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "GET",
+    "path": "/verifications/cases",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "GET",
+    "path": "/verifications/cases/:id/attorney-view",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "POST",
+    "path": "/verifications/correction-case",
+    "functionName": "Post",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "GET",
+    "path": "/verifications/fraud-workspace/:id",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "GET",
+    "path": "/verifications/my-case",
+    "functionName": "Get",
+    "requiresAuth": false,
+    "roles": ""
+  },
+  {
+    "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+    "service": "user-service",
+    "controller": "verifications",
+    "method": "PATCH",
+    "path": "/verifications/standing-check/:attorneyId",
+    "functionName": "Patch",
+    "requiresAuth": false,
+    "roles": ""
+  }
+]

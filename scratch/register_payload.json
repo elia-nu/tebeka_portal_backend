@@ -1,0 +1,7 @@
+{
+  "email": "testclient_curl@example.com",
+  "password": "Password123!",
+  "fullName": "Test Client Curl",
+  "phone": "+251911998877",
+  "role": "CLIENT"
+}
