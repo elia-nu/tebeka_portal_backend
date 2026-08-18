@@ -10,6 +10,7 @@
       "options": {
         "outputPath": "dist/apps/financial-service",
         "main": "apps/financial-service/src/main.ts",
+        "outputFileName": "apps/financial-service/src/main.js",
         "tsConfig": "apps/financial-service/tsconfig.app.json",
         "rootDir": "."
       }
@@ -17,7 +18,9 @@
     "serve": {
       "executor": "@nx/js:node",
       "options": {
-        "buildTarget": "financial-service:build"
+        "buildTarget": "financial-service:build",
+        "runtimeArgs": ["-r", "ts-node/register/transpile-only", "-r", "tsconfig-paths/register"],
+        "inspect": false
       }
     }
   }

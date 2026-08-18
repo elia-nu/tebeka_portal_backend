@@ -3,6 +3,9 @@ import { AppConfigModule } from '@workspace/config';
 import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware } from '@workspace/logger';
 import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
+import { DatabaseModule } from '@workspace/database';
+import { PaymentModule } from './modules/payments/payment.module';
+import { FinancialEventsModule } from './modules/events/financial-events.module';
 
 @Module({
   imports: [
@@ -10,6 +13,9 @@ import { AuthModule } from '@workspace/auth';
     AppLoggerModule,
     EventBusModule,
     AuthModule,
+    DatabaseModule,
+    FinancialEventsModule,
+    PaymentModule,
   ],
   providers: [
     {

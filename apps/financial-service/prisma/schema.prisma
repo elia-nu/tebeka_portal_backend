@@ -38,34 +38,78 @@ enum LedgerEntryType {
   PAYOUT
 }
 
+enum PaymentType {
+  CONSULTATION_ONE_TIME
+  CASE_MILESTONE
+  CASE_PERCENTAGE
+  CASE_STAGE
+  CASE_SERVICE_REQUEST
+}
+
 model Payment {
   id                   String          @id @default(uuid())
-  bookingId            String          @map("booking_id")
+  bookingId            String?         @map("booking_id")
+  caseId               String?         @map("case_id")
   payerId              String          @map("payer_id")
   payeeId              String          @map("payee_id")
-  amount               Float
+  paymentType          PaymentType     @default(CONSULTATION_ONE_TIME) @map("payment_type")
+  amount               Decimal         @db.Decimal(12, 2)
   currency             String          @default("ETB")
-  commission           Float           @default(0.0)
+  commission           Decimal         @default(0.0) @db.Decimal(12, 2)
   transactionReference String?         @unique @map("transaction_reference")
+  stripePaymentId      String?         @map("stripe_payment_id")
+  description          String?
   provider             PaymentProvider @default(TELEBIRR)
   status               PaymentStatus   @default(PENDING)
+  requestedBy          String?         @map("requested_by")
+  approvedBy           String?         @map("approved_by")
+  milestoneName        String?         @map("milestone_name")
+  percentage           Float?
+  stage                String?
+  requestedAt          DateTime?       @map("requested_at")
+  approvedAt           DateTime?       @map("approved_at")
   paidAt               DateTime?       @map("paid_at")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
 
   refunds              Refund[]
   ledgerEntries        LedgerEntry[]
 
+  @@index([payerId])
+  @@index([payeeId])
+  @@index([bookingId])
+  @@index([status])
   @@map("payments")
+}
+
+model Subscription {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  planType    String   @map("plan_type")
+  status      String   @default("active")
+  startDate   DateTime @default(now()) @map("start_date")
+  endDate     DateTime? @map("end_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
 }
 
 model Refund {
   id          String       @id @default(uuid())
   paymentId   String       @map("payment_id")
   payment     Payment      @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  amount      Float
+  amount      Decimal      @db.Decimal(12, 2)
   reason      String
   status      RefundStatus @default(PENDING)
   processedAt DateTime?    @map("processed_at")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
 
+  @@index([paymentId])
+  @@index([status])
   @@map("refunds")
 }
 
@@ -74,10 +118,12 @@ model LedgerEntry {
   paymentId    String          @map("payment_id")
   payment      Payment         @relation(fields: [paymentId], references: [id], onDelete: Cascade)
   entryType    LedgerEntryType @map("entry_type")
-  amount       Float
-  balanceAfter Float           @map("balance_after")
+  amount       Decimal         @db.Decimal(12, 2)
+  balanceAfter Decimal         @map("balance_after") @db.Decimal(12, 2)
   createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
 
+  @@index([paymentId])
   @@map("ledger_entries")
 }
 
