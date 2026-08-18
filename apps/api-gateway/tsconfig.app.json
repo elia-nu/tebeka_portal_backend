@@ -1,9 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../../dist/apps/api-gateway",
+    "outDir": "../../dist",
     "rootDir": "../../",
-    "types": ["node"]
+    "types": ["node", "jest"]
   },
-  "include": ["src/**/*.ts", "../../libs/**/*.ts"]
+  "include": ["src/**/*.ts", "../../libs/**/*.ts"],
+  "exclude": ["**/*.spec.ts", "../../libs/**/*.spec.ts"]
 }

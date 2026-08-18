@@ -10,6 +10,7 @@
       "options": {
         "outputPath": "dist/apps/api-gateway",
         "main": "apps/api-gateway/src/main.ts",
+        "outputFileName": "apps/api-gateway/src/main.js",
         "tsConfig": "apps/api-gateway/tsconfig.app.json",
         "rootDir": "."
       }
@@ -17,7 +18,9 @@
     "serve": {
       "executor": "@nx/js:node",
       "options": {
-        "buildTarget": "api-gateway:build"
+        "buildTarget": "api-gateway:build",
+        "runtimeArgs": ["-r", "ts-node/register/transpile-only", "-r", "tsconfig-paths/register"],
+        "inspect": false
       }
     }
   }
