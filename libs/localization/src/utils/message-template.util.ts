@@ -1,10 +1,13 @@
 /**
- * ICU MessageFormat & Catalog Key Validation Utility
- * 
+ * Message Template & Catalog Key Validation Utility
+ *
  * Validation Rule VR-LOC-01:
  * - Catalog keys: lowercase dot-namespaced, <= 80 chars (e.g., "auth.login.title")
  * - Catalog values: <= 2,000 chars
- * - Placeholders: ICU MessageFormat compatible (e.g., {name}, {count})
+ * - Placeholders: simple `{name}` substitution only - NOT ICU MessageFormat. There is
+ *   no support for plural rules, `select`/`selectordinal`, gender, or nested formatting.
+ *   If those are needed, integrate a real engine (e.g. `@formatjs/intl-messageformat`)
+ *   rather than extending this function.
  */
 
 export interface KeyValidationResult {
@@ -47,9 +50,10 @@ export function validateCatalogValue(value: string): KeyValidationResult {
 }
 
 /**
- * Interpolates ICU-style placeholders like {variable} in translation strings.
+ * Substitutes `{variable}` placeholders in translation strings. Plain string
+ * replacement only - see the file header for why this is not ICU MessageFormat.
  */
-export function interpolateIcuMessage(
+export function interpolateMessageTemplate(
   template: string,
   params: Record<string, any> = {}
 ): string {

@@ -36,7 +36,11 @@
       "@tebeka/storage": ["libs/storage/src/index.ts"],
       "@tebeka/localization": ["libs/localization/src/index.ts"],
       "@tebeka/websocket": ["libs/websocket/src/index.ts"],
-      "@tebeka/scheduler": ["libs/scheduler/src/index.ts"]
+      "@tebeka/scheduler": ["libs/scheduler/src/index.ts"],
+      "@prisma/client/user": ["node_modules/@prisma/client/user"],
+      "@prisma/client/marketplace": ["node_modules/@prisma/client/marketplace"],
+      "@prisma/client/financial": ["node_modules/@prisma/client/financial"],
+      "@prisma/client/communication": ["node_modules/@prisma/client/communication"]
     }
   },
   "exclude": ["node_modules", "tmp", "dist"]

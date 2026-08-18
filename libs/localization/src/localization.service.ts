@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { formatEtb, FormatCurrencyOptions } from './utils/currency-formatter.util';
 import { formatEatDateTime, toEthiopianCalendarString, EatDateTimeResult, FormatEatDateTimeOptions } from './utils/timezone-calendar.util';
-import { interpolateIcuMessage } from './utils/icu-message.util';
+import { interpolateMessageTemplate } from './utils/message-template.util';
 
 export type SupportedLanguage = 'en' | 'am' | 'om' | 'ti';
 
@@ -84,7 +84,7 @@ export class LocalizationService {
       template = key;
     }
 
-    return interpolateIcuMessage(template, params);
+    return interpolateMessageTemplate(template, params);
   }
 
   private logMissingKey(key: string, locale: string) {

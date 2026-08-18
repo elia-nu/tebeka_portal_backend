@@ -39,4 +39,43 @@ export class EventBusService implements OnModuleInit {
     });
     this.logger.log(`Published event [${routingKey}]`);
   }
+
+  async subscribe(routingKey: string, handler: (data: any) => Promise<void>, queueName?: string): Promise<void> {
+    const qName = queueName || `marketplace.queue.${routingKey}`;
+    const dlqName = `${qName}.dlq`;
+    if (!this.channelWrapper) {
+      this.logger.warn(`Event bus channel not initialized. Subscription for ${routingKey} pending.`);
+      return;
+    }
+    await this.channelWrapper.addSetup(async (channel: any) => {
+      await channel.assertQueue(dlqName, { durable: true });
+      await channel.bindQueue(dlqName, 'tebeka.dlq.exchange', '#');
+
+      try {
+        await channel.assertQueue(qName, {
+          durable: true,
+          arguments: {
+            'x-dead-letter-exchange': 'tebeka.dlq.exchange',
+            'x-dead-letter-routing-key': `${routingKey}.dlq`,
+          },
+        });
+      } catch {
+        await channel.assertQueue(qName, { durable: true });
+      }
+      await channel.bindQueue(qName, 'tebeka.events', routingKey);
+      await channel.consume(qName, async (msg: any) => {
+        if (msg) {
+          try {
+            const content = JSON.parse(msg.content.toString());
+            await handler(content);
+            channel.ack(msg);
+          } catch (err) {
+            this.logger.error(`Error processing event [${routingKey}] - routing to DLQ:`, err);
+            channel.nack(msg, false, false);
+          }
+        }
+      });
+    });
+    this.logger.log(`Subscribed to event [${routingKey}] on queue [${qName}] with DLQ [${dlqName}]`);
+  }
 }

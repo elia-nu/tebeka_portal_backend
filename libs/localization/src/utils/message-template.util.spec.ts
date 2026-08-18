@@ -1,6 +1,6 @@
-import { validateCatalogKey, validateCatalogValue, interpolateIcuMessage } from './icu-message.util';
+import { validateCatalogKey, validateCatalogValue, interpolateMessageTemplate } from './message-template.util';
 
-describe('ICU MessageFormat & Validation Utility (VR-LOC-01)', () => {
+describe('Message Template & Validation Utility (VR-LOC-01)', () => {
   it('should validate lowercase dot-namespaced keys <= 80 characters', () => {
     expect(validateCatalogKey('auth.login.title').isValid).toBe(true);
     expect(validateCatalogKey('booking.confirmation_message').isValid).toBe(true);
@@ -13,9 +13,9 @@ describe('ICU MessageFormat & Validation Utility (VR-LOC-01)', () => {
     expect(validateCatalogValue('a'.repeat(2001)).isValid).toBe(false);
   });
 
-  it('should interpolate ICU placeholders in templates', () => {
+  it('should substitute {placeholder} tokens in templates', () => {
     const template = 'Hello {name}, your booking ID is {bookingId}.';
-    const result = interpolateIcuMessage(template, { name: 'Abebe', bookingId: 'BK-1002' });
+    const result = interpolateMessageTemplate(template, { name: 'Abebe', bookingId: 'BK-1002' });
     expect(result).toBe('Hello Abebe, your booking ID is BK-1002.');
   });
 });
