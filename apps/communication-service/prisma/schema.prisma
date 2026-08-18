@@ -8,33 +8,82 @@ datasource db {
   url      = env("DATABASE_URL_COMMUNICATION")
 }
 
+// --------------------------------------------------------
+// ENUMS
+// --------------------------------------------------------
+
 enum ConversationType {
   DIRECT
   CASE_DISCUSSION
   BOOKING_CONSULTATION
   SUPPORT
+  SYSTEM
+}
+
+enum ConversationStatus {
+  ACTIVE
+  ARCHIVED
+  CLOSED
+  BLOCKED
+}
+
+enum ParticipantRole {
+  CLIENT
+  ATTORNEY
+  ADMIN
+  SUPPORT
 }
 
 enum MessageType {
   TEXT
+  FILE
   IMAGE
-  DOCUMENT
   SYSTEM
+  BOOKING_UPDATE
+  CASE_UPDATE
+  PAYMENT_UPDATE
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  DELETED
 }
 
 enum NotificationChannel {
+  IN_APP
   EMAIL
   SMS
   PUSH
-  IN_APP
+  WEBSOCKET
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
 }
 
 enum NotificationStatus {
   PENDING
+  PROCESSING
   SENT
+  PARTIALLY_SENT
   DELIVERED
-  FAILED
   READ
+  FAILED
+  CANCELLED
+}
+
+enum QueueJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DEAD_LETTER
 }
 
 enum TranslationStatus {
@@ -44,49 +93,90 @@ enum TranslationStatus {
   REJECTED
 }
 
-enum ReviewDecision {
-  APPROVE
-  REJECT
-  REQUEST_CHANGES
-}
+// --------------------------------------------------------
+// CONVERSATIONS & PARTICIPANTS
+// --------------------------------------------------------
 
 model Conversation {
-  id           String                    @id @default(uuid())
-  caseId       String?                   @map("case_id")
-  bookingId    String?                   @map("booking_id")
-  type         ConversationType          @default(DIRECT)
-  createdAt    DateTime                  @default(now()) @map("created_at")
+  id              String             @id @default(uuid())
+  title           String?
+  type            ConversationType   @default(DIRECT)
+  status          ConversationStatus @default(ACTIVE)
+  bookingId       String?            @map("booking_id")
+  caseId          String?            @map("case_id")
+  createdById     String?            @map("created_by_id")
+  lastMessageAt   DateTime?          @map("last_message_at")
+  lastMessageText String?            @map("last_message_text")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
 
-  participants ConversationParticipant[]
-  messages     Message[]
+  participants    ConversationParticipant[]
+  messages        Message[]
 
+  @@index([bookingId])
+  @@index([caseId])
+  @@index([status])
   @@map("conversations")
 }
 
 model ConversationParticipant {
-  conversationId String       @map("conversation_id")
-  userId         String       @map("user_id")
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  id                String          @id @default(uuid())
+  conversationId    String          @map("conversation_id")
+  conversation      Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId            String          @map("user_id")
+  role              ParticipantRole @default(CLIENT)
+  lastReadAt        DateTime?       @map("last_read_at")
+  lastReadMessageId String?         @map("last_read_message_id")
+  isMuted           Boolean         @default(false) @map("is_muted")
+  isArchived        Boolean         @default(false) @map("is_archived")
+  joinedAt          DateTime        @default(now()) @map("joined_at")
 
-  @@id([conversationId, userId])
+  @@unique([conversationId, userId])
+  @@index([userId])
   @@map("conversation_participants")
 }
 
+// --------------------------------------------------------
+// MESSAGES & ATTACHMENTS
+// --------------------------------------------------------
+
 model Message {
-  id             String       @id @default(uuid())
-  conversationId String       @map("conversation_id")
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId       String       @map("sender_id")
-  message        String
-  messageType    MessageType  @default(TEXT) @map("message_type")
-  attachmentKey  String?      @map("attachment_key")
-  sentAt         DateTime     @default(now()) @map("sent_at")
-  editedAt       DateTime?    @map("edited_at")
-  deletedAt      DateTime?    @map("deleted_at")
+  id             String        @id @default(uuid())
+  conversationId String        @map("conversation_id")
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String        @map("sender_id")
+  messageType    MessageType   @default(TEXT) @map("message_type")
+  content        String
+  status         MessageStatus @default(SENT)
+  isEdited       Boolean       @default(false) @map("is_edited")
+  editedAt       DateTime?     @map("edited_at")
+  deletedAt      DateTime?     @map("deleted_at")
+  deletedForIds  String[]      @default([]) @map("deleted_for_ids")
+  replyToId      String?       @map("reply_to_id")
+  metadata       Json?
+  sentAt         DateTime      @default(now()) @map("sent_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
 
-  messageReads   MessageRead[]
+  attachments    MessageAttachment[]
+  reads          MessageRead[]
 
+  @@index([conversationId, sentAt])
+  @@index([senderId])
   @@map("messages")
+}
+
+model MessageAttachment {
+  id           String   @id @default(uuid())
+  messageId    String   @map("message_id")
+  message      Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  fileName     String   @map("file_name")
+  fileKey      String   @map("file_key")
+  mimeType     String   @map("mime_type")
+  sizeBytes    Int      @map("size_bytes")
+  thumbnailKey String?  @map("thumbnail_key")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("message_attachments")
 }
 
 model MessageRead {
@@ -99,30 +189,152 @@ model MessageRead {
   @@map("message_reads")
 }
 
-model Notification {
-  id        String              @id @default(uuid())
-  userId    String              @map("user_id")
-  title     String
-  body      String
-  type      String
-  channel   NotificationChannel @default(IN_APP)
-  status    NotificationStatus  @default(PENDING)
-  sentAt    DateTime?           @map("sent_at")
-  readAt    DateTime?           @map("read_at")
+// --------------------------------------------------------
+// NOTIFICATIONS & TEMPLATES
+// --------------------------------------------------------
 
+model Notification {
+  id              String               @id @default(uuid())
+  recipientId     String               @map("recipient_id")
+  templateKey     String?              @map("template_key")
+  title           String
+  body            String
+  category        String               @default("SYSTEM")
+  priority        NotificationPriority @default(NORMAL)
+  channels        NotificationChannel[]
+  status          NotificationStatus   @default(PENDING)
+  actionUrl       String?              @map("action_url")
+  referenceNumber String?              @map("reference_number")
+  metadata        Json?
+  sentAt          DateTime?            @map("sent_at")
+  readAt          DateTime?            @map("read_at")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  logs            NotificationLog[]
+  emailJobs       EmailQueue[]
+  smsJobs         SMSQueue[]
+  pushJobs        PushQueue[]
+
+  @@index([recipientId, createdAt])
+  @@index([status])
   @@map("notifications")
 }
 
 model NotificationTemplate {
-  id      String              @id @default(uuid())
-  name    String
-  channel NotificationChannel
-  subject String?
-  body    String
-  locale  String              @default("en")
+  id          String                @id @default(uuid())
+  key         String                @unique
+  name        String
+  description String?
+  channels    NotificationChannel[]
+  subjectEn   String?               @map("subject_en")
+  subjectAm   String?               @map("subject_am")
+  bodyEn      String                @map("body_en")
+  bodyAm      String                @map("body_am")
+  variables   String[]              @default([])
+  isActive    Boolean               @default(true) @map("is_active")
+  version     Int                   @default(1)
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
 
   @@map("notification_templates")
 }
+
+model NotificationLog {
+  id                String              @id @default(uuid())
+  notificationId    String              @map("notification_id")
+  notification      Notification        @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  channel           NotificationChannel
+  provider          String
+  status            String
+  attemptNumber     Int                 @default(1) @map("attempt_number")
+  providerMessageId String?             @map("provider_message_id")
+  errorMessage      String?             @map("error_message")
+  responsePayload   Json?               @map("response_payload")
+  deliveredAt       DateTime?           @map("delivered_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+
+  @@index([notificationId])
+  @@map("notification_logs")
+}
+
+// --------------------------------------------------------
+// DELIVERY QUEUES (ASYNCHRONOUS ENGINE)
+// --------------------------------------------------------
+
+model EmailQueue {
+  id             String         @id @default(uuid())
+  notificationId String         @map("notification_id")
+  notification   Notification   @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  recipientEmail String         @map("recipient_email")
+  subject        String
+  htmlContent    String         @map("html_content")
+  status         QueueJobStatus @default(PENDING)
+  attempts       Int            @default(0)
+  maxAttempts    Int            @default(5) @map("max_attempts")
+  nextAttemptAt  DateTime       @default(now()) @map("next_attempt_at")
+  lastError      String?        @map("last_error")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([status, nextAttemptAt])
+  @@map("email_queue")
+}
+
+model SMSQueue {
+  id             String         @id @default(uuid())
+  notificationId String         @map("notification_id")
+  notification   Notification   @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  recipientPhone String         @map("recipient_phone")
+  messageText    String         @map("message_text")
+  status         QueueJobStatus @default(PENDING)
+  attempts       Int            @default(0)
+  maxAttempts    Int            @default(5) @map("max_attempts")
+  nextAttemptAt  DateTime       @default(now()) @map("next_attempt_at")
+  lastError      String?        @map("last_error")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([status, nextAttemptAt])
+  @@map("sms_queue")
+}
+
+model PushQueue {
+  id             String         @id @default(uuid())
+  notificationId String         @map("notification_id")
+  notification   Notification   @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  deviceToken    String         @map("device_token")
+  title          String
+  body           String
+  dataPayload    Json?          @map("data_payload")
+  status         QueueJobStatus @default(PENDING)
+  attempts       Int            @default(0)
+  maxAttempts    Int            @default(5) @map("max_attempts")
+  nextAttemptAt  DateTime       @default(now()) @map("next_attempt_at")
+  lastError      String?        @map("last_error")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([status, nextAttemptAt])
+  @@map("push_queue")
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  platform  String   @default("ANDROID")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("device_tokens")
+}
+
+// --------------------------------------------------------
+// LOCALIZATION & OUTBOX
+// --------------------------------------------------------
 
 model I18nString {
   id        String            @id @default(uuid())
@@ -135,22 +347,8 @@ model I18nString {
   updatedBy String?           @map("updated_by")
   updatedAt DateTime          @updatedAt @map("updated_at")
 
-  reviews   I18nReview[]
-
   @@unique([key, namespace, locale])
   @@map("i18n_strings")
-}
-
-model I18nReview {
-  id         String         @id @default(uuid())
-  stringId   String         @map("string_id")
-  i18nString I18nString     @relation(fields: [stringId], references: [id], onDelete: Cascade)
-  reviewerId String         @map("reviewer_id")
-  decision   ReviewDecision
-  note       String?
-  createdAt  DateTime       @default(now()) @map("created_at")
-
-  @@map("i18n_reviews")
 }
 
 model OutboxEvent {

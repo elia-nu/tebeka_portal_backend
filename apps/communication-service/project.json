@@ -10,6 +10,7 @@
       "options": {
         "outputPath": "dist/apps/communication-service",
         "main": "apps/communication-service/src/main.ts",
+        "outputFileName": "apps/communication-service/src/main.js",
         "tsConfig": "apps/communication-service/tsconfig.app.json",
         "rootDir": "."
       }
@@ -17,7 +18,9 @@
     "serve": {
       "executor": "@nx/js:node",
       "options": {
-        "buildTarget": "communication-service:build"
+        "buildTarget": "communication-service:build",
+        "runtimeArgs": ["-r", "ts-node/register/transpile-only", "-r", "tsconfig-paths/register"],
+        "inspect": false
       }
     }
   }

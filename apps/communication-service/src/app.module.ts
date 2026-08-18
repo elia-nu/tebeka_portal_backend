@@ -5,9 +5,17 @@ import { AppConfigModule, AppConfigService } from '@workspace/config';
 import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware } from '@workspace/logger';
 import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
-import { WebsocketModule } from '@workspace/websocket';
 import { LocalizationModule } from '@workspace/localization';
 import { StorageModule } from '@workspace/storage';
+
+import { ConversationModule } from './modules/conversation/conversation.module';
+import { MessageModule } from './modules/message/message.module';
+import { TemplateModule } from './modules/template/template.module';
+import { DeliveryModule } from './modules/delivery/delivery.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { WebsocketCommunicationModule } from './modules/websocket/websocket.module';
+import { CommunicationEventsModule } from './modules/events/events.module';
+import { CommunicationSchedulerModule } from './modules/scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -15,9 +23,16 @@ import { StorageModule } from '@workspace/storage';
     AppLoggerModule,
     EventBusModule,
     AuthModule,
-    WebsocketModule,
     LocalizationModule,
     StorageModule,
+    ConversationModule,
+    MessageModule,
+    TemplateModule,
+    DeliveryModule,
+    NotificationModule,
+    WebsocketCommunicationModule,
+    CommunicationEventsModule,
+    CommunicationSchedulerModule,
     MailerModule.forRootAsync({
       imports: [AppConfigModule],
       inject: [AppConfigService],
@@ -31,8 +46,8 @@ import { StorageModule } from '@workspace/storage';
             pass: config.smtpPass,
           },
           tls: {
-            rejectUnauthorized: false
-          }
+            rejectUnauthorized: false,
+          },
         },
         defaults: {
           from: `"Tebeka Legal Portal" <${config.mailFrom}>`,
