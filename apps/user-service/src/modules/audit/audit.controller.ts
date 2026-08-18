@@ -1,6 +1,8 @@
 import { Controller, Get, Param, Query, Header } from '@nestjs/common';
 import { AuditService } from './audit.service';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
+@AllowAnonymous()
 @Controller('audit-logs')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}

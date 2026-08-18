@@ -1,0 +1,12 @@
+export enum I18nStatus {
+  DRAFT = 'DRAFT',
+  IN_REVIEW = 'IN_REVIEW',
+  LEGAL_REVIEW = 'LEGAL_REVIEW',
+  PUBLISHED = 'PUBLISHED',
+}
+
+export enum I18nReviewDecision {
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  CHANGES_REQUESTED = 'CHANGES_REQUESTED',
+}

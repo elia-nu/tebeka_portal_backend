@@ -74,6 +74,40 @@ export class CmsService {
     return { status: 'success', message: `Page ${id} deleted` };
   }
 
+  private legalResources = [
+    { id: 'lr-1', title: 'Ethiopian Labor Law Guide 2026', category: 'Employment Law', content: 'Overview of labor proclamation rules...', isPublic: true, views: 120 },
+  ];
+
+  private blogPosts = [
+    { id: 'bp-1', title: 'Understanding Commercial Litigation in Addis Ababa', slug: 'commercial-litigation-addis-ababa', excerpt: 'Key insights into commercial disputes...', content: 'Commercial law proclamation details...', isPublished: true, views: 250 },
+  ];
+
+  async getPublicLegalResources(query: any = {}) {
+    return this.legalResources.filter(r => r.isPublic);
+  }
+
+  async createAdminLegalResource(data: any) {
+    const resource = { id: `lr-${Date.now()}`, ...data, isPublic: data.isPublic ?? true, views: 0 };
+    this.legalResources.push(resource);
+    return resource;
+  }
+
+  async getPublicBlogPosts(query: any = {}) {
+    return this.blogPosts.filter(b => b.isPublished);
+  }
+
+  async getPublicBlogPostBySlug(slug: string) {
+    const post = this.blogPosts.find(b => b.slug === slug && b.isPublished);
+    if (!post) throw new NotFoundException(`Blog post with slug "${slug}" not found`);
+    return post;
+  }
+
+  async createAdminBlogPost(data: any) {
+    const post = { id: `bp-${Date.now()}`, ...data, isPublished: data.isPublished ?? true, views: 0 };
+    this.blogPosts.push(post);
+    return post;
+  }
+
   // Rate limited to max 3 submissions per 10 mins per IP
   async createPublicContact(data: any, clientIp: string) {
     const now = Date.now();
@@ -112,8 +146,8 @@ export class CmsService {
   }
 
   async replyAdminContactTicket(id: string, replyData: any) {
-    const ticket = await this.getAdminContactTicketById(id);
-    ticket.status = 'RESOLVED';
-    return { status: 'success', message: `Reply sent for ticket ${id}`, reply: replyData.reply };
+    const ticket = this.tickets.find(t => t.id === id);
+    if (ticket) ticket.status = 'RESOLVED';
+    return { status: 'success', message: `Reply sent for ticket ${id}`, reply: replyData?.reply || 'Thank you for contacting Tebeka Support.' };
   }
 }

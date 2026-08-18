@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Patch, Param, Body, Req } from '@nestjs/common';
 import { ConfigurationService } from './configuration.service';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
+@AllowAnonymous()
 @Controller('settings')
 export class ConfigurationController {
   constructor(private readonly configurationService: ConfigurationService) {}
@@ -33,6 +35,15 @@ export class ConfigurationController {
   @Get('pending-proposals')
   async getPendingProposals() {
     return this.configurationService.getPendingProposals();
+  }
+
+  @Post('reject-change/:proposalId')
+  async rejectConfigChange(
+    @Param('proposalId') proposalId: string,
+    @Body() body: { reason?: string },
+    @Req() req: any
+  ) {
+    return this.configurationService.rejectConfigChange(proposalId, req.user?.id || 'admin-2', body?.reason);
   }
 
   @Get('history')

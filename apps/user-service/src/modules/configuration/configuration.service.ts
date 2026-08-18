@@ -104,6 +104,39 @@ export class ConfigurationService {
     });
   }
 
+  async rejectConfigChange(proposalId: string, rejectingAdminId: string, reason?: string) {
+    const proposal = await prisma.makerCheckerConfigChange.findUnique({
+      where: { id: proposalId }
+    });
+
+    if (!proposal) throw new NotFoundException(`Proposal ${proposalId} not found`);
+
+    if (proposal.status !== 'PENDING_APPROVAL') {
+      throw new BadRequestException(`Proposal is already ${proposal.status}`);
+    }
+
+    if (proposal.submittedByAdminId === rejectingAdminId) {
+      throw new ForbiddenException({
+        code: 'MAKER_CHECKER_SELF_REJECTION_PROHIBITED',
+        message: 'Admin cannot reject their own configuration proposal. A second Admin is required.'
+      });
+    }
+
+    const updatedProposal = await prisma.makerCheckerConfigChange.update({
+      where: { id: proposalId },
+      data: {
+        status: 'REJECTED',
+        approvedByAdminId: rejectingAdminId,
+      }
+    });
+
+    return {
+      status: 'REJECTED',
+      message: `Proposal rejected by admin ${rejectingAdminId}${reason ? `: ${reason}` : ''}`,
+      proposal: updatedProposal
+    };
+  }
+
   async updateSettings(data: any) {
     this.currentSettings = {
       ...this.currentSettings,

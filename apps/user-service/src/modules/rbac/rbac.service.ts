@@ -10,6 +10,8 @@ export class RbacService {
   }
 
   async createRole(data: any) {
+    const existing = await prisma.role.findUnique({ where: { name: data.name } });
+    if (existing) return existing;
     return prisma.role.create({ data: { name: data.name, description: data.description } });
   }
 

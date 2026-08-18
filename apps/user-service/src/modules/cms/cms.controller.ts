@@ -47,6 +47,34 @@ export class CmsController {
   }
 
   @AllowAnonymous()
+  @Get('public/legal-resources')
+  async getPublicLegalResources() {
+    return this.cmsService.getPublicLegalResources();
+  }
+
+  @Post('admin/legal-resources')
+  async createAdminLegalResource(@Body() body: any) {
+    return this.cmsService.createAdminLegalResource(body);
+  }
+
+  @AllowAnonymous()
+  @Get('public/blog-posts')
+  async getPublicBlogPosts() {
+    return this.cmsService.getPublicBlogPosts();
+  }
+
+  @AllowAnonymous()
+  @Get('public/blog-posts/:slug')
+  async getPublicBlogPostBySlug(@Param('slug') slug: string) {
+    return this.cmsService.getPublicBlogPostBySlug(slug);
+  }
+
+  @Post('admin/blog-posts')
+  async createAdminBlogPost(@Body() body: any) {
+    return this.cmsService.createAdminBlogPost(body);
+  }
+
+  @AllowAnonymous()
   @Post('public/contact')
   async createPublicContact(@Body() body: any, @Req() req: any) {
     const clientIp = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';

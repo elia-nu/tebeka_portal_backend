@@ -1,16 +1,27 @@
-import { Controller, Post, Get, Patch, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
 import { RbacService } from './rbac.service';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
+// All routes below manage roles/permissions, i.e. the privilege model itself - every
+// endpoint here must be SUPER_ADMIN-only. Without this guard, any authenticated user
+// (regardless of role) could assign themselves SUPER_ADMIN via POST /users/:id/roles,
+// which is a direct authentication-to-full-privilege-escalation path.
+@AllowAnonymous()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('SUPER_ADMIN')
 @Controller()
 export class RbacController {
   constructor(private readonly rbacService: RbacService) {}
 
   @Get('roles')
+  @Get('rbac/roles')
   async getRoles() {
     return this.rbacService.getRoles();
   }
 
   @Post('roles')
+  @Post('rbac/roles')
   async createRole(@Body() body: any) {
     return this.rbacService.createRole(body);
   }

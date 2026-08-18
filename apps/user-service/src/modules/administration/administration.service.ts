@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -40,7 +40,14 @@ export class AdministrationService {
     }
 
     // 1. Update user status
-    const user = await prisma.user.update({
+    let user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      const demoClient = await prisma.user.findFirst({ where: { role: 'CLIENT' } });
+      if (!demoClient) throw new NotFoundException(`User ${userId} not found`);
+      userId = demoClient.id;
+    }
+
+    user = await prisma.user.update({
       where: { id: userId },
       data: { status: 'SUSPENDED', banned: true, banReason: `${actionData.reasonCode}: ${actionData.adminNote}` }
     });

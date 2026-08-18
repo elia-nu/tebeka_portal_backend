@@ -20,6 +20,9 @@ import { LocalizationModule } from './modules/localization/localization.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { SearchModule } from './modules/search/search.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
+import { DatabaseModule } from '@workspace/database';
+import { UserEventsModule } from './modules/events/user-events.module';
+// Legacy PortalServicesController removed — marketplace domain routes are served by marketplace-service
 
 @Module({
   imports: [
@@ -28,6 +31,8 @@ import { DiscoveryModule } from './modules/discovery/discovery.module';
     AppLoggerModule,
     EventBusModule,
     CacheModule,
+    DatabaseModule,
+    UserEventsModule,
     UserAuthModule,
     UsersModule,
     AttorneysModule,
@@ -43,6 +48,7 @@ import { DiscoveryModule } from './modules/discovery/discovery.module';
     SearchModule,
     DiscoveryModule,
   ],
+  controllers: [],
   providers: [
     {
       provide: AppLoggerService,

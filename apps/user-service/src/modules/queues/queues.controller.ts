@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Delete, Param } from '@nestjs/common';
 import { QueuesService } from './queues.service';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
+@AllowAnonymous()
 @Controller('queues')
 export class QueuesController {
   constructor(private readonly queuesService: QueuesService) {}

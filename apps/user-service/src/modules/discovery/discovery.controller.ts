@@ -27,6 +27,13 @@ export class DiscoveryController {
   }
 
   @AllowAnonymous()
+  @Get('attorneys/search')
+  async searchPublicAttorneys(@Query() query: any, @Req() req: any) {
+    const isAnonymous = !req.user;
+    return this.discoveryService.getPublicAttorneys(query, isAnonymous);
+  }
+
+  @AllowAnonymous()
   @Get('attorneys/:slug')
   async getPublicAttorneyBySlug(@Param('slug') slug: string) {
     return this.discoveryService.getPublicAttorneyBySlug(slug);

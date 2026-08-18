@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { LocalizationController } from './localization.controller';
-import { LocalizationService } from './localization.service';
+import { LanguagePreferenceService } from './services/language-preference.service';
+import { CatalogAdminService } from './services/catalog-admin.service';
+import { CatalogPublishingService } from './services/catalog-publishing.service';
 
 @Module({
   controllers: [LocalizationController],
-  providers: [LocalizationService],
-  exports: [LocalizationService],
+  providers: [LanguagePreferenceService, CatalogAdminService, CatalogPublishingService],
+  exports: [LanguagePreferenceService, CatalogAdminService, CatalogPublishingService],
 })
 export class LocalizationModule {}

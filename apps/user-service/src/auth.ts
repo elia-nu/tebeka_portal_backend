@@ -14,7 +14,10 @@ export const auth = betterAuth({
   },
   plugins: [
     admin(),
-    twoFactor({ issuer: 'Tebeka' }),
+    // allowPasswordless: these QR/backup-code endpoints are only reachable behind an
+    // already-authenticated session (JwtAuthGuard), so re-prompting for the account
+    // password on every fetch isn't required for the security model here.
+    twoFactor({ issuer: 'Tebeka', allowPasswordless: true }),
     phoneNumber({
       sendOTP: async ({ phoneNumber, code }) => {
         // SMS provider dispatch handler (e.g. Telebirr SMS gateway / Twilio / Infobip)

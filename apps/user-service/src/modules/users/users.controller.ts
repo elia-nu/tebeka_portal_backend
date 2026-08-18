@@ -1,65 +1,96 @@
-import { Controller, Post, Get, Patch, Delete, Body, Param, Query, Req } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Body, Param, Query, Req, UsePipes, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { createMulterOptions } from '@workspace/storage';
 import { UsersService } from './users.service';
+import { UpdateUserDto, UpdateUserSchema, QueryUserDto, QueryUserSchema } from './dto/users.dto';
+import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
+@AllowAnonymous()
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @AllowAnonymous()
   @Post()
   async createUser(@Body() body: any) {
     return this.usersService.createUser(body);
   }
 
+  @AllowAnonymous()
   @Get()
-  async getUsers(@Query() query: any) {
+  @UsePipes(new JoiValidationPipe(QueryUserSchema))
+  async getUsers(@Query() query: QueryUserDto) {
     return this.usersService.findAll(query);
   }
 
+  @AllowAnonymous()
   @Get('me/profile')
   async getMyProfile(@Req() req: any) {
-    return this.usersService.getMyProfile(req.user?.id || 'demo-user-id');
+    const userId = await this.usersService.resolveUserId(req);
+    return this.usersService.getMyProfile(userId);
   }
 
+  @AllowAnonymous()
   @Patch('me/profile')
-  async updateMyProfile(@Req() req: any, @Body() body: any) {
-    return this.usersService.updateMyProfile(req.user?.id || 'demo-user-id', body);
+  @UsePipes(new JoiValidationPipe(UpdateUserSchema))
+  async updateMyProfile(@Req() req: any, @Body() body: UpdateUserDto) {
+    const userId = await this.usersService.resolveUserId(req);
+    return this.usersService.updateMyProfile(userId, body);
   }
 
+  @AllowAnonymous()
   @Post('me/avatar')
-  async uploadMyAvatar(@Req() req: any, @Body() body: any) {
-    return this.usersService.updateMyAvatar(req.user?.id || 'demo-user-id', body.fileKey || 'avatar-123.jpg');
+  @UseInterceptors(FileInterceptor('file', createMulterOptions('avatars', 5 * 1024 * 1024, ['image/jpeg', 'image/png', 'image/webp'])))
+  async uploadMyAvatar(@Req() req: any, @UploadedFile() file: any, @Body() body: any) {
+    const userId = await this.usersService.resolveUserId(req);
+    const fileKey = file ? `avatars/${file.filename}` : (body.fileKey || 'avatar-123.jpg');
+    return this.usersService.updateMyAvatar(userId, fileKey);
   }
 
+  @AllowAnonymous()
   @Delete('me/avatar')
   async deleteMyAvatar(@Req() req: any) {
-    return this.usersService.deleteMyAvatar(req.user?.id || 'demo-user-id');
+    const userId = await this.usersService.resolveUserId(req);
+    return this.usersService.deleteMyAvatar(userId);
   }
 
+  @AllowAnonymous()
   @Patch('me/email')
   async updateMyEmail(@Req() req: any, @Body() body: any) {
-    return this.usersService.updateMyEmail(req.user?.id || 'demo-user-id', body.email);
+    const userId = await this.usersService.resolveUserId(req);
+    return this.usersService.updateMyEmail(userId, body.email);
   }
 
+  @AllowAnonymous()
   @Patch('me/phone')
   async updateMyPhone(@Req() req: any, @Body() body: any) {
-    return this.usersService.updateMyPhone(req.user?.id || 'demo-user-id', body.phone);
+    const userId = await this.usersService.resolveUserId(req);
+    return this.usersService.updateMyPhone(userId, body.phone);
   }
 
+  @AllowAnonymous()
   @Patch('me/address')
   async updateMyAddress(@Req() req: any, @Body() body: any) {
-    return this.usersService.updateMyAddress(req.user?.id || 'demo-user-id', body);
+    const userId = await this.usersService.resolveUserId(req);
+    return this.usersService.updateMyAddress(userId, body);
   }
 
+  @AllowAnonymous()
   @Get('me/preferences')
   async getMyPreferences(@Req() req: any) {
-    return this.usersService.getMyPreferences(req.user?.id || 'demo-user-id');
+    const userId = await this.usersService.resolveUserId(req);
+    return this.usersService.getMyPreferences(userId);
   }
 
+  @AllowAnonymous()
   @Patch('me/preferences')
   async updateMyPreferences(@Req() req: any, @Body() body: any) {
-    return this.usersService.updateMyPreferences(req.user?.id || 'demo-user-id', body);
+    const userId = await this.usersService.resolveUserId(req);
+    return this.usersService.updateMyPreferences(userId, body);
   }
 
+  @AllowAnonymous()
   @Get(':id')
   async getUserById(@Param('id') id: string) {
     return this.usersService.findOne(id);
@@ -70,43 +101,8 @@ export class UsersController {
     return this.usersService.updateUser(id, body);
   }
 
-  @Delete(':id')
-  async deleteUser(@Param('id') id: string) {
-    return this.usersService.deleteUser(id);
-  }
-
-  @Post(':id/restore')
-  async restoreUser(@Param('id') id: string) {
-    return this.usersService.restoreUser(id);
-  }
-
-  @Patch(':id/activate')
-  async activateUser(@Param('id') id: string) {
-    return this.usersService.updateStatus(id, 'ACTIVE');
-  }
-
-  @Patch(':id/deactivate')
-  async deactivateUser(@Param('id') id: string) {
-    return this.usersService.updateStatus(id, 'INACTIVE');
-  }
-
-  @Patch(':id/suspend')
-  async suspendUser(@Param('id') id: string) {
-    return this.usersService.updateStatus(id, 'SUSPENDED');
-  }
-
-  @Patch(':id/unsuspend')
-  async unsuspendUser(@Param('id') id: string) {
-    return this.usersService.updateStatus(id, 'ACTIVE');
-  }
-
-  @Patch(':id/lock')
-  async lockUser(@Param('id') id: string) {
-    return this.usersService.lockUser(id, true);
-  }
-
-  @Patch(':id/unlock')
-  async unlockUser(@Param('id') id: string) {
-    return this.usersService.lockUser(id, false);
+  @Patch(':id/status')
+  async updateUserStatus(@Param('id') id: string, @Body() body: any) {
+    return this.usersService.updateStatus(id, body.status || 'ACTIVE');
   }
 }

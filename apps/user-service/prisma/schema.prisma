@@ -99,6 +99,8 @@ model User {
   createdAt             DateTime         @default(now()) @map("created_at")
   updatedAt             DateTime         @updatedAt @map("updated_at")
 
+  username              String?          @unique
+  clientProfile         ClientProfile?
   attorneyProfile       AttorneyProfile?
   sessions              Session[]
   accounts              Account[]
@@ -110,6 +112,28 @@ model User {
 
   @@unique([phone, role])
   @@map("users")
+}
+
+model ClientProfile {
+  id                      String   @id @default(uuid())
+  userId                  String   @unique @map("user_id")
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName               String?  @map("first_name")
+  lastName                String?  @map("last_name")
+  address                 String?
+  city                    String?
+  country                 String   @default("Ethiopia")
+  nationalIdNumber        String?  @unique @map("national_id_number")
+  nationalIdDocumentUrl   String?  @map("national_id_document_url")
+  profilePhotoUrl         String?  @map("profile_photo_url")
+  preferredLanguage       String?  @map("preferred_language")
+  communicationPreference String?  @map("communication_preference")
+  notificationEmailOptIn  Boolean  @default(true) @map("notification_email_opt_in")
+  notificationSmsOptIn    Boolean  @default(false) @map("notification_sms_opt_in")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@map("client_profiles")
 }
 
 model Session {
@@ -169,8 +193,10 @@ model TwoFactor {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   secret      String
   backupCodes String   @map("backup_codes")
-  enabled     Boolean  @default(false)
-  createdAt   DateTime @default(now()) @map("created_at")
+  enabled                 Boolean  @default(false)
+  verified                Boolean  @default(false)
+  failedVerificationCount Int      @default(0) @map("failed_verification_count")
+  createdAt               DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("two_factors")
@@ -236,35 +262,66 @@ model AttorneyProfile {
   userId                String             @unique @map("user_id")
   user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   slug                  String?            @unique
-  bioEn                 String?            @map("bio_en")
-  bioAm                 String?            @map("bio_am")
-  photoKey              String?            @map("photo_key")
-  exifStripped          Boolean            @default(true) @map("exif_stripped")
+  licenseNumber         String?            @unique @map("license_number")
+  fullName              String?            @map("full_name")
+  age                   Int?
+  gender                String?
+  yearsOfExperience     Int?               @map("years_of_experience")
+  experienceYears       Int                @default(0) @map("experience_years")
+  officeAddress         String?            @map("office_address")
+  officeLocation        String?            @map("office_location")
+  subcity               String?            @map("subcity")
   city                  String?
   region                String?
+  secondLicenseRegion   String?            @map("second_license_region")
   country               String?            @default("Ethiopia")
-  officeAddress         String?            @map("office_address")
+  googleMapsPin         String?            @map("google_maps_pin")
   latitude              Float?
   longitude             Float?
+  lawFirmName           String?            @map("law_firm_name")
+  practiceAreas         String[]           @default([]) @map("practice_areas")
+  languages             String[]           @default(["en", "am"])
+  languagesSpoken       String[]           @default([]) @map("languages_spoken")
+  bio                   String?            @map("bio")
+  bioEn                 String?            @map("bio_en")
+  bioAm                 String?            @map("bio_am")
+  consultationFee       Float              @default(0.0) @map("consultation_fee")
+  consultationFees      Float?             @map("consultation_fees")
+  feeBand               String?            @map("fee_band")
+  availabilitySchedule  String?            @map("availability_schedule")
+  onlineConsultation    Boolean            @default(false) @map("online_consultation")
   videoSupport          Boolean            @default(true) @map("video_support")
   bufferTimeMinutes     Int                @default(15) @map("buffer_time_minutes")
   maxBookingsPerDay     Int                @default(8) @map("max_bookings_per_day")
-  languages             String[]           @default(["en", "am"])
-  feeBand               String?            @map("fee_band")
-  consultationFee       Float              @default(0.0) @map("consultation_fee")
-  experienceYears       Int                @default(0) @map("experience_years")
+  officeContactDetails  String?            @map("office_contact_details")
+  photoKey              String?            @map("photo_key")
+  professionalPhotoUrl  String?            @map("professional_photo_url")
+  exifStripped          Boolean            @default(true) @map("exif_stripped")
   barRegistrationNumber String?            @map("bar_registration_number")
   barAdmissionYear      Int?               @map("bar_admission_year")
   standingStatus        String?            @map("standing_status")
   standingCheckedAt     DateTime?          @map("standing_checked_at")
   standingCheckedBy     String?            @map("standing_checked_by")
   standingNotes         String?            @map("standing_notes")
+  pendingAccountReference String?          @unique @map("pending_account_reference")
+  permanentAccountNumber String?           @unique @map("permanent_account_number")
+  licenseBookUrl        String?            @map("license_book_url")
+  barRegistrationUrl    String?            @map("bar_registration_url")
+  nationalIdNumber      String?            @unique @map("national_id_number")
+  nationalIdDocumentUrl String?            @map("national_id_document_url")
+  otherSupportingDocuments String[]        @default([]) @map("other_supporting_documents")
   verificationStatus    VerificationStatus @default(DRAFT) @map("verification_status")
+  verifiedAt            DateTime?          @map("verified_at")
+  verifiedBy            String?            @map("verified_by")
+  verificationNotes     String?            @map("verification_notes")
+  rejectionReason       String?            @map("rejection_reason")
+  additionalInfoRequested String?          @map("additional_info_requested")
   hasVerifiedBadge      Boolean            @default(false) @map("has_verified_badge")
   credentialClaimsMatch Boolean            @default(false) @map("credential_claims_match")
   profileCompleteness   Int                @default(0) @map("profile_completeness")
   rating                Float              @default(0.0)
   reviewCount           Int                @default(0) @map("review_count")
+  totalReviews          Int                @default(0) @map("total_reviews")
   totalConsultations    Int                @default(0) @map("total_consultations")
   completionRate        Float              @default(100.0) @map("completion_rate")
   responsivenessScore   Float              @default(0.0) @map("responsiveness_score")
@@ -277,20 +334,25 @@ model AttorneyProfile {
   verificationCases     VerificationCase[]
   guardedChanges        GuardedChange[]
 
+  @@index([licenseNumber])
+  @@index([nationalIdNumber])
+  @@index([verificationStatus])
   @@map("attorney_profiles")
 }
 
 model AttorneyEducation {
-  id           String          @id @default(uuid())
-  attorneyId   String          @map("attorney_id")
-  attorney     AttorneyProfile @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
-  institution  String
-  degree       String
-  fieldOfStudy String?         @map("field_of_study")
-  startYear    Int?            @map("start_year")
-  endYear      Int?            @map("end_year")
-  createdAt    DateTime        @default(now()) @map("created_at")
-  updatedAt    DateTime        @updatedAt @map("updated_at")
+  id                String          @id @default(uuid())
+  attorneyId        String          @map("attorney_id")
+  attorney          AttorneyProfile @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
+  institution       String
+  degree            String
+  fieldOfStudy      String?         @map("field_of_study")
+  startYear         Int?            @map("start_year")
+  endYear           Int?            @map("end_year")
+  graduationYear    Int?            @map("graduation_year")
+  degreeDocumentUrl String?         @map("degree_document_url")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
 
   @@map("attorney_educations")
 }
@@ -356,6 +418,11 @@ model VerificationCase {
   submittedAt        DateTime                @default(now()) @map("submitted_at")
   verifiedAt         DateTime?               @map("verified_at")
   rejectedReason     String?                 @map("rejected_reason")
+  amendmentNotes     String?                 @map("amendment_notes")
+  requestedFields    String[]                @default([]) @map("requested_fields")
+  amendmentReply     String?                 @map("amendment_reply")
+  amendmentRequestedAt DateTime?             @map("amendment_requested_at")
+  amendmentSubmittedAt DateTime?             @map("amendment_submitted_at")
   isImmutable        Boolean                 @default(true) @map("is_immutable")
   previousCaseId     String?                 @map("previous_case_id")
   
@@ -518,4 +585,44 @@ model I18nMissingKeyLog {
 
   @@unique([key, locale])
   @@map("i18n_missing_keys")
+}
+
+model LegalResource {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  category    String
+  fileUrl     String?  @map("file_url")
+  content     String?
+  tags        String[]
+  isPublic    Boolean  @default(true) @map("is_public")
+  views       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@index([isPublic])
+  @@map("legal_resources")
+}
+
+model BlogPost {
+  id               String    @id @default(uuid())
+  title            String
+  slug             String    @unique
+  excerpt          String?
+  content          String
+  authorId         String?   @map("author_id")
+  category         String?
+  tags             String[]
+  featuredImageUrl String?   @map("featured_image_url")
+  isPublished      Boolean   @default(false) @map("is_published")
+  publishedAt      DateTime? @map("published_at")
+  views            Int       @default(0)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@index([isPublished])
+  @@index([category])
+  @@map("blog_posts")
 }
