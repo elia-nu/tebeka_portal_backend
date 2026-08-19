@@ -23,7 +23,7 @@ export class AnalyticsService {
       prisma.case.count(),
       prisma.review.count(),
       prisma.practiceArea.count(),
-      prisma.booking.count({ where: { status: BookingStatus.PENDING } }),
+      prisma.booking.count({ where: { status: { in: [BookingStatus.REQUESTED, BookingStatus.ACCEPTED_PENDING_PAYMENT] } } }),
       prisma.booking.count({ where: { status: BookingStatus.CONFIRMED } }),
       prisma.booking.count({ where: { status: BookingStatus.COMPLETED } }),
       prisma.booking.count({ where: { status: BookingStatus.CANCELLED } }),

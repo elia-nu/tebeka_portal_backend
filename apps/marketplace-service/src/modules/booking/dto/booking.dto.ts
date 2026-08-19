@@ -35,7 +35,26 @@ export interface UpdateBookingStatusDto {
 }
 
 export const UpdateBookingStatusSchema = Joi.object({
-  status: Joi.string().valid('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NOSHOW', 'EXPIRED').required(),
+  status: Joi.string()
+    .valid(
+      'REQUESTED',
+      'ACCEPTED_PENDING_PAYMENT',
+      'CONFIRMED',
+      'DECLINED',
+      'CANCELLED',
+      'COMPLETED',
+      'NOSHOW',
+      'EXPIRED'
+    )
+    .required(),
+  reason: Joi.string().max(500).optional(),
+});
+
+export interface DeclineBookingDto {
+  reason?: string;
+}
+
+export const DeclineBookingSchema = Joi.object({
   reason: Joi.string().max(500).optional(),
 });
 
@@ -118,7 +137,18 @@ export const QueryBookingSchema = Joi.object({
   role: Joi.string().valid('CLIENT', 'ATTORNEY', 'ADMIN', 'SUPER_ADMIN').optional(),
   clientId: Joi.string().uuid().optional(),
   attorneyId: Joi.string().uuid().optional(),
-  status: Joi.string().valid('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NOSHOW', 'EXPIRED').optional(),
+  status: Joi.string()
+    .valid(
+      'REQUESTED',
+      'ACCEPTED_PENDING_PAYMENT',
+      'CONFIRMED',
+      'DECLINED',
+      'CANCELLED',
+      'COMPLETED',
+      'NOSHOW',
+      'EXPIRED'
+    )
+    .optional(),
   paymentStatus: Joi.string().valid('UNPAID', 'PAID', 'REFUNDED').optional(),
   consultationType: Joi.string().valid('IN_PERSON', 'VIDEO', 'PHONE').optional(),
   fromDate: Joi.date().iso().optional(),

@@ -9,7 +9,7 @@ export class MarketplaceSchedulerService implements OnModuleInit, OnModuleDestro
   private timer: NodeJS.Timeout | null = null;
 
   onModuleInit() {
-    this.timer = setInterval(() => this.runScheduledJobs(), 60000); // Every 1 minute
+    this.timer = setInterval(() => this.runScheduledJobs(), 60000); // Runs every 1 minute
   }
 
   onModuleDestroy() {
@@ -19,31 +19,36 @@ export class MarketplaceSchedulerService implements OnModuleInit, OnModuleDestro
   }
 
   async runScheduledJobs() {
-    await this.expireAbandonedBookings();
+    await this.expireUnansweredRequests();
+    await this.expireUnpaidAcceptedBookings();
+    await this.expirePendingRescheduleProposals();
   }
 
-  private async expireAbandonedBookings() {
+  /**
+   * 1. Auto-expire REQUESTED bookings where attorney did not respond within 24 hours
+   */
+  private async expireUnansweredRequests() {
     try {
-      const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
-      const abandoned = await prisma.booking.findMany({
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const expiredRequests = await prisma.booking.findMany({
         where: {
-          status: BookingStatus.PENDING,
-          createdAt: { lt: fifteenMinsAgo },
+          status: BookingStatus.REQUESTED,
+          createdAt: { lt: twentyFourHoursAgo },
         },
       });
 
-      for (const booking of abandoned) {
+      for (const booking of expiredRequests) {
         await prisma.$transaction(async (tx) => {
           await tx.booking.update({
             where: { id: booking.id },
-            data: { status: BookingStatus.CANCELLED },
+            data: { status: BookingStatus.EXPIRED },
           });
 
           await tx.bookingEvent.create({
             data: {
               bookingId: booking.id,
               event: 'BOOKING_EXPIRED',
-              description: 'Booking automatically expired due to 15-minute unpaid inactivity (BR-BOOK-01).',
+              description: 'Booking expired due to no attorney response within 24 hours (BR-BOOK-01).',
               createdBy: 'SYSTEM_SCHEDULER',
             },
           });
@@ -53,19 +58,116 @@ export class MarketplaceSchedulerService implements OnModuleInit, OnModuleDestro
               aggregateType: 'Booking',
               aggregateId: booking.id,
               eventType: 'BOOKING_EXPIRED',
-              payload: { bookingId: booking.id, clientId: booking.clientId, attorneyId: booking.attorneyId },
+              payload: {
+                bookingId: booking.id,
+                referenceNumber: booking.referenceNumber,
+                clientId: booking.clientId,
+                attorneyId: booking.attorneyId,
+                reason: 'No attorney response within 24 hours',
+              },
             },
           });
         });
 
-        this.logger.log(`Abandoned booking ${booking.id} expired.`);
+        this.logger.log(`Unanswered consultation request [${booking.id}] auto-expired.`);
       }
     } catch (err: any) {
-      if (err?.code === 'P2022' || err?.code === 'P2021' || err?.message?.includes('does not exist')) {
-        this.logger.debug('Bookings table schema mismatch in database. Skipping expiration check until db push.');
-      } else {
-        this.logger.error('Error expiring abandoned bookings:', err);
+      this.logger.error('Error expiring unanswered requests:', err);
+    }
+  }
+
+  /**
+   * 2. Auto-expire ACCEPTED_PENDING_PAYMENT bookings where client did not pay within 24 hours
+   */
+  private async expireUnpaidAcceptedBookings() {
+    try {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const unpaidBookings = await prisma.booking.findMany({
+        where: {
+          status: BookingStatus.ACCEPTED_PENDING_PAYMENT,
+          createdAt: { lt: twentyFourHoursAgo },
+        },
+      });
+
+      for (const booking of unpaidBookings) {
+        await prisma.$transaction(async (tx) => {
+          await tx.booking.update({
+            where: { id: booking.id },
+            data: { status: BookingStatus.EXPIRED },
+          });
+
+          await tx.bookingEvent.create({
+            data: {
+              bookingId: booking.id,
+              event: 'BOOKING_EXPIRED',
+              description: 'Booking expired due to unpaid checkout within 24 hours.',
+              createdBy: 'SYSTEM_SCHEDULER',
+            },
+          });
+
+          await tx.outboxEvent.create({
+            data: {
+              aggregateType: 'Booking',
+              aggregateId: booking.id,
+              eventType: 'BOOKING_EXPIRED',
+              payload: {
+                bookingId: booking.id,
+                referenceNumber: booking.referenceNumber,
+                clientId: booking.clientId,
+                attorneyId: booking.attorneyId,
+                reason: 'Unpaid within 24 hours',
+              },
+            },
+          });
+        });
+
+        this.logger.log(`Unpaid accepted booking [${booking.id}] auto-expired.`);
       }
+    } catch (err: any) {
+      this.logger.error('Error expiring unpaid accepted bookings:', err);
+    }
+  }
+
+  /**
+   * 3. Clear expired reschedule proposals (12 hours elapsed)
+   */
+  private async expirePendingRescheduleProposals() {
+    try {
+      const now = new Date();
+      const expiredProposals = await prisma.booking.findMany({
+        where: {
+          rescheduleExpiresAt: { lte: now },
+          proposedBookingDate: { not: null },
+        },
+      });
+
+      for (const booking of expiredProposals) {
+        await prisma.$transaction(async (tx) => {
+          await tx.booking.update({
+            where: { id: booking.id },
+            data: {
+              rescheduleProposedBy: null,
+              proposedBookingDate: null,
+              proposedStartTime: null,
+              proposedEndTime: null,
+              rescheduleExpiresAt: null,
+            },
+          });
+
+          await tx.bookingEvent.create({
+            data: {
+              bookingId: booking.id,
+              event: 'RESCHEDULE_EXPIRED',
+              description: 'Reschedule proposal expired after 12 hours. Original time slot maintained.',
+              createdBy: 'SYSTEM_SCHEDULER',
+            },
+          });
+        });
+
+        this.logger.log(`Reschedule proposal on booking [${booking.id}] cleared after 12h expiry.`);
+      }
+    } catch (err: any) {
+      this.logger.error('Error expiring pending reschedule proposals:', err);
     }
   }
 }

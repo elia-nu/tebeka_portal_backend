@@ -1,13 +1,22 @@
-import { Injectable, BadRequestException, NotFoundException, ConflictException, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+  Optional,
+} from '@nestjs/common';
 import { PrismaClient, BookingStatus, ConsultationType } from '@prisma/client/marketplace';
 import { CommunicationServiceClient } from '../../integrations/communication-service.client';
+import { GoogleMeetService } from '../integrations/google-meet.service';
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class BookingService {
   constructor(
-    @Optional() private readonly communicationServiceClient?: CommunicationServiceClient
+    @Optional() private readonly communicationServiceClient?: CommunicationServiceClient,
+    @Optional() private readonly googleMeetService?: GoogleMeetService
   ) {}
 
   async createBooking(data: any, clientId: string) {
@@ -24,14 +33,14 @@ export class BookingService {
           attorneyId: data.attorneyId,
           bookingDate,
           startTime: data.startTime,
-          status: { in: ['PENDING', 'CONFIRMED'] },
+          status: { in: [BookingStatus.CONFIRMED, BookingStatus.ACCEPTED_PENDING_PAYMENT] },
         },
       });
 
       if (existingOverlapping) {
         throw new ConflictException({
           code: 'BOOKING_SLOT_CONFLICT',
-          message: 'The selected time slot is already booked or pending confirmation.',
+          message: 'The selected time slot is already booked or accepted pending payment.',
         });
       }
 
@@ -48,22 +57,22 @@ export class BookingService {
           startTime: data.startTime,
           endTime: data.endTime,
           consultationType: data.consultationType || ConsultationType.VIDEO,
-          status: BookingStatus.PENDING,
+          status: BookingStatus.REQUESTED,
           paymentStatus: data.paymentStatus || 'UNPAID',
           meetingLink: data.meetingLink || null,
           issueBrief: data.issueBrief || data.notes || null,
           notes: data.notes || null,
           bookingEvents: {
             create: {
-              event: 'BOOKING_CREATED',
-              description: `Booking created with reference ${referenceNumber} by client ${clientId}`,
+              event: 'BOOKING_REQUESTED',
+              description: `Booking requested with reference ${referenceNumber} by client ${clientId}`,
               createdBy: clientId,
             },
           },
           bookingTimelines: {
             create: {
-              title: 'Consultation Booked',
-              description: `Consultation scheduled with reference ${referenceNumber}`,
+              title: 'Consultation Requested',
+              description: `Consultation requested with reference ${referenceNumber}`,
               eventDate: new Date(),
             },
           },
@@ -75,7 +84,7 @@ export class BookingService {
         data: {
           aggregateType: 'Booking',
           aggregateId: booking.id,
-          eventType: 'BOOKING_CREATED',
+          eventType: 'BOOKING_REQUESTED',
           payload: {
             bookingId: booking.id,
             clientId,
@@ -88,6 +97,97 @@ export class BookingService {
       });
 
       return booking;
+    });
+  }
+
+  async acceptBooking(id: string, attorneyId: string) {
+    return prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({ where: { id } });
+      if (!booking) throw new NotFoundException(`Booking ${id} not found`);
+
+      if (booking.attorneyId !== attorneyId) {
+        throw new ForbiddenException('You can only accept bookings requested for you');
+      }
+
+      if (booking.status !== BookingStatus.REQUESTED) {
+        throw new BadRequestException(`Cannot accept booking in ${booking.status} status`);
+      }
+
+      const updated = await tx.booking.update({
+        where: { id },
+        data: { status: BookingStatus.ACCEPTED_PENDING_PAYMENT },
+      });
+
+      await tx.bookingEvent.create({
+        data: {
+          bookingId: id,
+          event: 'BOOKING_ACCEPTED',
+          description: `Booking request accepted by attorney ${attorneyId}. Pending client payment.`,
+          createdBy: attorneyId,
+        },
+      });
+
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'Booking',
+          aggregateId: id,
+          eventType: 'BOOKING_ACCEPTED',
+          payload: {
+            bookingId: id,
+            clientId: booking.clientId,
+            attorneyId: booking.attorneyId,
+            status: BookingStatus.ACCEPTED_PENDING_PAYMENT,
+          },
+        },
+      });
+
+      return updated;
+    });
+  }
+
+  async declineBooking(id: string, attorneyId: string, reason?: string) {
+    return prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({ where: { id } });
+      if (!booking) throw new NotFoundException(`Booking ${id} not found`);
+
+      if (booking.attorneyId !== attorneyId) {
+        throw new ForbiddenException('You can only decline bookings requested for you');
+      }
+
+      if (booking.status !== BookingStatus.REQUESTED) {
+        throw new BadRequestException(`Cannot decline booking in ${booking.status} status`);
+      }
+
+      const updated = await tx.booking.update({
+        where: { id },
+        data: { status: BookingStatus.DECLINED },
+      });
+
+      await tx.bookingEvent.create({
+        data: {
+          bookingId: id,
+          event: 'BOOKING_DECLINED',
+          description: reason || `Booking request declined by attorney ${attorneyId}`,
+          createdBy: attorneyId,
+        },
+      });
+
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'Booking',
+          aggregateId: id,
+          eventType: 'BOOKING_DECLINED',
+          payload: {
+            bookingId: id,
+            clientId: booking.clientId,
+            attorneyId: booking.attorneyId,
+            reason,
+            status: BookingStatus.DECLINED,
+          },
+        },
+      });
+
+      return updated;
     });
   }
 
@@ -191,13 +291,98 @@ export class BookingService {
   }
 
   async cancelBooking(id: string, userId: string, reason?: string) {
-    return this.updateBookingStatus(id, BookingStatus.CANCELLED, userId, reason || 'Cancelled by user');
+    return prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({ where: { id } });
+      if (!booking) throw new NotFoundException(`Booking ${id} not found`);
+
+      if (booking.status === BookingStatus.CANCELLED) {
+        throw new BadRequestException('Booking is already cancelled');
+      }
+
+      if (booking.status === BookingStatus.COMPLETED) {
+        throw new BadRequestException('Cannot cancel a completed consultation');
+      }
+
+      // Tiered cancellation & refund policy calculation (BR-BOOK-03)
+      const dateStr = typeof booking.bookingDate === 'string'
+        ? (booking.bookingDate as string).split('T')[0]
+        : booking.bookingDate.toISOString().split('T')[0];
+      const appointmentDateTime = new Date(`${dateStr}T${booking.startTime}:00`);
+      const hoursUntilAppointment = (appointmentDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
+
+      let refundPercentage = 0;
+      let refundPolicyTier = 'NONE';
+      const isAttorneyCancelling = userId === booking.attorneyId;
+
+      if (isAttorneyCancelling) {
+        // If attorney cancels, client receives 100% full refund
+        refundPercentage = 100;
+        refundPolicyTier = 'ATTORNEY_FULL_REFUND';
+      } else {
+        // Client tiered cancellation policy
+        if (hoursUntilAppointment >= 24) {
+          refundPercentage = 100;
+          refundPolicyTier = 'FULL_24H_PRIOR';
+        } else if (hoursUntilAppointment >= 12) {
+          refundPercentage = 50;
+          refundPolicyTier = 'PARTIAL_12H_TO_24H';
+        } else {
+          refundPercentage = 0;
+          refundPolicyTier = 'LATE_LESS_THAN_12H';
+        }
+      }
+
+      const updated = await tx.booking.update({
+        where: { id },
+        data: { status: BookingStatus.CANCELLED },
+      });
+
+      await tx.bookingEvent.create({
+        data: {
+          bookingId: id,
+          event: 'BOOKING_CANCELLED',
+          description: reason || `Cancelled by ${isAttorneyCancelling ? 'Attorney' : 'Client'} (Refund: ${refundPercentage}% - Policy: ${refundPolicyTier})`,
+          createdBy: userId,
+        },
+      });
+
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'Booking',
+          aggregateId: id,
+          eventType: 'BOOKING_CANCELLED',
+          payload: {
+            bookingId: id,
+            referenceNumber: booking.referenceNumber,
+            clientId: booking.clientId,
+            attorneyId: booking.attorneyId,
+            cancelledBy: userId,
+            isAttorneyCancelling,
+            refundPercentage,
+            refundPolicyTier,
+            reason: reason || 'Cancelled by user',
+          },
+        },
+      });
+
+      // Cancel Google Calendar & Meet event
+      if (booking.googleCalendarEventId && this.googleMeetService) {
+        setImmediate(() => {
+          this.googleMeetService?.cancelConsultationMeeting(booking.googleCalendarEventId!);
+        });
+      }
+
+      return {
+        ...updated,
+        refundPercentage,
+        refundPolicyTier,
+      };
+    });
   }
 
   async rescheduleBooking(id: string, data: { bookingDate: string; startTime: string; endTime: string }, userId: string) {
     const bookingDate = new Date(data.bookingDate);
 
-    // Interactive Transaction: Fetching booking, checking conflict, and updating inside tx
     return prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({
         where: { id },
@@ -213,7 +398,7 @@ export class BookingService {
           bookingDate,
           startTime: data.startTime,
           id: { not: id },
-          status: { in: ['PENDING', 'CONFIRMED'] },
+          status: { in: [BookingStatus.ACCEPTED_PENDING_PAYMENT, BookingStatus.CONFIRMED] },
         },
       });
 
@@ -227,7 +412,7 @@ export class BookingService {
           bookingDate,
           startTime: data.startTime,
           endTime: data.endTime,
-          status: BookingStatus.PENDING,
+          status: BookingStatus.ACCEPTED_PENDING_PAYMENT,
         },
       });
 
@@ -266,7 +451,11 @@ export class BookingService {
         throw new BadRequestException('Maximum limit of 2 reschedules reached for this booking (BR-BOOK-04)');
       }
 
-      if (booking.status !== BookingStatus.CONFIRMED && booking.status !== BookingStatus.PENDING) {
+      if (
+        booking.status !== BookingStatus.CONFIRMED &&
+        booking.status !== BookingStatus.ACCEPTED_PENDING_PAYMENT &&
+        booking.status !== BookingStatus.REQUESTED
+      ) {
         throw new BadRequestException(`Cannot propose reschedule for booking in status ${booking.status}`);
       }
 
@@ -277,7 +466,7 @@ export class BookingService {
           bookingDate: proposedDate,
           startTime: data.proposedStartTime,
           id: { not: id },
-          status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
+          status: { in: [BookingStatus.ACCEPTED_PENDING_PAYMENT, BookingStatus.CONFIRMED] },
         },
       });
 
@@ -360,6 +549,36 @@ export class BookingService {
           },
         });
 
+        await tx.outboxEvent.create({
+          data: {
+            aggregateType: 'Booking',
+            aggregateId: id,
+            eventType: 'BOOKING_RESCHEDULED',
+            payload: {
+              bookingId: id,
+              referenceNumber: booking.referenceNumber,
+              clientId: booking.clientId,
+              attorneyId: booking.attorneyId,
+              newBookingDate: booking.proposedBookingDate,
+              newStartTime: booking.proposedStartTime,
+              newEndTime: booking.proposedEndTime,
+              rescheduleCount: booking.rescheduleCount + 1,
+            },
+          },
+        });
+
+        // Sync new schedule to Google Calendar & Meet
+        if (booking.googleCalendarEventId && this.googleMeetService) {
+          setImmediate(() => {
+            this.googleMeetService?.updateConsultationMeeting(
+              booking.googleCalendarEventId!,
+              booking.proposedBookingDate!,
+              booking.proposedStartTime!,
+              booking.proposedEndTime!
+            );
+          });
+        }
+
         return updated;
       } else {
         const updated = await tx.booking.update({
@@ -392,12 +611,20 @@ export class BookingService {
       const booking = await tx.booking.findUnique({ where: { id } });
       if (!booking) throw new NotFoundException(`Booking ${id} not found`);
 
+      if (booking.status !== BookingStatus.CONFIRMED) {
+        throw new BadRequestException(`Cannot mark booking in ${booking.status} status as No-Show.`);
+      }
+
+      const isClientReporting = userId === booking.clientId;
+      const faultParty = isClientReporting ? 'ATTORNEY' : 'CLIENT';
+      const refundPercentage = isClientReporting ? 100 : 0; // Attorney no-show -> 100% refund; Client no-show -> 0% refund
+
       const updated = await tx.booking.update({
         where: { id },
         data: {
           status: BookingStatus.NOSHOW,
           noShowReportedBy: userId,
-          noShowReason: reason || 'Participant failed to attend scheduled consultation',
+          noShowReason: reason || `No-show reported by ${isClientReporting ? 'Client' : 'Attorney'}`,
         },
       });
 
@@ -405,12 +632,34 @@ export class BookingService {
         data: {
           bookingId: id,
           event: 'BOOKING_NOSHOW',
-          description: reason || 'Marked as No-Show',
+          description: reason || `Marked as No-Show. Fault Party: ${faultParty} (Refund: ${refundPercentage}%)`,
           createdBy: userId,
         },
       });
 
-      return updated;
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'Booking',
+          aggregateId: id,
+          eventType: 'BOOKING_NOSHOW',
+          payload: {
+            bookingId: id,
+            referenceNumber: booking.referenceNumber,
+            clientId: booking.clientId,
+            attorneyId: booking.attorneyId,
+            reportedBy: userId,
+            faultParty,
+            refundPercentage,
+            reason: reason || 'Participant failed to attend scheduled consultation',
+          },
+        },
+      });
+
+      return {
+        ...updated,
+        faultParty,
+        refundPercentage,
+      };
     });
   }
 
