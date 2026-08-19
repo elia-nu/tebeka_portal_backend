@@ -72,7 +72,7 @@ export class EventBusService implements OnModuleInit {
   }
 
   async subscribe(routingKey: string, handler: (data: any) => Promise<void>, queueName?: string): Promise<void> {
-    const qName = queueName || `marketplace.queue.${routingKey}`;
+    const qName = queueName || `tebeka.queue.${routingKey}`;
     const dlqName = `${qName}.dlq`;
     if (!this.channelWrapper) {
       this.logger.warn(`Event bus channel not initialized. Subscription for ${routingKey} pending.`);
@@ -113,7 +113,7 @@ export class EventBusService implements OnModuleInit {
     handler: (data: any) => Promise<void>,
     queueName?: string,
   ): Promise<void> {
-    const qName = queueName || `${consumerName}.queue.${routingKey}`;
+    const qName = queueName || `tebeka.queue.${consumerName}.${routingKey}`;
     const dlqName = `${qName}.dlq`;
     if (!this.channelWrapper) {
       this.logger.warn(`Event bus channel not initialized. Subscription for ${routingKey} pending.`);
