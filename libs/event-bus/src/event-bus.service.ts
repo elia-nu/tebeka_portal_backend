@@ -12,17 +12,48 @@ export class EventBusService implements OnModuleInit {
 
   async onModuleInit() {
     try {
-      this.connection = amqp.connect([this.configService.rabbitmqUri]);
+      this.connection = amqp.connect([this.configService.rabbitmqUri], {
+        reconnectTimeInSeconds: 5,
+        heartbeatIntervalInSeconds: 10,
+      });
+
+      this.connection.on('connect', () => {
+        this.logger.log('Connected to RabbitMQ Event Bus successfully');
+      });
+
+      this.connection.on('disconnect', (params: any) => {
+        this.logger.warn(`Disconnected from RabbitMQ: ${params?.err?.message || 'reconnecting...'}`);
+      });
+
+      this.connection.on('error', (err: any) => {
+        this.logger.warn(`RabbitMQ connection error: ${err?.message || err}`);
+      });
+
       this.channelWrapper = this.connection.createChannel({
         json: true,
-        setup: (channel: any) => {
-          return Promise.all([
-            channel.assertExchange('tebeka.events', 'topic', { durable: true }),
-            channel.assertExchange('tebeka.dlq.exchange', 'topic', { durable: true }),
-          ]);
+        setup: async (channel: any) => {
+          try {
+            await Promise.all([
+              channel.assertExchange('tebeka.events', 'topic', { durable: true }),
+              channel.assertExchange('tebeka.dlq.exchange', 'topic', { durable: true }),
+            ]);
+          } catch (err: any) {
+            this.logger.warn(`Exchange setup warning: ${err.message}`);
+          }
         },
       });
-      this.logger.log('Connected to RabbitMQ Event Bus successfully');
+
+      this.channelWrapper.on('connect', () => {
+        this.logger.log('RabbitMQ channel wrapper connected');
+      });
+
+      this.channelWrapper.on('error', (err: any) => {
+        this.logger.warn(`RabbitMQ channel wrapper error: ${err?.message || err}`);
+      });
+
+      this.channelWrapper.on('close', () => {
+        this.logger.warn('RabbitMQ channel closed, waiting for reconnection');
+      });
     } catch (err) {
       this.logger.error('Failed to initialize RabbitMQ Event Bus connection', err);
     }
