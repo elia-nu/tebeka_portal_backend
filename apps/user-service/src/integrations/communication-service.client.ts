@@ -21,6 +21,10 @@ export class CommunicationServiceClient {
     title?: string;
     body?: string;
     category?: string;
+    channels?: string[];
+    priority?: string;
+    actionUrl?: string;
+    referenceNumber?: string;
     variables?: Record<string, any>;
     locale?: string;
   }): Promise<any> {
@@ -28,7 +32,11 @@ export class CommunicationServiceClient {
       const response = await fetch(`${this.communicationServiceBaseUrl}/notifications/dispatch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(2000),
+        body: JSON.stringify({
+          ...payload,
+          channels: payload.channels || ['IN_APP', 'PUSH'],
+        }),
       });
       if (!response.ok) {
         this.logger.warn(`Communication Service response for dispatchNotification: ${response.status}`);

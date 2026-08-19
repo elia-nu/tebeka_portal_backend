@@ -109,6 +109,10 @@ model User {
   adminActions          AdminAction[]
   auditLogs             AuditLog[]
   userPreference        UserPreference?
+  blogs                 BlogPost[]
+  blogLikes             BlogLike[]
+  blogComments          BlogComment[]
+  blogShares            BlogShare[]
 
   @@unique([phone, role])
   @@map("users")
@@ -605,24 +609,112 @@ model LegalResource {
   @@map("legal_resources")
 }
 
+enum BlogStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+model BlogCategory {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  iconUrl     String?    @map("icon_url")
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  posts       BlogPost[]
+
+  @@map("blog_categories")
+}
+
 model BlogPost {
-  id               String    @id @default(uuid())
-  title            String
-  slug             String    @unique
-  excerpt          String?
-  content          String
-  authorId         String?   @map("author_id")
-  category         String?
-  tags             String[]
-  featuredImageUrl String?   @map("featured_image_url")
-  isPublished      Boolean   @default(false) @map("is_published")
-  publishedAt      DateTime? @map("published_at")
-  views            Int       @default(0)
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  id                 String        @id @default(uuid())
+  title              String
+  slug               String        @unique
+  excerpt            String?
+  content            String
+  authorId           String        @map("author_id")
+  author             User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  categoryId         String?       @map("category_id")
+  categoryRelation   BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  caseCategory       String?       @map("case_category")
+  tags               String[]      @default([])
+  featuredImageUrl   String?       @map("featured_image_url")
+  status             BlogStatus    @default(DRAFT)
+  rejectionReason    String?       @map("rejection_reason")
+  isFeatured         Boolean       @default(false) @map("is_featured")
+  readingTimeMinutes Int           @default(1) @map("reading_time_minutes")
+  viewsCount         Int           @default(0) @map("views_count")
+  likesCount         Int           @default(0) @map("likes_count")
+  commentsCount      Int           @default(0) @map("comments_count")
+  sharesCount        Int           @default(0) @map("shares_count")
+  reviewedByAdminId  String?       @map("reviewed_by_admin_id")
+  reviewedAt         DateTime?     @map("reviewed_at")
+  publishedAt        DateTime?     @map("published_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  likes              BlogLike[]
+  comments           BlogComment[]
+  shares             BlogShare[]
 
   @@index([slug])
-  @@index([isPublished])
-  @@index([category])
+  @@index([status])
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([caseCategory])
   @@map("blog_posts")
+}
+
+model BlogLike {
+  id        String   @id @default(uuid())
+  blogId    String   @map("blog_id")
+  blog      BlogPost @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([blogId, userId])
+  @@index([blogId])
+  @@index([userId])
+  @@map("blog_likes")
+}
+
+model BlogComment {
+  id         String        @id @default(uuid())
+  blogId     String        @map("blog_id")
+  blog       BlogPost      @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  userId     String        @map("user_id")
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId   String?       @map("parent_id")
+  parent     BlogComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    BlogComment[] @relation("CommentReplies")
+  content    String
+  isApproved Boolean       @default(true) @map("is_approved")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+
+  @@index([blogId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("blog_comments")
+}
+
+model BlogShare {
+  id        String   @id @default(uuid())
+  blogId    String   @map("blog_id")
+  blog      BlogPost @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  platform  String   @default("DIRECT_LINK")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([blogId])
+  @@index([userId])
+  @@map("blog_shares")
 }
