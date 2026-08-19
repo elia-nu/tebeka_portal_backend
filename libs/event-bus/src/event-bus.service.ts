@@ -81,18 +81,7 @@ export class EventBusService implements OnModuleInit {
     await this.channelWrapper.addSetup(async (channel: any) => {
       await channel.assertQueue(dlqName, { durable: true });
       await channel.bindQueue(dlqName, 'tebeka.dlq.exchange', '#');
-
-      try {
-        await channel.assertQueue(qName, {
-          durable: true,
-          arguments: {
-            'x-dead-letter-exchange': 'tebeka.dlq.exchange',
-            'x-dead-letter-routing-key': `${routingKey}.dlq`,
-          },
-        });
-      } catch {
-        await channel.assertQueue(qName, { durable: true });
-      }
+      await channel.assertQueue(qName, { durable: true });
       await channel.bindQueue(qName, 'tebeka.events', routingKey);
       await channel.consume(qName, async (msg: any) => {
         if (msg) {
@@ -126,18 +115,7 @@ export class EventBusService implements OnModuleInit {
     await this.channelWrapper.addSetup(async (channel: any) => {
       await channel.assertQueue(dlqName, { durable: true });
       await channel.bindQueue(dlqName, 'tebeka.dlq.exchange', '#');
-
-      try {
-        await channel.assertQueue(qName, {
-          durable: true,
-          arguments: {
-            'x-dead-letter-exchange': 'tebeka.dlq.exchange',
-            'x-dead-letter-routing-key': `${routingKey}.dlq`,
-          },
-        });
-      } catch {
-        await channel.assertQueue(qName, { durable: true });
-      }
+      await channel.assertQueue(qName, { durable: true });
       await channel.bindQueue(qName, 'tebeka.events', routingKey);
       await channel.consume(qName, async (msg: any) => {
         if (msg) {
