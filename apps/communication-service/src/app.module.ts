@@ -1,4 +1,5 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { AppConfigModule, AppConfigService } from '@workspace/config';
@@ -7,6 +8,7 @@ import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
 import { LocalizationModule } from '@workspace/localization';
 import { StorageModule } from '@workspace/storage';
+import { MetricsController, MetricsInterceptor, TracingMiddleware } from '@workspace/common';
 
 import { ConversationModule } from './modules/conversation/conversation.module';
 import { MessageModule } from './modules/message/message.module';
@@ -37,18 +39,26 @@ import { CommunicationSchedulerModule } from './modules/scheduler/scheduler.modu
       imports: [AppConfigModule],
       inject: [AppConfigService],
       useFactory: (config: AppConfigService) => ({
-        transport: {
-          host: config.smtpHost,
-          port: config.smtpPort,
-          secure: false, // 587 uses STARTTLS
-          auth: {
-            user: config.smtpUser,
-            pass: config.smtpPass,
-          },
-          tls: {
-            rejectUnauthorized: false,
-          },
-        },
+        transport: config.smtpHost === 'smtp.gmail.com'
+          ? {
+              service: 'gmail',
+              auth: {
+                user: config.smtpUser,
+                pass: (config.smtpPass || '').replace(/\s+/g, ''),
+              },
+            }
+          : {
+              host: config.smtpHost,
+              port: config.smtpPort,
+              secure: config.smtpPort === 465,
+              auth: {
+                user: config.smtpUser,
+                pass: (config.smtpPass || '').replace(/\s+/g, ''),
+              },
+              tls: {
+                rejectUnauthorized: false,
+              },
+            },
         defaults: {
           from: `"Tebeka Legal Portal" <${config.mailFrom}>`,
         },
@@ -61,15 +71,20 @@ import { CommunicationSchedulerModule } from './modules/scheduler/scheduler.modu
       }),
     }),
   ],
+  controllers: [MetricsController],
   providers: [
     {
       provide: AppLoggerService,
       useFactory: () => new AppLoggerService('COMMUNICATION-SERVICE'),
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
+    },
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+    consumer.apply(CorrelationIdMiddleware, TracingMiddleware).forRoutes('*');
   }
 }

@@ -14,7 +14,7 @@ export class TemplateService implements OnModuleInit {
       {
         key: 'user.welcome',
         name: 'User Welcome & Email Verification',
-        channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP],
+        channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP, NotificationChannel.PUSH],
         subjectEn: 'Welcome to Tebeka Legal Portal',
         subjectAm: 'እንኳን ወደ ጠበቃ የህግ መድረክ በደህና መጡ',
         bodyEn: 'Hello {{user_name}}, welcome to Tebeka Legal Portal. Your account is active.',
@@ -23,18 +23,24 @@ export class TemplateService implements OnModuleInit {
       },
       {
         key: 'booking.confirmed',
-        name: 'Consultation Booking Confirmed',
-        channels: [NotificationChannel.EMAIL, NotificationChannel.SMS, NotificationChannel.IN_APP, NotificationChannel.WEBSOCKET],
+        name: 'Consultation Booking Confirmed & Google Meet Ready',
+        channels: [
+          NotificationChannel.EMAIL,
+          NotificationChannel.SMS,
+          NotificationChannel.IN_APP,
+          NotificationChannel.WEBSOCKET,
+          NotificationChannel.PUSH,
+        ],
         subjectEn: 'Consultation Confirmed - {{reference_number}}',
         subjectAm: 'የምክክር ቀጠሮ ተረጋግጧል - {{reference_number}}',
-        bodyEn: 'Hello {{user_name}}, your consultation with {{attorney_name}} is confirmed for {{appointment_time}}.',
-        bodyAm: 'ሰላም {{user_name}}፣ ከጠበቃ {{attorney_name}} ጋር ያለዎት ምክክር ለ {{appointment_time}} ተረጋግጧል።',
-        variables: ['user_name', 'attorney_name', 'appointment_time', 'reference_number'],
+        bodyEn: 'Hello {{user_name}}, your consultation with {{attorney_name}} is confirmed for {{appointment_time}}. Join Google Meet: {{meeting_link}}',
+        bodyAm: 'ሰላም {{user_name}}፣ ከጠበቃ {{attorney_name}} ጋር ያለዎት ምክክር ለ {{appointment_time}} ተረጋግጧል። የጉግል ሚት ሊንክ፡ {{meeting_link}}',
+        variables: ['user_name', 'attorney_name', 'appointment_time', 'reference_number', 'meeting_link'],
       },
       {
         key: 'booking.cancelled',
         name: 'Consultation Booking Cancelled',
-        channels: [NotificationChannel.EMAIL, NotificationChannel.SMS, NotificationChannel.IN_APP],
+        channels: [NotificationChannel.EMAIL, NotificationChannel.SMS, NotificationChannel.IN_APP, NotificationChannel.PUSH],
         subjectEn: 'Consultation Cancelled - {{reference_number}}',
         subjectAm: 'የምክክር ቀጠሮ ተሰርዟል - {{reference_number}}',
         bodyEn: 'Your consultation {{reference_number}} has been cancelled. Refund amount: {{refund_amount}} ETB.',
@@ -44,7 +50,7 @@ export class TemplateService implements OnModuleInit {
       {
         key: 'case.created',
         name: 'Legal Case Created',
-        channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP, NotificationChannel.WEBSOCKET],
+        channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP, NotificationChannel.WEBSOCKET, NotificationChannel.PUSH],
         subjectEn: 'New Legal Case Opened: {{case_reference}}',
         subjectAm: 'አዲስ የህግ ጉዳይ ተከፍቷል፡ {{case_reference}}',
         bodyEn: 'A new legal case {{case_reference}} ({{case_title}}) has been assigned.',
@@ -54,7 +60,7 @@ export class TemplateService implements OnModuleInit {
       {
         key: 'payment.completed',
         name: 'Payment Receipt',
-        channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP],
+        channels: [NotificationChannel.EMAIL, NotificationChannel.IN_APP, NotificationChannel.PUSH],
         subjectEn: 'Payment Receipt - {{transaction_id}}',
         subjectAm: 'የክፍያ ደረሰኝ - {{transaction_id}}',
         bodyEn: 'Payment of {{amount}} ETB for {{item_name}} was successfully processed.',
@@ -64,10 +70,18 @@ export class TemplateService implements OnModuleInit {
     ];
 
     for (const t of defaults) {
-      const exists = await prisma.notificationTemplate.findUnique({ where: { key: t.key } });
-      if (!exists) {
-        await prisma.notificationTemplate.create({ data: t });
-      }
+      await prisma.notificationTemplate.upsert({
+        where: { key: t.key },
+        update: {
+          channels: t.channels,
+          subjectEn: t.subjectEn,
+          subjectAm: t.subjectAm,
+          bodyEn: t.bodyEn,
+          bodyAm: t.bodyAm,
+          variables: t.variables,
+        },
+        create: t,
+      });
     }
   }
 
