@@ -7,6 +7,7 @@ export interface PaymentCheckoutRequest {
   lastName?: string;
   phone?: string;
   txRef: string;
+  subaccountId?: string;
   callbackUrl?: string;
   returnUrl?: string;
 }
