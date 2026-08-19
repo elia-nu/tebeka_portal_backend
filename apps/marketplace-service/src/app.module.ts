@@ -5,7 +5,7 @@ import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware } from '@wor
 import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
 import { StorageModule } from '@workspace/storage';
-import { MetricsController, MetricsInterceptor, TracingMiddleware } from '@workspace/common';
+import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware } from '@workspace/common';
 
 import { EventsModule } from './modules/events/events.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
@@ -23,6 +23,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
   imports: [
     AppConfigModule,
     AppLoggerModule,
+    MetricsModule,
     EventBusModule,
     AuthModule,
     StorageModule,
