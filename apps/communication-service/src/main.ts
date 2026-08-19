@@ -8,6 +8,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(AppConfigService);
 
+  app.enableCors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'x-custom-locale', 'ngrok-skip-browser-warning'],
+  });
+
   app.setGlobalPrefix('api/v1/communication');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new GlobalHttpExceptionFilter());

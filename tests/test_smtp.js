@@ -55,20 +55,17 @@ async function testEmailOtpFlow() {
 
   // 4. Configure SMTP Transporter using .env credentials
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const port = Number(process.env.SMTP_PORT || 587);
+  const port = Number(process.env.SMTP_PORT || 465);
   const user_email = process.env.SMTP_USER || '';
-  const pass = process.env.SMTP_PASS || '';
+  const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
 
   console.log(`\n[SMTP Transporter Configuration]`);
   console.log(`Host: ${host}:${port}`);
   console.log(`Sender Account: ${user_email}`);
 
   const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
+    service: 'gmail',
     auth: user_email && pass ? { user: user_email, pass } : undefined,
-    tls: { rejectUnauthorized: false }
   });
 
   const fromAddress = process.env.MAIL_FROM || user_email;

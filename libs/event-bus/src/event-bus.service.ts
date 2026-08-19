@@ -78,4 +78,77 @@ export class EventBusService implements OnModuleInit {
     });
     this.logger.log(`Subscribed to event [${routingKey}] on queue [${qName}] with DLQ [${dlqName}]`);
   }
+
+  async subscribeIdempotent(
+    routingKey: string,
+    consumerName: string,
+    prisma: any,
+    handler: (data: any) => Promise<void>,
+    queueName?: string,
+  ): Promise<void> {
+    const qName = queueName || `${consumerName}.queue.${routingKey}`;
+    const dlqName = `${qName}.dlq`;
+    if (!this.channelWrapper) {
+      this.logger.warn(`Event bus channel not initialized. Subscription for ${routingKey} pending.`);
+      return;
+    }
+    await this.channelWrapper.addSetup(async (channel: any) => {
+      await channel.assertQueue(dlqName, { durable: true });
+      await channel.bindQueue(dlqName, 'tebeka.dlq.exchange', '#');
+
+      try {
+        await channel.assertQueue(qName, {
+          durable: true,
+          arguments: {
+            'x-dead-letter-exchange': 'tebeka.dlq.exchange',
+            'x-dead-letter-routing-key': `${routingKey}.dlq`,
+          },
+        });
+      } catch {
+        await channel.assertQueue(qName, { durable: true });
+      }
+      await channel.bindQueue(qName, 'tebeka.events', routingKey);
+      await channel.consume(qName, async (msg: any) => {
+        if (msg) {
+          try {
+            const content = JSON.parse(msg.content.toString());
+            const eventId =
+              content.id ||
+              content.paymentId ||
+              content.bookingId ||
+              content.aggregateId ||
+              `${routingKey}-${Date.now()}`;
+
+            // Idempotency check: attempt to insert into processed_events table
+            try {
+              if (prisma?.processedEvent) {
+                await prisma.processedEvent.create({
+                  data: {
+                    eventId: String(eventId),
+                    consumerName,
+                  },
+                });
+              }
+            } catch (err: any) {
+              // Unique constraint violation (P2002) -> duplicate message
+              if (err.code === 'P2002') {
+                this.logger.warn(
+                  `Duplicate event [${routingKey}] with id [${eventId}] already processed by [${consumerName}]. Acknowledging and skipping.`
+                );
+                channel.ack(msg);
+                return;
+              }
+            }
+
+            await handler(content);
+            channel.ack(msg);
+          } catch (err) {
+            this.logger.error(`Error processing event [${routingKey}] - routing to DLQ:`, err);
+            channel.nack(msg, false, false);
+          }
+        }
+      });
+    });
+    this.logger.log(`Subscribed idempotently to event [${routingKey}] on queue [${qName}] for consumer [${consumerName}]`);
+  }
 }

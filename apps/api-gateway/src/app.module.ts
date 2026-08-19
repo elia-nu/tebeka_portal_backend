@@ -4,7 +4,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppConfigModule } from '@workspace/config';
 import { AppLoggerModule, CorrelationIdMiddleware, AppLoggerService } from '@workspace/logger';
 import { AuthModule, JwtAuthGuard } from '@workspace/auth';
-import { APP_GUARD } from '@nestjs/core';
+import { MetricsController, MetricsInterceptor, TracingMiddleware } from '@workspace/common';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { HealthController } from './health.controller';
 
@@ -22,7 +23,7 @@ import { HealthController } from './health.controller';
       },
     ]),
   ],
-  controllers: [AppController, HealthController],
+  controllers: [AppController, HealthController, MetricsController],
   providers: [
     {
       provide: APP_GUARD,
@@ -33,6 +34,10 @@ import { HealthController } from './health.controller';
       useClass: JwtAuthGuard,
     },
     {
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
+    },
+    {
       provide: AppLoggerService,
       useFactory: () => new AppLoggerService('API-GATEWAY'),
     },
@@ -40,6 +45,6 @@ import { HealthController } from './health.controller';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+    consumer.apply(CorrelationIdMiddleware, TracingMiddleware).forRoutes('*');
   }
 }

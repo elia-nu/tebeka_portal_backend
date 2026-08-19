@@ -17,7 +17,6 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
   async onModuleInit() {
     await this.eventBus.subscribe('BOOKING_CREATED', async (payload: any) => {
       this.logger.log(`Received BOOKING_CREATED event for booking: ${payload.bookingId}`, 'MarketplaceEventsConsumer');
-      // Create conversation thread between client and attorney
       if (payload.clientId && payload.attorneyId) {
         await this.conversationService.createConversation(
           {
@@ -34,16 +33,45 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
 
     await this.eventBus.subscribe('BOOKING_CONFIRMED', async (payload: any) => {
       this.logger.log(`Received BOOKING_CONFIRMED event for booking: ${payload.bookingId}`, 'MarketplaceEventsConsumer');
+      
+      const meetingLink = payload.meetingLink || `https://meet.google.com/${payload.referenceNumber || payload.bookingId}`;
+      const appointmentTime = `${payload.bookingDate ? new Date(payload.bookingDate).toISOString().split('T')[0] : ''} ${payload.startTime || ''} - ${payload.endTime || ''}`;
+
+      // 1. Notify Client
       if (payload.clientId) {
         await this.notificationDispatcher.dispatch({
           recipientId: payload.clientId,
+          recipientEmail: payload.clientEmail,
+          recipientPhone: payload.clientPhone,
           templateKey: 'booking.confirmed',
           variables: {
-            user_name: 'Client',
-            attorney_name: 'Attorney',
-            appointment_time: `${payload.bookingDate || ''} ${payload.startTime || ''}`,
+            user_name: payload.clientName || 'Valued Client',
+            attorney_name: payload.attorneyName || 'Attorney',
+            appointment_time: appointmentTime,
             reference_number: payload.referenceNumber || payload.bookingId,
+            meeting_link: meetingLink,
           },
+          actionUrl: meetingLink,
+          category: 'BOOKING',
+          referenceNumber: payload.referenceNumber,
+        });
+      }
+
+      // 2. Notify Attorney
+      if (payload.attorneyId) {
+        await this.notificationDispatcher.dispatch({
+          recipientId: payload.attorneyId,
+          recipientEmail: payload.attorneyEmail,
+          recipientPhone: payload.attorneyPhone,
+          templateKey: 'booking.confirmed',
+          variables: {
+            user_name: payload.attorneyName || 'Counselor',
+            attorney_name: 'Client ' + (payload.clientName || ''),
+            appointment_time: appointmentTime,
+            reference_number: payload.referenceNumber || payload.bookingId,
+            meeting_link: meetingLink,
+          },
+          actionUrl: meetingLink,
           category: 'BOOKING',
           referenceNumber: payload.referenceNumber,
         });
@@ -55,9 +83,11 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
       if (payload.clientId) {
         await this.notificationDispatcher.dispatch({
           recipientId: payload.clientId,
+          recipientEmail: payload.clientEmail,
+          recipientPhone: payload.clientPhone,
           templateKey: 'booking.cancelled',
           variables: {
-            user_name: 'Client',
+            user_name: payload.clientName || 'Client',
             reference_number: payload.referenceNumber || payload.bookingId,
             refund_amount: payload.refundAmount || 0,
           },

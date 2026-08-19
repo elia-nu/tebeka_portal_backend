@@ -28,7 +28,7 @@ export class DashboardService {
     ] = await Promise.all([
       // 1. Pending consultations awaiting attorney response
       prisma.booking.count({
-        where: { attorneyId, status: BookingStatus.PENDING }
+        where: { attorneyId, status: { in: [BookingStatus.REQUESTED, BookingStatus.ACCEPTED_PENDING_PAYMENT] } }
       }),
 
       // 2. Confirmed upcoming consultations

@@ -1,9 +1,11 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppConfigModule } from '@workspace/config';
 import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware } from '@workspace/logger';
 import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
 import { StorageModule } from '@workspace/storage';
+import { MetricsController, MetricsInterceptor, TracingMiddleware } from '@workspace/common';
 
 import { EventsModule } from './modules/events/events.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
@@ -36,15 +38,20 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     DashboardModule,
     AnalyticsModule,
   ],
+  controllers: [MetricsController],
   providers: [
     {
       provide: AppLoggerService,
       useFactory: () => new AppLoggerService('MARKETPLACE-SERVICE'),
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
+    },
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+    consumer.apply(CorrelationIdMiddleware, TracingMiddleware).forRoutes('*');
   }
 }

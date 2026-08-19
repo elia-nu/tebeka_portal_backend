@@ -36,6 +36,18 @@ export class BookingController {
     return this.bookingService.findOne(id);
   }
 
+  @Patch(':id/accept')
+  async acceptBooking(@Param('id') id: string, @Req() req: any) {
+    const attorneyId = req.user?.id || req.body?.attorneyId || 'attorney-1';
+    return this.bookingService.acceptBooking(id, attorneyId);
+  }
+
+  @Patch(':id/decline')
+  async declineBooking(@Param('id') id: string, @Body() body: { reason?: string }, @Req() req: any) {
+    const attorneyId = req.user?.id || req.body?.attorneyId || 'attorney-1';
+    return this.bookingService.declineBooking(id, attorneyId, body?.reason);
+  }
+
   @Patch(':id/status')
   @UsePipes(new JoiValidationPipe(UpdateBookingStatusSchema))
   async updateStatus(@Param('id') id: string, @Body() body: UpdateBookingStatusDto, @Req() req: any) {
