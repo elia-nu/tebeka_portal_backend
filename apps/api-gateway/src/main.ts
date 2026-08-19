@@ -57,6 +57,7 @@ async function bootstrap() {
         '/api/v1/queues/**',
         '/api/v1/files/**',
         '/api/v1/public/**',
+        '/api/v1/blogs/**',
       ],
     })
   );
