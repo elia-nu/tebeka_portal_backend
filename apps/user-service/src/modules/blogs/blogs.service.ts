@@ -18,131 +18,93 @@ import {
   UpdateBlogCategoryDto,
   QueryBlogDto,
 } from './dto/blog.dto';
+import { BlogCategoriesService } from './services/blog-categories.service';
+import { BlogModerationService } from './services/blog-moderation.service';
+import { BlogInteractionsService } from './services/blog-interactions.service';
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class BlogsService {
   constructor(
+    private readonly categoriesService: BlogCategoriesService,
+    private readonly moderationService: BlogModerationService,
+    private readonly interactionsService: BlogInteractionsService,
     @Optional() private readonly communicationClient?: CommunicationServiceClient,
   ) {}
 
   // =========================================================================
-  // 1. BLOG CATEGORY MANAGEMENT (ADMIN & PUBLIC)
+  // 1. CATEGORY DELEGATIONS
   // =========================================================================
 
-  async createCategory(dto: CreateBlogCategoryDto) {
-    const slug = dto.name
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-');
-
-    const existing = await prisma.blogCategory.findFirst({
-      where: { OR: [{ name: dto.name }, { slug }] },
-    });
-    if (existing) {
-      throw new BadRequestException(`Category "${dto.name}" already exists`);
-    }
-
-    return prisma.blogCategory.create({
-      data: {
-        name: dto.name,
-        slug,
-        description: dto.description || null,
-        iconUrl: dto.iconUrl || null,
-        isActive: dto.isActive !== undefined ? dto.isActive : true,
-      },
-    });
+  createCategory(dto: CreateBlogCategoryDto) {
+    return this.categoriesService.createCategory(dto);
   }
 
-  async getAllCategories(includeInactive = false) {
-    const where = includeInactive ? {} : { isActive: true };
-    const categories = await prisma.blogCategory.findMany({
-      where,
-      include: {
-        _count: {
-          select: { posts: { where: { status: BlogStatus.PUBLISHED } } },
-        },
-      },
-      orderBy: { name: 'asc' },
-    });
-
-    return categories.map((c) => ({
-      id: c.id,
-      name: c.name,
-      slug: c.slug,
-      description: c.description,
-      iconUrl: c.iconUrl,
-      isActive: c.isActive,
-      publishedPostCount: c._count.posts,
-      createdAt: c.createdAt,
-      updatedAt: c.updatedAt,
-    }));
+  getAllCategories(includeInactive = false) {
+    return this.categoriesService.getAllCategories(includeInactive);
   }
 
-  async getCategoryById(id: string) {
-    const category = await prisma.blogCategory.findUnique({
-      where: { id },
-      include: {
-        _count: { select: { posts: true } },
-      },
-    });
-    if (!category) throw new NotFoundException(`Category ${id} not found`);
-    return category;
+  getCategoryById(id: string) {
+    return this.categoriesService.getCategoryById(id);
   }
 
-  async updateCategory(id: string, dto: UpdateBlogCategoryDto) {
-    const category = await prisma.blogCategory.findUnique({ where: { id } });
-    if (!category) throw new NotFoundException(`Category ${id} not found`);
-
-    let slug = category.slug;
-    if (dto.name && dto.name !== category.name) {
-      slug = dto.name
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/[\s_-]+/g, '-');
-    }
-
-    return prisma.blogCategory.update({
-      where: { id },
-      data: {
-        name: dto.name !== undefined ? dto.name : category.name,
-        slug,
-        description: dto.description !== undefined ? dto.description : category.description,
-        iconUrl: dto.iconUrl !== undefined ? dto.iconUrl : category.iconUrl,
-        isActive: dto.isActive !== undefined ? dto.isActive : category.isActive,
-      },
-    });
+  updateCategory(id: string, dto: UpdateBlogCategoryDto) {
+    return this.categoriesService.updateCategory(id, dto);
   }
 
-  async deleteCategory(id: string) {
-    const category = await prisma.blogCategory.findUnique({
-      where: { id },
-      include: { _count: { select: { posts: true } } },
-    });
-    if (!category) throw new NotFoundException(`Category ${id} not found`);
-
-    if (category._count.posts > 0) {
-      return prisma.blogCategory.update({
-        where: { id },
-        data: { isActive: false },
-      });
-    }
-
-    return prisma.blogCategory.delete({ where: { id } });
+  deleteCategory(id: string) {
+    return this.categoriesService.deleteCategory(id);
   }
 
   // =========================================================================
-  // 2. ATTORNEY & AUTHOR BLOG CREATION & LIFECYCLE
+  // 2. MODERATION & ADMIN DELEGATIONS
+  // =========================================================================
+
+  publishBlog(id: string, adminId: string) {
+    return this.moderationService.publishBlog(id, adminId);
+  }
+
+  rejectBlog(id: string, adminId: string, dto: RejectBlogDto) {
+    return this.moderationService.rejectBlog(id, adminId, dto);
+  }
+
+  getAdminBlogs(query: QueryBlogDto = {}) {
+    return this.moderationService.getAdminBlogs(query);
+  }
+
+  // =========================================================================
+  // 3. SOCIAL INTERACTIONS DELEGATIONS
+  // =========================================================================
+
+  toggleLike(blogId: string, userId: string) {
+    return this.interactionsService.toggleLike(blogId, userId);
+  }
+
+  addComment(blogId: string, userId: string, dto: CreateCommentDto) {
+    return this.interactionsService.addComment(blogId, userId, dto);
+  }
+
+  getBlogComments(blogId: string, page = 1, limit = 20) {
+    return this.interactionsService.getBlogComments(blogId, page, limit);
+  }
+
+  deleteComment(commentId: string, userId: string, role: string) {
+    return this.interactionsService.deleteComment(commentId, userId, role);
+  }
+
+  recordShare(blogId: string, userId?: string, dto?: ShareBlogDto) {
+    return this.interactionsService.recordShare(blogId, userId, dto);
+  }
+
+  // =========================================================================
+  // 4. CORE BLOG CONTENT MANAGEMENT & AUTHOR LIFECYCLE
   // =========================================================================
 
   async createBlog(authorId: string, dto: CreateBlogDto, featuredImageUrl?: string) {
     const slug = generateSlug(dto.title);
     const readingTimeMinutes = calculateReadingTime(dto.content);
     const status = dto.submitForReview ? BlogStatus.PENDING_REVIEW : BlogStatus.DRAFT;
-
     const imageUrl = featuredImageUrl || dto.featuredImageUrl || null;
 
     return prisma.blogPost.create({
@@ -239,7 +201,7 @@ export class BlogsService {
       },
     });
 
-    // Notify all active Admins via In-App and Push Notification
+    // Notify all active Admins
     setImmediate(async () => {
       try {
         const admins = await prisma.user.findMany({
@@ -257,7 +219,7 @@ export class BlogsService {
           });
         }
       } catch (err) {
-        // Safe fire-and-forget
+        // Fire-and-forget
       }
     });
 
@@ -310,172 +272,7 @@ export class BlogsService {
   }
 
   // =========================================================================
-  // 3. ADMIN MODERATION & REVIEW WORKFLOW (TRANSACTIONAL)
-  // =========================================================================
-
-  async publishBlog(id: string, adminId: string) {
-    const blog = await prisma.blogPost.findUnique({ where: { id } });
-    if (!blog) throw new NotFoundException(`Blog post ${id} not found`);
-
-    const result = await prisma.$transaction(async (tx) => {
-      const updated = await tx.blogPost.update({
-        where: { id },
-        data: {
-          status: BlogStatus.PUBLISHED,
-          publishedAt: new Date(),
-          reviewedByAdminId: adminId,
-          reviewedAt: new Date(),
-          rejectionReason: null,
-        },
-        include: {
-          author: { select: { id: true, name: true, email: true } },
-          categoryRelation: true,
-        },
-      });
-
-      await tx.outboxEvent.create({
-        data: {
-          aggregateType: 'BlogPost',
-          aggregateId: id,
-          eventType: 'BLOG_POST_PUBLISHED',
-          payload: {
-            blogId: id,
-            title: updated.title,
-            authorId: updated.authorId,
-            publishedAt: updated.publishedAt,
-          },
-        },
-      });
-
-      return updated;
-    });
-
-    // Notify Author (Attorney) via In-App, Push & Email
-    setImmediate(async () => {
-      try {
-        await this.communicationClient?.dispatchNotification({
-          recipientId: result.authorId,
-          recipientEmail: result.author?.email || undefined,
-          title: 'Your Article Has Been Published!',
-          body: `Congratulations! Your article "${result.title}" is now live on the Tebeka portal.`,
-          category: 'BLOG',
-          channels: ['IN_APP', 'PUSH', 'EMAIL'],
-          actionUrl: `/blogs/${result.slug}`,
-        });
-      } catch (err) {
-        // Safe fire-and-forget
-      }
-    });
-
-    return result;
-  }
-
-  async rejectBlog(id: string, adminId: string, dto: RejectBlogDto) {
-    const blog = await prisma.blogPost.findUnique({ where: { id } });
-    if (!blog) throw new NotFoundException(`Blog post ${id} not found`);
-
-    const result = await prisma.$transaction(async (tx) => {
-      const updated = await tx.blogPost.update({
-        where: { id },
-        data: {
-          status: BlogStatus.REJECTED,
-          rejectionReason: dto.reason,
-          reviewedByAdminId: adminId,
-          reviewedAt: new Date(),
-        },
-        include: {
-          author: { select: { id: true, name: true, email: true } },
-        },
-      });
-
-      await tx.outboxEvent.create({
-        data: {
-          aggregateType: 'BlogPost',
-          aggregateId: id,
-          eventType: 'BLOG_POST_REJECTED',
-          payload: {
-            blogId: id,
-            title: updated.title,
-            authorId: updated.authorId,
-            reason: dto.reason,
-          },
-        },
-      });
-
-      return updated;
-    });
-
-    // Notify Author (Attorney) via In-App and Push Notification with feedback
-    setImmediate(async () => {
-      try {
-        await this.communicationClient?.dispatchNotification({
-          recipientId: result.authorId,
-          recipientEmail: result.author?.email || undefined,
-          title: 'Blog Submission Status Update',
-          body: `Your submission "${result.title}" was not approved: ${dto.reason}`,
-          category: 'BLOG',
-          channels: ['IN_APP', 'PUSH'],
-          actionUrl: `/attorney/blogs/${result.id}`,
-        });
-      } catch (err) {
-        // Safe fire-and-forget
-      }
-    });
-
-    return result;
-  }
-
-  async getAdminBlogs(query: QueryBlogDto = {}) {
-    const page = Math.max(1, Number(query.page) || 1);
-    const limit = Math.max(1, Number(query.limit) || 15);
-    const skip = (page - 1) * limit;
-
-    const where: any = {};
-    if (query.status) {
-      where.status = query.status as BlogStatus;
-    }
-    if (query.categoryId) {
-      where.categoryId = query.categoryId;
-    }
-    if (query.caseCategory) {
-      where.caseCategory = { equals: query.caseCategory, mode: 'insensitive' };
-    }
-    if (query.search) {
-      where.OR = [
-        { title: { contains: query.search, mode: 'insensitive' } },
-        { content: { contains: query.search, mode: 'insensitive' } },
-        { author: { name: { contains: query.search, mode: 'insensitive' } } },
-      ];
-    }
-
-    const [items, total] = await Promise.all([
-      prisma.blogPost.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          author: {
-            select: { id: true, name: true, email: true, image: true, role: true },
-          },
-          categoryRelation: true,
-          _count: { select: { likes: true, comments: true, shares: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.blogPost.count({ where }),
-    ]);
-
-    return {
-      items,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
-  }
-
-  // =========================================================================
-  // 4. PUBLIC BLOG BROWSING & SEARCH
+  // 5. PUBLIC BLOG BROWSING & SEARCH
   // =========================================================================
 
   async getPublicBlogs(query: QueryBlogDto = {}) {
@@ -602,7 +399,7 @@ export class BlogsService {
 
     if (!blog) throw new NotFoundException(`Published blog post not found`);
 
-    // Atomically increment views count
+    // Increment views count
     await prisma.blogPost.update({
       where: { id: blog.id },
       data: { viewsCount: { increment: 1 } },
@@ -621,245 +418,5 @@ export class BlogsService {
       viewsCount: blog.viewsCount + 1,
       hasLiked,
     };
-  }
-
-  // =========================================================================
-  // 5. INTERACTIVE LIKE / UNLIKE (TRANSACTIONAL)
-  // =========================================================================
-
-  async toggleLike(blogId: string, userId: string) {
-    const blog = await prisma.blogPost.findUnique({
-      where: { id: blogId },
-      include: { author: { select: { id: true, name: true } } },
-    });
-    if (!blog) throw new NotFoundException(`Blog post ${blogId} not found`);
-
-    const result = await prisma.$transaction(async (tx) => {
-      const existingLike = await tx.blogLike.findUnique({
-        where: { blogId_userId: { blogId, userId } },
-      });
-
-      if (existingLike) {
-        await tx.blogLike.delete({
-          where: { id: existingLike.id },
-        });
-
-        const updated = await tx.blogPost.update({
-          where: { id: blogId },
-          data: { likesCount: { decrement: 1 } },
-          select: { likesCount: true },
-        });
-
-        return {
-          liked: false,
-          likesCount: Math.max(0, updated.likesCount),
-          message: 'Blog unliked',
-        };
-      } else {
-        await tx.blogLike.create({
-          data: { blogId, userId },
-        });
-
-        const updated = await tx.blogPost.update({
-          where: { id: blogId },
-          data: { likesCount: { increment: 1 } },
-          select: { likesCount: true },
-        });
-
-        return {
-          liked: true,
-          likesCount: updated.likesCount,
-          message: 'Blog liked',
-        };
-      }
-    });
-
-    // If newly liked and user is not the author, notify author via In-App + Push
-    if (result.liked && blog.authorId !== userId) {
-      setImmediate(async () => {
-        try {
-          const liker = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { name: true },
-          });
-          await this.communicationClient?.dispatchNotification({
-            recipientId: blog.authorId,
-            title: 'New Like on Your Article',
-            body: `${liker?.name || 'A reader'} liked your article "${blog.title}".`,
-            category: 'BLOG',
-            channels: ['IN_APP', 'PUSH'],
-            actionUrl: `/blogs/${blog.slug}`,
-          });
-        } catch (err) {
-          // Safe fire-and-forget
-        }
-      });
-    }
-
-    return result;
-  }
-
-  // =========================================================================
-  // 6. INTERACTIVE COMMENTS & THREADED REPLIES (TRANSACTIONAL)
-  // =========================================================================
-
-  async addComment(blogId: string, userId: string, dto: CreateCommentDto) {
-    const blog = await prisma.blogPost.findUnique({
-      where: { id: blogId },
-      include: { author: { select: { id: true, name: true } } },
-    });
-    if (!blog) throw new NotFoundException(`Blog post ${blogId} not found`);
-
-    let parentComment: { id: string; userId: string; blogId: string } | null = null;
-    if (dto.parentId) {
-      parentComment = await prisma.blogComment.findUnique({
-        where: { id: dto.parentId },
-        select: { id: true, userId: true, blogId: true },
-      });
-      if (!parentComment || parentComment.blogId !== blogId) {
-        throw new BadRequestException('Parent comment does not exist for this blog post');
-      }
-    }
-
-    const comment = await prisma.$transaction(async (tx) => {
-      const created = await tx.blogComment.create({
-        data: {
-          blogId,
-          userId,
-          parentId: dto.parentId || null,
-          content: dto.content,
-          isApproved: true,
-        },
-        include: {
-          user: { select: { id: true, name: true, image: true, role: true } },
-        },
-      });
-
-      await tx.blogPost.update({
-        where: { id: blogId },
-        data: { commentsCount: { increment: 1 } },
-      });
-
-      return created;
-    });
-
-    // Notify Author / Parent Commenter via In-App + Push
-    setImmediate(async () => {
-      try {
-        const commenterName = comment.user?.name || 'A reader';
-
-        // 1. If this is a root comment and commenter is not the author -> notify author
-        if (!dto.parentId && blog.authorId !== userId) {
-          await this.communicationClient?.dispatchNotification({
-            recipientId: blog.authorId,
-            title: 'New Comment on Your Article',
-            body: `${commenterName} commented on "${blog.title}": "${dto.content.slice(0, 80)}..."`,
-            category: 'BLOG',
-            channels: ['IN_APP', 'PUSH'],
-            actionUrl: `/blogs/${blog.slug}`,
-          });
-        }
-
-        // 2. If this is a threaded reply and replier is not the parent commenter -> notify parent commenter
-        if (parentComment && parentComment.userId !== userId) {
-          await this.communicationClient?.dispatchNotification({
-            recipientId: parentComment.userId,
-            title: 'New Reply to Your Comment',
-            body: `${commenterName} replied to your comment on "${blog.title}": "${dto.content.slice(0, 80)}..."`,
-            category: 'BLOG',
-            channels: ['IN_APP', 'PUSH'],
-            actionUrl: `/blogs/${blog.slug}`,
-          });
-        }
-      } catch (err) {
-        // Safe fire-and-forget
-      }
-    });
-
-    return comment;
-  }
-
-  async getBlogComments(blogId: string, page = 1, limit = 20) {
-    const skip = (Math.max(1, page) - 1) * limit;
-
-    const [items, total] = await Promise.all([
-      prisma.blogComment.findMany({
-        where: { blogId, parentId: null, isApproved: true },
-        skip,
-        take: limit,
-        include: {
-          user: { select: { id: true, name: true, image: true, role: true } },
-          replies: {
-            where: { isApproved: true },
-            include: { user: { select: { id: true, name: true, image: true, role: true } } },
-            orderBy: { createdAt: 'asc' },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.blogComment.count({ where: { blogId, parentId: null, isApproved: true } }),
-    ]);
-
-    return {
-      items,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
-  }
-
-  async deleteComment(commentId: string, userId: string, role: string) {
-    const comment = await prisma.blogComment.findUnique({ where: { id: commentId } });
-    if (!comment) throw new NotFoundException(`Comment ${commentId} not found`);
-
-    const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
-    if (!isAdmin && comment.userId !== userId) {
-      throw new ForbiddenException('You do not have permission to delete this comment');
-    }
-
-    return prisma.$transaction(async (tx) => {
-      await tx.blogComment.delete({ where: { id: commentId } });
-
-      await tx.blogPost.update({
-        where: { id: comment.blogId },
-        data: { commentsCount: { decrement: 1 } },
-      });
-
-      return { success: true, message: 'Comment deleted successfully' };
-    });
-  }
-
-  // =========================================================================
-  // 7. INTERACTIVE SHARE TRACKING (TRANSACTIONAL)
-  // =========================================================================
-
-  async recordShare(blogId: string, userId?: string, dto?: ShareBlogDto) {
-    const blog = await prisma.blogPost.findUnique({ where: { id: blogId } });
-    if (!blog) throw new NotFoundException(`Blog post ${blogId} not found`);
-
-    const platform = dto?.platform || 'DIRECT_LINK';
-
-    return prisma.$transaction(async (tx) => {
-      const share = await tx.blogShare.create({
-        data: {
-          blogId,
-          userId: userId || null,
-          platform,
-        },
-      });
-
-      const updated = await tx.blogPost.update({
-        where: { id: blogId },
-        data: { sharesCount: { increment: 1 } },
-        select: { sharesCount: true },
-      });
-
-      return {
-        success: true,
-        platform: share.platform,
-        sharesCount: updated.sharesCount,
-      };
-    });
   }
 }
