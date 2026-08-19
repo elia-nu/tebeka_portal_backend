@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 
 interface MetricCounter {
   name: string;
@@ -29,7 +29,7 @@ export class MetricsService {
   private readonly defaultBuckets = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
   private readonly serviceName: string;
 
-  constructor(serviceName?: string) {
+  constructor(@Optional() serviceName?: string) {
     this.serviceName = serviceName || process.env.SERVICE_NAME || 'tebeka-service';
     this.initDefaultMetrics();
   }
