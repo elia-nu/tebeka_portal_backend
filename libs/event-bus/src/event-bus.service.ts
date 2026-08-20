@@ -12,17 +12,48 @@ export class EventBusService implements OnModuleInit {
 
   async onModuleInit() {
     try {
-      this.connection = amqp.connect([this.configService.rabbitmqUri]);
+      this.connection = amqp.connect([this.configService.rabbitmqUri], {
+        reconnectTimeInSeconds: 5,
+        heartbeatIntervalInSeconds: 10,
+      });
+
+      this.connection.on('connect', () => {
+        this.logger.log('Connected to RabbitMQ Event Bus successfully');
+      });
+
+      this.connection.on('disconnect', (params: any) => {
+        this.logger.warn(`Disconnected from RabbitMQ: ${params?.err?.message || 'reconnecting...'}`);
+      });
+
+      this.connection.on('error', (err: any) => {
+        this.logger.warn(`RabbitMQ connection error: ${err?.message || err}`);
+      });
+
       this.channelWrapper = this.connection.createChannel({
         json: true,
-        setup: (channel: any) => {
-          return Promise.all([
-            channel.assertExchange('tebeka.events', 'topic', { durable: true }),
-            channel.assertExchange('tebeka.dlq.exchange', 'topic', { durable: true }),
-          ]);
+        setup: async (channel: any) => {
+          try {
+            await Promise.all([
+              channel.assertExchange('tebeka.events', 'topic', { durable: true }),
+              channel.assertExchange('tebeka.dlq.exchange', 'topic', { durable: true }),
+            ]);
+          } catch (err: any) {
+            this.logger.warn(`Exchange setup warning: ${err.message}`);
+          }
         },
       });
-      this.logger.log('Connected to RabbitMQ Event Bus successfully');
+
+      this.channelWrapper.on('connect', () => {
+        this.logger.log('RabbitMQ channel wrapper connected');
+      });
+
+      this.channelWrapper.on('error', (err: any) => {
+        this.logger.warn(`RabbitMQ channel wrapper error: ${err?.message || err}`);
+      });
+
+      this.channelWrapper.on('close', () => {
+        this.logger.warn('RabbitMQ channel closed, waiting for reconnection');
+      });
     } catch (err) {
       this.logger.error('Failed to initialize RabbitMQ Event Bus connection', err);
     }
@@ -41,7 +72,7 @@ export class EventBusService implements OnModuleInit {
   }
 
   async subscribe(routingKey: string, handler: (data: any) => Promise<void>, queueName?: string): Promise<void> {
-    const qName = queueName || `marketplace.queue.${routingKey}`;
+    const qName = queueName || `tebeka.queue.${routingKey}`;
     const dlqName = `${qName}.dlq`;
     if (!this.channelWrapper) {
       this.logger.warn(`Event bus channel not initialized. Subscription for ${routingKey} pending.`);
@@ -51,17 +82,13 @@ export class EventBusService implements OnModuleInit {
       await channel.assertQueue(dlqName, { durable: true });
       await channel.bindQueue(dlqName, 'tebeka.dlq.exchange', '#');
 
-      try {
-        await channel.assertQueue(qName, {
-          durable: true,
-          arguments: {
-            'x-dead-letter-exchange': 'tebeka.dlq.exchange',
-            'x-dead-letter-routing-key': `${routingKey}.dlq`,
-          },
-        });
-      } catch {
-        await channel.assertQueue(qName, { durable: true });
-      }
+      await channel.assertQueue(qName, {
+        durable: true,
+        arguments: {
+          'x-dead-letter-exchange': 'tebeka.dlq.exchange',
+          'x-dead-letter-routing-key': `${routingKey}.dlq`,
+        },
+      });
       await channel.bindQueue(qName, 'tebeka.events', routingKey);
       await channel.consume(qName, async (msg: any) => {
         if (msg) {
@@ -86,7 +113,7 @@ export class EventBusService implements OnModuleInit {
     handler: (data: any) => Promise<void>,
     queueName?: string,
   ): Promise<void> {
-    const qName = queueName || `${consumerName}.queue.${routingKey}`;
+    const qName = queueName || `tebeka.queue.${consumerName}.${routingKey}`;
     const dlqName = `${qName}.dlq`;
     if (!this.channelWrapper) {
       this.logger.warn(`Event bus channel not initialized. Subscription for ${routingKey} pending.`);
@@ -96,17 +123,13 @@ export class EventBusService implements OnModuleInit {
       await channel.assertQueue(dlqName, { durable: true });
       await channel.bindQueue(dlqName, 'tebeka.dlq.exchange', '#');
 
-      try {
-        await channel.assertQueue(qName, {
-          durable: true,
-          arguments: {
-            'x-dead-letter-exchange': 'tebeka.dlq.exchange',
-            'x-dead-letter-routing-key': `${routingKey}.dlq`,
-          },
-        });
-      } catch {
-        await channel.assertQueue(qName, { durable: true });
-      }
+      await channel.assertQueue(qName, {
+        durable: true,
+        arguments: {
+          'x-dead-letter-exchange': 'tebeka.dlq.exchange',
+          'x-dead-letter-routing-key': `${routingKey}.dlq`,
+        },
+      });
       await channel.bindQueue(qName, 'tebeka.events', routingKey);
       await channel.consume(qName, async (msg: any) => {
         if (msg) {

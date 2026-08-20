@@ -6,7 +6,7 @@ import { AppConfigModule } from '@workspace/config';
 import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware } from '@workspace/logger';
 import { EventBusModule } from '@workspace/event-bus';
 import { CacheModule } from '@workspace/cache';
-import { MetricsController, MetricsInterceptor, TracingMiddleware } from '@workspace/common';
+import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware } from '@workspace/common';
 
 import { UserAuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -31,6 +31,7 @@ import { UserEventsModule } from './modules/events/user-events.module';
     AuthModule.forRoot({ auth }),
     AppConfigModule,
     AppLoggerModule,
+    MetricsModule,
     EventBusModule,
     CacheModule,
     DatabaseModule,

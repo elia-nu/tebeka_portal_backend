@@ -2,8 +2,12 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { sanitizeUser } from '../../users/users.service';
 import { prisma } from '../attorneys-shared/prisma';
 
+import { AttorneyVaultService } from './attorney-vault.service';
+
 @Injectable()
 export class AttorneyProfileService {
+  constructor(private readonly vaultService?: AttorneyVaultService) {}
+
   async createAttorney(data: any) {
     return prisma.attorneyProfile.create({ data });
   }
@@ -49,8 +53,11 @@ export class AttorneyProfileService {
     return sanitizeUser(attorney);
   }
 
-  // Public Credential Vault Projection (Raw files NEVER exposed publicly)
+  // Public Credential Vault Projection (Delegated to AttorneyVaultService)
   async getPublicCredentials(attorneyId: string) {
+    if (this.vaultService) {
+      return this.vaultService.getPublicCredentials(attorneyId);
+    }
     const credentials = await prisma.credential.findMany({
       where: { attorneyId },
       select: {
@@ -70,8 +77,11 @@ export class AttorneyProfileService {
     }));
   }
 
-  // Authenticated Attorney's Own Credential Vault Projection (Includes document metadata)
+  // Authenticated Attorney's Own Credential Vault Projection (Delegated to AttorneyVaultService)
   async getMyCredentials(attorneyId: string) {
+    if (this.vaultService) {
+      return this.vaultService.getMyCredentials(attorneyId);
+    }
     const credentials = await prisma.credential.findMany({
       where: { attorneyId },
       include: {

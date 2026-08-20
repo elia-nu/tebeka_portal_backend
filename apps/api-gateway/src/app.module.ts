@@ -4,7 +4,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppConfigModule } from '@workspace/config';
 import { AppLoggerModule, CorrelationIdMiddleware, AppLoggerService } from '@workspace/logger';
 import { AuthModule, JwtAuthGuard } from '@workspace/auth';
-import { MetricsController, MetricsInterceptor, TracingMiddleware } from '@workspace/common';
+import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware } from '@workspace/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { HealthController } from './health.controller';
@@ -13,6 +13,7 @@ import { HealthController } from './health.controller';
   imports: [
     AppConfigModule,
     AppLoggerModule,
+    MetricsModule,
     AuthModule,
     TerminusModule,
     ThrottlerModule.forRoot([

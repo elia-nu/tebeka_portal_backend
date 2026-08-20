@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { PrismaClient, PaymentStatus, PaymentType, PaymentProvider, LedgerEntryType } from '@prisma/client/financial';
 import { ChapaStrategy } from './strategies/chapa.strategy';
 import { StripeStrategy } from './strategies/stripe.strategy';
+import { PaymentRefundService } from './services/payment-refund.service';
+import { PayoutWalletService } from './services/payout-wallet.service';
 
 const prisma = new PrismaClient();
 
@@ -12,7 +14,13 @@ export class PaymentService {
   constructor(
     private readonly chapaStrategy: ChapaStrategy,
     private readonly stripeStrategy: StripeStrategy,
+    private readonly refundService: PaymentRefundService,
+    private readonly walletService: PayoutWalletService,
   ) {}
+
+  // =========================================================================
+  // 1. PAYMENT CREATION & CHECKOUT
+  // =========================================================================
 
   async createPayment(data: any, userId: string) {
     if (!data.amount || data.amount <= 0) throw new BadRequestException('Valid positive amount is required');
@@ -132,7 +140,14 @@ export class PaymentService {
           aggregateType: 'Payment',
           aggregateId: payment.id,
           eventType: 'PAYMENT_REQUESTED',
-          payload: { paymentId: payment.id, caseId: data.caseId, requestedBy: attorneyId, clientId: data.clientId, amount: payment.amount, transactionReference: txRef },
+          payload: {
+            paymentId: payment.id,
+            caseId: data.caseId,
+            requestedBy: attorneyId,
+            clientId: data.clientId,
+            amount: payment.amount,
+            transactionReference: txRef,
+          },
         },
       });
 
@@ -167,7 +182,6 @@ export class PaymentService {
         },
       });
 
-      // Atomic Ledger Entry creation
       const netAmount = updated.amount.minus(updated.commission);
       await tx.ledgerEntry.create({
         data: {
@@ -189,7 +203,6 @@ export class PaymentService {
         });
       }
 
-      // Upsert Payee Wallet pending escrow balance
       if (updated.payeeId) {
         await tx.wallet.upsert({
           where: { userId: updated.payeeId },
@@ -205,7 +218,6 @@ export class PaymentService {
         });
       }
 
-      // Write PAYMENT_COMPLETED event to Outbox table
       await tx.outboxEvent.create({
         data: {
           aggregateType: 'Payment',
@@ -254,7 +266,11 @@ export class PaymentService {
     });
   }
 
-  async setupAttorneyPayoutAccount(
+  // =========================================================================
+  // 2. WALLET & PAYOUT SUBACCOUNT DELEGATIONS
+  // =========================================================================
+
+  setupAttorneyPayoutAccount(
     attorneyId: string,
     data: {
       businessName: string;
@@ -262,198 +278,33 @@ export class PaymentService {
       bankCode: string | number;
       bankName?: string;
       accountNumber: string;
-      splitPercentage?: number; // e.g., 15 for 15% platform commission
-    }
+      splitPercentage?: number;
+    },
   ) {
-    const splitPercentage = data.splitPercentage || 15.0;
-    const splitValue = splitPercentage / 100; // e.g., 0.15 for Chapa API
-
-    // Register Subaccount with Chapa Payment Gateway
-    const subaccountRes = await this.chapaStrategy.createSubaccount({
-      businessName: data.businessName,
-      accountName: data.accountName,
-      bankCode: data.bankCode,
-      accountNumber: data.accountNumber,
-      splitValue,
-      splitType: 'percentage',
-    });
-
-    const chapaSubaccountId = subaccountRes.subaccountId || `sub_${attorneyId}_${Date.now()}`;
-
-    // Upsert attorney wallet with subaccount link
-    const wallet = await prisma.wallet.upsert({
-      where: { userId: attorneyId },
-      update: {
-        chapaSubaccountId,
-        bankCode: String(data.bankCode),
-        bankName: data.bankName || null,
-        accountNumber: data.accountNumber,
-        accountName: data.accountName,
-        splitPercentage,
-      },
-      create: {
-        userId: attorneyId,
-        availableBalance: 0,
-        pendingBalance: 0,
-        currency: 'ETB',
-        chapaSubaccountId,
-        bankCode: String(data.bankCode),
-        bankName: data.bankName || null,
-        accountNumber: data.accountNumber,
-        accountName: data.accountName,
-        splitPercentage,
-      },
-    });
-
-    this.logger.log(`Attorney [${attorneyId}] payout subaccount registered: ${chapaSubaccountId}`);
-
-    return {
-      success: true,
-      message: 'Payout subaccount registered successfully with Chapa Split Payment',
-      wallet,
-      chapaSubaccountId,
-    };
+    return this.walletService.setupAttorneyPayoutAccount(attorneyId, data);
   }
 
-  async getBanks() {
-    return this.chapaStrategy.getBanks();
+  getBanks() {
+    return this.walletService.getBanks();
   }
 
-  async getAttorneyWallet(attorneyId: string) {
-    const wallet = await prisma.wallet.findUnique({
-      where: { userId: attorneyId },
-    });
-
-    // Also fetch any pending refunds or dispute records associated with attorney's payments
-    const pendingRefunds = await prisma.refund.findMany({
-      where: {
-        payment: { payeeId: attorneyId },
-        status: 'PENDING',
-      },
-      include: {
-        payment: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!wallet) {
-      return {
-        userId: attorneyId,
-        availableBalance: 0,
-        pendingBalance: 0,
-        currency: 'ETB',
-        chapaSubaccountId: null,
-        pendingRefunds,
-      };
-    }
-
-    return {
-      ...wallet,
-      pendingRefunds,
-    };
+  getAttorneyWallet(attorneyId: string) {
+    return this.walletService.getAttorneyWallet(attorneyId);
   }
 
-  async getRefunds(query?: { status?: any; payeeId?: string; payerId?: string }) {
-    return prisma.refund.findMany({
-      where: {
-        ...(query?.status && { status: query.status }),
-        ...(query?.payeeId && { payment: { payeeId: query.payeeId } }),
-        ...(query?.payerId && { payment: { payerId: query.payerId } }),
-      },
-      include: {
-        payment: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  // =========================================================================
+  // 3. MANUAL REFUND DELEGATIONS
+  // =========================================================================
+
+  getRefunds(query?: { status?: any; payeeId?: string; payerId?: string }) {
+    return this.refundService.getRefunds(query);
   }
 
-  async processManualRefund(refundId: string, processedBy: string, notes?: string) {
-    return prisma.$transaction(async (tx) => {
-      const refund = await tx.refund.findUnique({
-        where: { id: refundId },
-        include: { payment: true },
-      });
-
-      if (!refund) throw new NotFoundException(`Refund ${refundId} not found`);
-      if (refund.status === 'PROCESSED') {
-        throw new BadRequestException('Refund has already been processed');
-      }
-
-      const refundAmount = Number(refund.amount);
-
-      // 1. Credit client available balance
-      const clientWallet = await tx.wallet.upsert({
-        where: { userId: refund.payment.payerId },
-        update: { availableBalance: { increment: refundAmount } },
-        create: { userId: refund.payment.payerId, availableBalance: refundAmount },
-      });
-
-      // 2. Decrement attorney pending balance
-      const attorneyPendingDeduction = (refundAmount * (100 - (refund.payment.splitPercentage || 15))) / 100;
-      await tx.wallet.upsert({
-        where: { userId: refund.payment.payeeId },
-        update: { pendingBalance: { decrement: attorneyPendingDeduction } },
-        create: { userId: refund.payment.payeeId, availableBalance: 0, pendingBalance: 0 },
-      });
-
-      // 3. Mark Refund as PROCESSED
-      const updatedRefund = await tx.refund.update({
-        where: { id: refundId },
-        data: {
-          status: 'PROCESSED',
-          reason: notes ? `${refund.reason || ''} | Note: ${notes}` : refund.reason,
-        },
-      });
-
-      // 4. Record Ledger Entry
-      await tx.ledgerEntry.create({
-        data: {
-          paymentId: refund.paymentId,
-          entryType: 'REFUND',
-          amount: refundAmount,
-          balanceAfter: clientWallet.availableBalance,
-        },
-      });
-
-      // 5. Update Payment status
-      await tx.payment.update({
-        where: { id: refund.paymentId },
-        data: { status: 'REFUNDED' },
-      });
-
-      // 6. Emit Outbox Event
-      await tx.outboxEvent.create({
-        data: {
-          aggregateType: 'Refund',
-          aggregateId: refund.id,
-          eventType: 'PAYMENT_REFUNDED',
-          payload: {
-            refundId: refund.id,
-            paymentId: refund.paymentId,
-            payerId: refund.payment.payerId,
-            payeeId: refund.payment.payeeId,
-            refundAmount,
-            processedBy,
-            notes,
-          },
-        },
-      });
-
-      return updatedRefund;
-    });
+  processManualRefund(refundId: string, processedBy: string, notes?: string) {
+    return this.refundService.processManualRefund(refundId, processedBy, notes);
   }
 
-  async rejectManualRefund(refundId: string, rejectedBy: string, reason: string) {
-    const refund = await prisma.refund.findUnique({ where: { id: refundId } });
-    if (!refund) throw new NotFoundException(`Refund ${refundId} not found`);
-
-    return prisma.refund.update({
-      where: { id: refundId },
-      data: {
-        status: 'REJECTED',
-        reason: `${refund.reason || ''} | Rejected by ${rejectedBy}: ${reason}`,
-      },
-    });
+  rejectManualRefund(refundId: string, rejectedBy: string, reason: string) {
+    return this.refundService.rejectManualRefund(refundId, rejectedBy, reason);
   }
 }
-
