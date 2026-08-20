@@ -3,7 +3,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { auth } from './auth';
 import { AppConfigModule } from '@workspace/config';
-import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware } from '@workspace/logger';
+import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware, HttpLoggingInterceptor } from '@workspace/logger';
 import { EventBusModule } from '@workspace/event-bus';
 import { CacheModule } from '@workspace/cache';
 import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware } from '@workspace/common';
@@ -61,6 +61,10 @@ import { UserEventsModule } from './modules/events/user-events.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: MetricsInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: HttpLoggingInterceptor,
     },
   ],
 })

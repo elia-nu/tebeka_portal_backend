@@ -3,7 +3,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { AppConfigModule, AppConfigService } from '@workspace/config';
-import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware } from '@workspace/logger';
+import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware, HttpLoggingInterceptor } from '@workspace/logger';
 import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
 import { LocalizationModule } from '@workspace/localization';
@@ -81,6 +81,10 @@ import { CommunicationSchedulerModule } from './modules/scheduler/scheduler.modu
     {
       provide: APP_INTERCEPTOR,
       useClass: MetricsInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: HttpLoggingInterceptor,
     },
   ],
 })

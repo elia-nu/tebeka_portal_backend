@@ -1,7 +1,7 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppConfigModule } from '@workspace/config';
-import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware } from '@workspace/logger';
+import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware, HttpLoggingInterceptor } from '@workspace/logger';
 import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
 import { DatabaseModule } from '@workspace/database';
@@ -29,6 +29,10 @@ import { FinancialEventsModule } from './modules/events/financial-events.module'
     {
       provide: APP_INTERCEPTOR,
       useClass: MetricsInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: HttpLoggingInterceptor,
     },
   ],
 })
