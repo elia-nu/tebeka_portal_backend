@@ -105,6 +105,7 @@ async function bootstrap() {
       changeOrigin: true,
       ws: true,
       pathFilter: [
+        '/api/v1/communication/**',
         '/api/v1/conversations/**',
         '/api/v1/messages/**',
         '/api/v1/notifications/**',
