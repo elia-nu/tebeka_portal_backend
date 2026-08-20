@@ -25,7 +25,9 @@
     "seed:admin": "ts-node -r dotenv/config apps/user-service/src/seed_test_users.ts",
     "seed:users": "ts-node -r dotenv/config apps/user-service/src/seed_test_users.ts",
     "routes": "node list-routes.js",
-    "endpoints": "node list-routes.js"
+    "endpoints": "node list-routes.js",
+    "track": "node track-endpoints.js",
+    "monitor": "node track-endpoints.js"
   },
   "workspaces": [
     "apps/*",
