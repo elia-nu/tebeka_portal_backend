@@ -27,8 +27,8 @@ export class AppLoggerService implements NestLoggerService {
       level: 'info',
       format: winston.format.combine(
         winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
-        winston.format.printf((info) => {
-          const correlationId = info.correlationId || CorrelationContext.getCorrelationId() || 'N/A';
+        winston.format.printf((info: any) => {
+          const correlationId = String(info.correlationId || CorrelationContext.getCorrelationId() || 'N/A');
           const tag = formatServiceName(this.serviceName);
           const levelStr =
             info.level === 'error'
@@ -37,9 +37,10 @@ export class AppLoggerService implements NestLoggerService {
               ? yellow(info.level.toUpperCase())
               : green(info.level.toUpperCase());
           const contextStr = info.context ? `[Context: ${info.context}]` : '';
-          const msg = typeof info.message === 'object' ? JSON.stringify(info.message) : info.message;
-          const traceStr = info.trace ? `\n${red(info.trace)}` : '';
-          return `${gray(info.timestamp)} ${tag} [${levelStr}] ${contextStr} [CorrID: ${correlationId}]: ${msg}${traceStr}`;
+          const msg = typeof info.message === 'object' ? JSON.stringify(info.message) : String(info.message);
+          const traceStr = info.trace ? `\n${red(String(info.trace))}` : '';
+          const timeStr = gray(String(info.timestamp || new Date().toISOString()));
+          return `${timeStr} ${tag} [${levelStr}] ${contextStr} [CorrID: ${correlationId}]: ${msg}${traceStr}`;
         })
       ),
       transports: [new winston.transports.Console()],
