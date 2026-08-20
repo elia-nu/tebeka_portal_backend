@@ -10,6 +10,26 @@ import rateLimit from 'express-rate-limit';
 
 import { AppLoggerService } from '@workspace/logger';
 
+import { green, blue, yellow, red, magenta, cyan, gray, bold } from 'colorette';
+
+function colorMethod(method: string): string {
+  switch (method.toUpperCase()) {
+    case 'GET': return green(method);
+    case 'POST': return blue(method);
+    case 'PATCH': return yellow(method);
+    case 'PUT': return magenta(method);
+    case 'DELETE': return red(method);
+    default: return cyan(method);
+  }
+}
+
+function colorStatus(status: number): string {
+  if (status >= 500) return bold(red(`[${status}]`));
+  if (status >= 400) return bold(yellow(`[${status}]`));
+  if (status >= 300) return bold(cyan(`[${status}]`));
+  return bold(green(`[${status}]`));
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(AppConfigService);
@@ -32,7 +52,7 @@ async function bootstrap() {
     if (!url.endsWith('/metrics')) {
       const hasBody = req.body && Object.keys(req.body).length > 0;
       const bodyStr = hasBody ? ` | Payload: ${JSON.stringify(req.body)}` : '';
-      logger.log(`📥 INCOMING ${req.method} ${url}${bodyStr}`, 'GATEWAY-PROXY');
+      logger.log(`📥 INCOMING ${colorMethod(req.method)} ${cyan(url)}${gray(bodyStr)}`, 'GATEWAY-PROXY');
     }
 
     res.on('finish', () => {
@@ -41,9 +61,9 @@ async function bootstrap() {
       if (url.endsWith('/metrics') && status === 200) return;
 
       if (status >= 400) {
-        logger.warn(`📤 RESPONSE ${req.method} ${url} -> [${status} ${res.statusMessage || ''}] (${duration}ms)`, 'GATEWAY-PROXY');
+        logger.warn(`📤 RESPONSE ${colorMethod(req.method)} ${cyan(url)} -> ${colorStatus(status)} ${cyan(`(${duration}ms)`)}`, 'GATEWAY-PROXY');
       } else {
-        logger.log(`📤 RESPONSE ${req.method} ${url} -> [${status} ${res.statusMessage || ''}] (${duration}ms)`, 'GATEWAY-PROXY');
+        logger.log(`📤 RESPONSE ${colorMethod(req.method)} ${cyan(url)} -> ${colorStatus(status)} ${cyan(`(${duration}ms)`)}`, 'GATEWAY-PROXY');
       }
     });
     next();

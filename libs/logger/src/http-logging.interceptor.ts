@@ -10,6 +10,7 @@ import { Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { AppLoggerService } from './logger.service';
 import { Request, Response } from 'express';
+import { green, blue, yellow, red, magenta, cyan, gray, bold } from 'colorette';
 
 function sanitizePayload(payload: any): any {
   if (!payload || typeof payload !== 'object') return payload;
@@ -24,6 +25,24 @@ function sanitizePayload(payload: any): any {
     }
   }
   return clone;
+}
+
+function colorMethod(method: string): string {
+  switch (method.toUpperCase()) {
+    case 'GET': return green(method);
+    case 'POST': return blue(method);
+    case 'PATCH': return yellow(method);
+    case 'PUT': return magenta(method);
+    case 'DELETE': return red(method);
+    default: return cyan(method);
+  }
+}
+
+function colorStatus(status: number): string {
+  if (status >= 500) return bold(red(`[${status}]`));
+  if (status >= 400) return bold(yellow(`[${status}]`));
+  if (status >= 300) return bold(cyan(`[${status}]`));
+  return bold(green(`[${status}]`));
 }
 
 @Injectable()
@@ -60,7 +79,7 @@ export class HttpLoggingInterceptor implements NestInterceptor {
       .join(' | ');
 
     this.logger.log(
-      `📥 INCOMING ${method} ${path}${requestDetails ? ` -> ${requestDetails}` : ''}`,
+      `📥 INCOMING ${colorMethod(method)} ${cyan(path)}${requestDetails ? ` -> ${gray(requestDetails)}` : ''}`,
       'HTTP-REQUEST'
     );
 
@@ -73,11 +92,11 @@ export class HttpLoggingInterceptor implements NestInterceptor {
         let responsePreview = '';
         if (sanitizedRes !== undefined && sanitizedRes !== null) {
           const resStr = typeof sanitizedRes === 'object' ? JSON.stringify(sanitizedRes) : String(sanitizedRes);
-          responsePreview = resStr.length > 500 ? `${resStr.substring(0, 500)}... [truncated ${resStr.length} chars]` : resStr;
+          responsePreview = resStr.length > 400 ? `${resStr.substring(0, 400)}... ${gray(`[truncated ${resStr.length} chars]`)}` : resStr;
         }
 
         this.logger.log(
-          `📤 COMPLETED ${method} ${path} -> [${statusCode}] (${duration}ms)${responsePreview ? ` | Data: ${responsePreview}` : ''}`,
+          `📤 COMPLETED ${colorMethod(method)} ${cyan(path)} -> ${colorStatus(statusCode)} ${cyan(`(${duration}ms)`)}${responsePreview ? ` | ${gray(`Data: ${responsePreview}`)}` : ''}`,
           'HTTP-RESPONSE'
         );
       }),
@@ -91,7 +110,7 @@ export class HttpLoggingInterceptor implements NestInterceptor {
           error instanceof HttpException ? error.getResponse() : error.message;
 
         this.logger.error(
-          `❌ FAILED ${method} ${path} -> [${status}] (${duration}ms) | Error: ${typeof errorResponse === 'object' ? JSON.stringify(errorResponse) : errorResponse}`,
+          `❌ FAILED ${colorMethod(method)} ${cyan(path)} -> ${colorStatus(status)} ${cyan(`(${duration}ms)`)} | ${red(`Error: ${typeof errorResponse === 'object' ? JSON.stringify(errorResponse) : errorResponse}`)}`,
           error.stack,
           'HTTP-ERROR'
         );
