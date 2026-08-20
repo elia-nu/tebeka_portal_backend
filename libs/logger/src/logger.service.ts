@@ -26,8 +26,21 @@ export class AppLoggerService implements NestLoggerService {
     this.winstonLogger = winston.createLogger({
       level: 'info',
       format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json(),
+        winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
+        winston.format.printf((info) => {
+          const correlationId = info.correlationId || CorrelationContext.getCorrelationId() || 'N/A';
+          const tag = formatServiceName(this.serviceName);
+          const levelStr =
+            info.level === 'error'
+              ? red(info.level.toUpperCase())
+              : info.level === 'warn'
+              ? yellow(info.level.toUpperCase())
+              : green(info.level.toUpperCase());
+          const contextStr = info.context ? `[Context: ${info.context}]` : '';
+          const msg = typeof info.message === 'object' ? JSON.stringify(info.message) : info.message;
+          const traceStr = info.trace ? `\n${red(info.trace)}` : '';
+          return `${gray(info.timestamp)} ${tag} [${levelStr}] ${contextStr} [CorrID: ${correlationId}]: ${msg}${traceStr}`;
+        })
       ),
       transports: [new winston.transports.Console()],
     });
@@ -37,44 +50,19 @@ export class AppLoggerService implements NestLoggerService {
     this.serviceName = name;
   }
 
-  private print(level: string, message: any, context?: string, trace?: string) {
-    const timestamp = new Date().toISOString();
-    const correlationId = CorrelationContext.getCorrelationId() || 'N/A';
-    const tag = formatServiceName(this.serviceName);
-
-    const logObject = {
-      timestamp,
-      service: this.serviceName,
-      level,
-      context,
-      correlationId,
-      message,
-      trace,
-    };
-
-    if (process.env.NODE_ENV === 'production') {
-      console.log(JSON.stringify(logObject));
-    } else {
-      const levelStr = level === 'error' ? red(level.toUpperCase()) : level.toUpperCase();
-      console.log(
-        `${gray(timestamp)} ${tag} [${levelStr}] [Context: ${context || 'App'}] [CorrID: ${correlationId}]: ${typeof message === 'object' ? JSON.stringify(message) : message}${trace ? `\n${red(trace)}` : ''}`,
-      );
-    }
-  }
-
   log(message: any, context?: string) {
-    this.print('info', message, context);
+    this.winstonLogger.info(message, { context });
   }
 
   error(message: any, trace?: string, context?: string) {
-    this.print('error', message, context, trace);
+    this.winstonLogger.error(message, { context, trace });
   }
 
   warn(message: any, context?: string) {
-    this.print('warn', message, context);
+    this.winstonLogger.warn(message, { context });
   }
 
   debug(message: any, context?: string) {
-    this.print('debug', message, context);
+    this.winstonLogger.debug(message, { context });
   }
 }

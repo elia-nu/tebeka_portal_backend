@@ -1,12 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppConfigService } from '@workspace/config';
+import { AppLoggerService } from '@workspace/logger';
 import { ValidationPipe } from '@nestjs/common';
 import { GlobalHttpExceptionFilter } from '@workspace/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(AppConfigService);
+  const logger = app.get(AppLoggerService);
+  app.useLogger(logger);
 
   app.enableCors({
     origin: true,
