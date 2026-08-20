@@ -23,7 +23,9 @@
     "prisma:generate:communication": "prisma generate --schema=apps/communication-service/prisma/schema.prisma",
     "prisma:generate:all": "npm run prisma:generate:user && npm run prisma:generate:marketplace && npm run prisma:generate:financial && npm run prisma:generate:communication",
     "seed:admin": "ts-node -r dotenv/config apps/user-service/src/seed_test_users.ts",
-    "seed:users": "ts-node -r dotenv/config apps/user-service/src/seed_test_users.ts"
+    "seed:users": "ts-node -r dotenv/config apps/user-service/src/seed_test_users.ts",
+    "routes": "node list-routes.js",
+    "endpoints": "node list-routes.js"
   },
   "workspaces": [
     "apps/*",
