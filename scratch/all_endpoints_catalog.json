@@ -1,0 +1,2692 @@
+{
+  "api-gateway": [
+    {
+      "service": "api-gateway",
+      "file": "apps/api-gateway/src/app.controller.ts",
+      "method": "GET",
+      "path": "/health",
+      "functionName": "getHealth",
+      "description": "Handles getHealth"
+    },
+    {
+      "service": "api-gateway",
+      "file": "apps/api-gateway/src/health.controller.ts",
+      "method": "GET",
+      "path": "/health",
+      "functionName": "HealthCheck",
+      "description": "Handles HealthCheck"
+    }
+  ],
+  "communication-service": [
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/conversation/conversation.controller.ts",
+      "method": "POST",
+      "path": "/conversations",
+      "functionName": "createConversation",
+      "description": "Handles createConversation"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/conversation/conversation.controller.ts",
+      "method": "GET",
+      "path": "/conversations",
+      "functionName": "getUserConversations",
+      "description": "Handles getUserConversations"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/conversation/conversation.controller.ts",
+      "method": "GET",
+      "path": "/conversations/:id",
+      "functionName": "getConversationDetails",
+      "description": "Handles getConversationDetails"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/conversation/conversation.controller.ts",
+      "method": "POST",
+      "path": "/conversations/:id/archive",
+      "functionName": "archiveConversation",
+      "description": "Handles archiveConversation"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/conversation/conversation.controller.ts",
+      "method": "POST",
+      "path": "/conversations/:id/close",
+      "functionName": "closeConversation",
+      "description": "Handles closeConversation"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/conversation/conversation.controller.ts",
+      "method": "POST",
+      "path": "/conversations/:id/block",
+      "functionName": "blockConversation",
+      "description": "Handles blockConversation"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/conversation/conversation.controller.ts",
+      "method": "POST",
+      "path": "/conversations/by-booking/:bookingId",
+      "functionName": "getOrCreateBookingChat",
+      "description": "Handles getOrCreateBookingChat"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/conversation/conversation.controller.ts",
+      "method": "GET",
+      "path": "/conversations/by-booking/:bookingId",
+      "functionName": "getBookingChat",
+      "description": "Handles getBookingChat"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/conversation/conversation.controller.ts",
+      "method": "POST",
+      "path": "/conversations/by-case/:caseId",
+      "functionName": "getOrCreateCaseChat",
+      "description": "Handles getOrCreateCaseChat"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/conversation/conversation.controller.ts",
+      "method": "GET",
+      "path": "/conversations/by-case/:caseId",
+      "functionName": "getCaseChat",
+      "description": "Handles getCaseChat"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/message/message.controller.ts",
+      "method": "POST",
+      "path": "/conversations/:id/messages",
+      "functionName": "sendMessage",
+      "description": "Handles sendMessage"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/message/message.controller.ts",
+      "method": "GET",
+      "path": "/conversations/:id/messages",
+      "functionName": "getConversationMessages",
+      "description": "Handles getConversationMessages"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/message/message.controller.ts",
+      "method": "PATCH",
+      "path": "/messages/:id",
+      "functionName": "editMessage",
+      "description": "Handles editMessage"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/message/message.controller.ts",
+      "method": "DELETE",
+      "path": "/messages/:id",
+      "functionName": "deleteMessage",
+      "description": "Handles deleteMessage"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/message/message.controller.ts",
+      "method": "POST",
+      "path": "/messages/:id/read",
+      "functionName": "markMessageRead",
+      "description": "Handles markMessageRead"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/message/message.controller.ts",
+      "method": "POST",
+      "path": "/conversations/:id/read-all",
+      "functionName": "markAllMessagesRead",
+      "description": "Handles markAllMessagesRead"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/notification/notification.controller.ts",
+      "method": "POST",
+      "path": "/notifications/dispatch",
+      "functionName": "dispatchNotification",
+      "description": "Handles dispatchNotification"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/notification/notification.controller.ts",
+      "method": "GET",
+      "path": "/notifications",
+      "functionName": "getUserNotifications",
+      "description": "Handles getUserNotifications"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/notification/notification.controller.ts",
+      "method": "POST",
+      "path": "/notifications/:id/read",
+      "functionName": "markAsRead",
+      "description": "Handles markAsRead"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/notification/notification.controller.ts",
+      "method": "POST",
+      "path": "/notifications/read-all",
+      "functionName": "markAllAsRead",
+      "description": "Handles markAllAsRead"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/notification/notification.controller.ts",
+      "method": "DELETE",
+      "path": "/notifications/:id",
+      "functionName": "deleteNotification",
+      "description": "Handles deleteNotification"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/notification/notification.controller.ts",
+      "method": "POST",
+      "path": "/notifications/device-tokens",
+      "functionName": "registerDeviceToken",
+      "description": "Handles registerDeviceToken"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/notification/notification.controller.ts",
+      "method": "GET",
+      "path": "/notifications/device-tokens",
+      "functionName": "getUserDeviceTokens",
+      "description": "Handles getUserDeviceTokens"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/notification/notification.controller.ts",
+      "method": "DELETE",
+      "path": "/notifications/device-tokens/:token",
+      "functionName": "removeDeviceToken",
+      "description": "Handles removeDeviceToken"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/template/template.controller.ts",
+      "method": "GET",
+      "path": "/notification-templates",
+      "functionName": "getAllTemplates",
+      "description": "Handles getAllTemplates"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/template/template.controller.ts",
+      "method": "GET",
+      "path": "/notification-templates/:key",
+      "functionName": "getTemplate",
+      "description": "Handles getTemplate"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/template/template.controller.ts",
+      "method": "POST",
+      "path": "/notification-templates",
+      "functionName": "createTemplate",
+      "description": "Handles createTemplate"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/template/template.controller.ts",
+      "method": "PATCH",
+      "path": "/notification-templates/:key",
+      "functionName": "updateTemplate",
+      "description": "Handles updateTemplate"
+    },
+    {
+      "service": "communication-service",
+      "file": "apps/communication-service/src/modules/template/template.controller.ts",
+      "method": "POST",
+      "path": "/notification-templates/:key/preview",
+      "functionName": "previewTemplate",
+      "description": "Handles previewTemplate"
+    }
+  ],
+  "financial-service": [
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+      "method": "POST",
+      "path": "/payments",
+      "functionName": "createPayment",
+      "description": "Handles createPayment"
+    },
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+      "method": "POST",
+      "path": "/payments/request",
+      "functionName": "requestPayment",
+      "description": "Handles requestPayment"
+    },
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+      "method": "POST",
+      "path": "/payments/approve",
+      "functionName": "approvePayment",
+      "description": "Handles approvePayment"
+    },
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+      "method": "GET",
+      "path": "/payments",
+      "functionName": "getPayments",
+      "description": "Handles getPayments"
+    },
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+      "method": "POST",
+      "path": "/payments/payout-account",
+      "functionName": "setupPayoutAccount",
+      "description": "Handles setupPayoutAccount"
+    },
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+      "method": "GET",
+      "path": "/payments/banks",
+      "functionName": "getBanks",
+      "description": "Handles getBanks"
+    },
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+      "method": "GET",
+      "path": "/payments/wallet",
+      "functionName": "getWallet",
+      "description": "Handles getWallet"
+    },
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+      "method": "GET",
+      "path": "/payments/refunds",
+      "functionName": "getRefunds",
+      "description": "Handles getRefunds"
+    },
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+      "method": "PATCH",
+      "path": "/payments/refunds/:id/process",
+      "functionName": "processManualRefund",
+      "description": "Handles processManualRefund"
+    },
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/payment.controller.ts",
+      "method": "PATCH",
+      "path": "/payments/refunds/:id/reject",
+      "functionName": "rejectManualRefund",
+      "description": "Handles rejectManualRefund"
+    },
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/webhook.controller.ts",
+      "method": "POST",
+      "path": "/payments/webhooks/chapa",
+      "functionName": "handleChapaWebhook",
+      "description": "Handles handleChapaWebhook"
+    },
+    {
+      "service": "financial-service",
+      "file": "apps/financial-service/src/modules/payments/webhook.controller.ts",
+      "method": "POST",
+      "path": "/payments/webhooks/stripe",
+      "functionName": "handleStripeWebhook",
+      "description": "Handles handleStripeWebhook"
+    }
+  ],
+  "marketplace-service": [
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/analytics/analytics.controller.ts",
+      "method": "GET",
+      "path": "/analytics/overview",
+      "functionName": "getOverview",
+      "description": "Handles getOverview"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/analytics/analytics.controller.ts",
+      "method": "GET",
+      "path": "/analytics/attorneys",
+      "functionName": "getAttorneyAnalytics",
+      "description": "Handles getAttorneyAnalytics"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/analytics/analytics.controller.ts",
+      "method": "GET",
+      "path": "/analytics/bookings",
+      "functionName": "getBookingAnalytics",
+      "description": "Handles getBookingAnalytics"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/analytics/analytics.controller.ts",
+      "method": "GET",
+      "path": "/analytics/revenue",
+      "functionName": "getRevenueAnalytics",
+      "description": "Handles getRevenueAnalytics"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "POST",
+      "path": "/bookings",
+      "functionName": "createBooking",
+      "description": "Handles createBooking"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "GET",
+      "path": "/bookings",
+      "functionName": "findUserBookings",
+      "description": "Handles findUserBookings"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "GET",
+      "path": "/bookings/:id",
+      "functionName": "findOne",
+      "description": "Handles findOne"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "PATCH",
+      "path": "/bookings/:id/accept",
+      "functionName": "acceptBooking",
+      "description": "Handles acceptBooking"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "PATCH",
+      "path": "/bookings/:id/decline",
+      "functionName": "declineBooking",
+      "description": "Handles declineBooking"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "PATCH",
+      "path": "/bookings/:id/status",
+      "functionName": "updateStatus",
+      "description": "Handles updateStatus"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "POST",
+      "path": "/bookings/:id/cancel",
+      "functionName": "cancelBooking",
+      "description": "Handles cancelBooking"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "POST",
+      "path": "/bookings/:id/reschedule",
+      "functionName": "rescheduleBooking",
+      "description": "Handles rescheduleBooking"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "POST",
+      "path": "/bookings/:id/reschedule-proposal",
+      "functionName": "proposeReschedule",
+      "description": "Handles proposeReschedule"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "POST",
+      "path": "/bookings/:id/reschedule-response",
+      "functionName": "respondToReschedule",
+      "description": "Handles respondToReschedule"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "POST",
+      "path": "/bookings/:id/no-show",
+      "functionName": "reportNoShow",
+      "description": "Handles reportNoShow"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "POST",
+      "path": "/bookings/blackouts",
+      "functionName": "createBlackout",
+      "description": "Handles createBlackout"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "GET",
+      "path": "/bookings/blackouts",
+      "functionName": "getBlackouts",
+      "description": "Handles getBlackouts"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "POST",
+      "path": "/bookings/:id/chat",
+      "functionName": "createBookingChat",
+      "description": "Handles createBookingChat"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/booking/booking.controller.ts",
+      "method": "GET",
+      "path": "/bookings/:id/chat",
+      "functionName": "getBookingChat",
+      "description": "Handles getBookingChat"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+      "method": "POST",
+      "path": "/cases",
+      "functionName": "createCase",
+      "description": "Handles createCase"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+      "method": "GET",
+      "path": "/cases",
+      "functionName": "findUserCases",
+      "description": "Handles findUserCases"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+      "method": "GET",
+      "path": "/cases/:id",
+      "functionName": "findOne",
+      "description": "Handles findOne"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+      "method": "PATCH",
+      "path": "/cases/:id/status",
+      "functionName": "updateStatus",
+      "description": "Handles updateStatus"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+      "method": "POST",
+      "path": "/cases/:id/milestones",
+      "functionName": "createMilestone",
+      "description": "Handles createMilestone"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+      "method": "PATCH",
+      "path": "/cases/:id/milestones/:milestoneId/status",
+      "functionName": "updateMilestoneStatus",
+      "description": "Handles updateMilestoneStatus"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+      "method": "POST",
+      "path": "/cases/:id/timeline",
+      "functionName": "addTimelineEvent",
+      "description": "Handles addTimelineEvent"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+      "method": "GET",
+      "path": "/cases/:id/timeline",
+      "functionName": "getCaseTimeline",
+      "description": "Handles getCaseTimeline"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+      "method": "POST",
+      "path": "/cases/:id/chat",
+      "functionName": "createCaseChat",
+      "description": "Handles createCaseChat"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/case/case.controller.ts",
+      "method": "GET",
+      "path": "/cases/:id/chat",
+      "functionName": "getCaseChat",
+      "description": "Handles getCaseChat"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/dashboard/dashboard.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/me/dashboard-summary",
+      "functionName": "getMyDashboardSummary",
+      "description": "Handles getMyDashboardSummary"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/dashboard/dashboard.controller.ts",
+      "method": "GET",
+      "path": "/marketplace/dashboard/summary",
+      "functionName": "getMarketplaceDashboardSummary",
+      "description": "Handles getMarketplaceDashboardSummary"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/dashboard/dashboard.controller.ts",
+      "method": "GET",
+      "path": "/dashboard/attorney/summary",
+      "functionName": "getAttorneyDashboardSummaryAlias",
+      "description": "Handles getAttorneyDashboardSummaryAlias"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/dashboard/dashboard.controller.ts",
+      "method": "GET",
+      "path": "/dashboard/attorney/:attorneyId",
+      "functionName": "getAttorneyDashboardById",
+      "description": "Handles getAttorneyDashboardById"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/discovery/discovery.controller.ts",
+      "method": "GET",
+      "path": "/discovery/attorneys",
+      "functionName": "getPublicAttorneys",
+      "description": "Handles getPublicAttorneys"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/discovery/discovery.controller.ts",
+      "method": "POST",
+      "path": "/discovery/questionnaire",
+      "functionName": "processQuestionnaire",
+      "description": "Handles processQuestionnaire"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/discovery/discovery.controller.ts",
+      "method": "GET",
+      "path": "/discovery/attorneys/:id",
+      "functionName": "getAttorneyDetails",
+      "description": "Handles getAttorneyDetails"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/document/document.controller.ts",
+      "method": "POST",
+      "path": "/cases/:caseId/documents",
+      "functionName": "uploadCaseDocument",
+      "description": "Handles uploadCaseDocument"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/document/document.controller.ts",
+      "method": "GET",
+      "path": "/cases/:caseId/documents",
+      "functionName": "getCaseDocuments",
+      "description": "Handles getCaseDocuments"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/document/document.controller.ts",
+      "method": "GET",
+      "path": "/cases/:caseId/documents/:docId/download",
+      "functionName": "downloadDocument",
+      "description": "Handles downloadDocument"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/ranking/ranking.controller.ts",
+      "method": "GET",
+      "path": "/ranking/weights",
+      "functionName": "getActiveWeights",
+      "description": "Handles getActiveWeights"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/ranking/ranking.controller.ts",
+      "method": "POST",
+      "path": "/ranking/weights",
+      "functionName": "createWeights",
+      "description": "Handles createWeights"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/review/review.controller.ts",
+      "method": "POST",
+      "path": "/bookings/:bookingId/reviews",
+      "functionName": "createReview",
+      "description": "Handles createReview"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/review/review.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/:attorneyId/reviews",
+      "functionName": "getAttorneyReviews",
+      "description": "Handles getAttorneyReviews"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/review/review.controller.ts",
+      "method": "POST",
+      "path": "/reviews/:id/rebuttal",
+      "functionName": "submitRebuttal",
+      "description": "Handles submitRebuttal"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/review/review.controller.ts",
+      "method": "PATCH",
+      "path": "/reviews/:id/moderation-status",
+      "functionName": "updateModerationStatus",
+      "description": "Handles updateModerationStatus"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/review/review.controller.ts",
+      "method": "POST",
+      "path": "/reviews/:id/report",
+      "functionName": "reportReview",
+      "description": "Handles reportReview"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/search/search.controller.ts",
+      "method": "GET",
+      "path": "/search/attorneys",
+      "functionName": "searchAttorneys",
+      "description": "Handles searchAttorneys"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/search/search.controller.ts",
+      "method": "GET",
+      "path": "/search/history",
+      "functionName": "getSearchHistory",
+      "description": "Handles getSearchHistory"
+    },
+    {
+      "service": "marketplace-service",
+      "file": "apps/marketplace-service/src/modules/search/search.controller.ts",
+      "method": "DELETE",
+      "path": "/search/history",
+      "functionName": "clearSearchHistory",
+      "description": "Handles clearSearchHistory"
+    }
+  ],
+  "user-service": [
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "GET",
+      "path": "/admin/users",
+      "functionName": "getAdminUsers",
+      "description": "Handles getAdminUsers"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "GET",
+      "path": "/admin/users/statistics",
+      "functionName": "getUserStatistics",
+      "description": "Handles getUserStatistics"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "GET",
+      "path": "/admin/platform-health",
+      "functionName": "getPlatformHealth",
+      "description": "Handles getPlatformHealth"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "GET",
+      "path": "/admin/business-queues",
+      "functionName": "getUnifiedBusinessQueues",
+      "description": "Handles getUnifiedBusinessQueues"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "PATCH",
+      "path": "/admin/users/:id/suspend-reasoned",
+      "functionName": "adminSuspendUserReasoned",
+      "description": "Handles adminSuspendUserReasoned"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "PATCH",
+      "path": "/admin/users/:id/reset-password",
+      "functionName": "adminResetPassword",
+      "description": "Handles adminResetPassword"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "POST",
+      "path": "/admin/users/:id/impersonate",
+      "functionName": "impersonateUser",
+      "description": "Handles impersonateUser"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "GET",
+      "path": "/admin/users/:id/login-history",
+      "functionName": "getUserLoginHistory",
+      "description": "Handles getUserLoginHistory"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "GET",
+      "path": "/admin/attorneys",
+      "functionName": "getAdminAttorneys",
+      "description": "Handles getAdminAttorneys"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "GET",
+      "path": "/admin/attorneys/statistics",
+      "functionName": "getAttorneyStatistics",
+      "description": "Handles getAttorneyStatistics"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "PATCH",
+      "path": "/admin/attorneys/:id/verify",
+      "functionName": "adminVerifyAttorney",
+      "description": "Handles adminVerifyAttorney"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "PATCH",
+      "path": "/admin/attorneys/:id/reject",
+      "functionName": "adminRejectAttorney",
+      "description": "Handles adminRejectAttorney"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/administration/administration.controller.ts",
+      "method": "PATCH",
+      "path": "/admin/attorneys/:id/suspend",
+      "functionName": "adminSuspendAttorney",
+      "description": "Handles adminSuspendAttorney"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/me",
+      "functionName": "getMyProfile",
+      "description": "--- My Profile ---"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "PATCH",
+      "path": "/attorneys/me",
+      "functionName": "updateMyProfile",
+      "description": "Handles updateMyProfile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/attorneys/me/submit-amendment",
+      "functionName": "submitMyAmendment",
+      "description": "Handles submitMyAmendment"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "PATCH",
+      "path": "/attorneys/me/publish",
+      "functionName": "publishMyProfile",
+      "description": "Handles publishMyProfile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "PATCH",
+      "path": "/attorneys/me/hide",
+      "functionName": "hideMyProfile",
+      "description": "Handles hideMyProfile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/me/credentials",
+      "functionName": "getMyCredentials",
+      "description": "--- My Credentials ---"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/me/credentials-public",
+      "functionName": "getMyPublicCredentials",
+      "description": "Handles getMyPublicCredentials"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/attorneys/me/education",
+      "functionName": "addMyEducation",
+      "description": "--- My Education ---"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/me/education",
+      "functionName": "getMyEducation",
+      "description": "Handles getMyEducation"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "DELETE",
+      "path": "/attorneys/me/education/:eduId",
+      "functionName": "removeMyEducation",
+      "description": "Handles removeMyEducation"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/me/availability",
+      "functionName": "getMyAvailability",
+      "description": "--- My Availability ---"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/attorneys/me/availability",
+      "functionName": "createMyAvailability",
+      "description": "Handles createMyAvailability"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "PATCH",
+      "path": "/attorneys/me/availability/:availId",
+      "functionName": "updateMyAvailability",
+      "description": "Handles updateMyAvailability"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "DELETE",
+      "path": "/attorneys/me/availability/:availId",
+      "functionName": "deleteMyAvailability",
+      "description": "Handles deleteMyAvailability"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/attorneys/me/block-date",
+      "functionName": "blockMyDate",
+      "description": "Handles blockMyDate"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/attorneys/me/vacation",
+      "functionName": "setMyVacation",
+      "description": "Handles setMyVacation"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/attorneys/me/practice-areas",
+      "functionName": "assignMyPracticeArea",
+      "description": "--- My Practice Areas ---"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "DELETE",
+      "path": "/attorneys/me/practice-areas/:paId",
+      "functionName": "removeMyPracticeArea",
+      "description": "Handles removeMyPracticeArea"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/attorneys/me/request-profile-change",
+      "functionName": "requestMyProfileChange",
+      "description": "--- My Profile Changes ---"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/me/pending-profile-changes",
+      "functionName": "getMyPendingProfileChanges",
+      "description": "Handles getMyPendingProfileChanges"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/attorneys",
+      "functionName": "createAttorney",
+      "description": "Handles createAttorney"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys",
+      "functionName": "getAttorneys",
+      "description": "Handles getAttorneys"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/:id",
+      "functionName": "getAttorneyById",
+      "description": "Handles getAttorneyById"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/:id/credentials-public",
+      "functionName": "getPublicCredentials",
+      "description": "Handles getPublicCredentials"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "PATCH",
+      "path": "/attorneys/:id",
+      "functionName": "updateAttorney",
+      "description": "Handles updateAttorney"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "DELETE",
+      "path": "/attorneys/:id",
+      "functionName": "deleteAttorney",
+      "description": "Handles deleteAttorney"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "PATCH",
+      "path": "/attorneys/:id/publish",
+      "functionName": "publishProfile",
+      "description": "Handles publishProfile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "PATCH",
+      "path": "/attorneys/:id/hide",
+      "functionName": "hideProfile",
+      "description": "Handles hideProfile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "PATCH",
+      "path": "/attorneys/:id/moderate",
+      "functionName": "moderateProfile",
+      "description": "Handles moderateProfile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/attorneys/:id/education",
+      "functionName": "addEducation",
+      "description": "Handles addEducation"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/:id/education",
+      "functionName": "getEducation",
+      "description": "Handles getEducation"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/attorneys/:id/availability",
+      "functionName": "createAvailability",
+      "description": "Handles createAvailability"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/:id/availability",
+      "functionName": "getAvailability",
+      "description": "Handles getAvailability"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/availability/vacation",
+      "functionName": "createVacationAlias",
+      "description": "Handles createVacationAlias"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "DELETE",
+      "path": "/attorneys/:id/education/:eduId",
+      "functionName": "removeEducation",
+      "description": "Handles removeEducation"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "POST",
+      "path": "/attorneys/:id/request-profile-change",
+      "functionName": "requestProfileChange",
+      "description": "Handles requestProfileChange"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "GET",
+      "path": "/attorneys/:id/pending-profile-changes",
+      "functionName": "getPendingProfileChanges",
+      "description": "Handles getPendingProfileChanges"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "PATCH",
+      "path": "/attorneys/profile-changes/:changeId/approve",
+      "functionName": "approveProfileChange",
+      "description": "Handles approveProfileChange"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/attorneys/attorneys.controller.ts",
+      "method": "PATCH",
+      "path": "/attorneys/profile-changes/:changeId/reject",
+      "functionName": "rejectProfileChange",
+      "description": "Handles rejectProfileChange"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/audit/audit.controller.ts",
+      "method": "GET",
+      "path": "/audit-logs",
+      "functionName": "getAuditLogs",
+      "description": "Handles getAuditLogs"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/audit/audit.controller.ts",
+      "method": "GET",
+      "path": "/audit-logs/export",
+      "functionName": "Header",
+      "description": "Handles Header"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/audit/audit.controller.ts",
+      "method": "GET",
+      "path": "/audit-logs/:id",
+      "functionName": "getAuditLogById",
+      "description": "Handles getAuditLogById"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/register",
+      "functionName": "registerUnified",
+      "description": "Handles registerUnified"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/register/client",
+      "functionName": "registerClient",
+      "description": "Handles registerClient"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/register/attorney",
+      "functionName": "registerAttorney",
+      "description": "Handles registerAttorney"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/register/admin",
+      "functionName": "registerAdmin",
+      "description": "Handles registerAdmin"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/register/invite",
+      "functionName": "registerInvite",
+      "description": "Handles registerInvite"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/login",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/sign-in",
+      "functionName": "login",
+      "description": "Handles login"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/logout",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/sign-out",
+      "functionName": "logout",
+      "description": "Handles logout"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/otp/request",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/request-otp",
+      "functionName": "requestOtp",
+      "description": "Handles requestOtp"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/otp/verify",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/verify-otp",
+      "functionName": "verifyOtp",
+      "description": "Handles verifyOtp"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/otp/resend",
+      "functionName": "resendOtp",
+      "description": "Handles resendOtp"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/otp/cancel",
+      "functionName": "cancelOtp",
+      "description": "Handles cancelOtp"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "GET",
+      "path": "/auth/email/status",
+      "functionName": "Get",
+      "description": "Handles Get"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "GET",
+      "path": "/auth/check-email",
+      "functionName": "Get",
+      "description": "Handles Get"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "GET",
+      "path": "/auth/email-status",
+      "functionName": "checkEmailStatusGet",
+      "description": "Handles checkEmailStatusGet"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/email/status",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/check-email",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/email-status",
+      "functionName": "checkEmailStatusPost",
+      "description": "Handles checkEmailStatusPost"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/email/request-otp",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/request-email-otp",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/email-otp/request",
+      "functionName": "requestEmailOtp",
+      "description": "Handles requestEmailOtp"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/email/verify-otp",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/verify-email-otp",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/email-otp/verify",
+      "functionName": "verifyEmailOtp",
+      "description": "Handles verifyEmailOtp"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/email/resend-otp",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/resend-email-otp",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/email-otp/resend",
+      "functionName": "resendEmailOtp",
+      "description": "Handles resendEmailOtp"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/password/forgot",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/forgot-password",
+      "functionName": "forgotPassword",
+      "description": "Handles forgotPassword"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/password/reset",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/reset-password",
+      "functionName": "resetPassword",
+      "description": "Handles resetPassword"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/password/change",
+      "functionName": "changePassword",
+      "description": "Handles changePassword"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/password/validate",
+      "functionName": "validatePassword",
+      "description": "Handles validatePassword"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/2fa/enable",
+      "functionName": "enable2FA",
+      "description": "Handles enable2FA"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/2fa/disable",
+      "functionName": "disable2FA",
+      "description": "Handles disable2FA"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/2fa/verify",
+      "functionName": "verify2FA",
+      "description": "Handles verify2FA"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "GET",
+      "path": "/auth/2fa/qrcode",
+      "functionName": "get2FAQrCode",
+      "description": "Handles get2FAQrCode"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "POST",
+      "path": "/auth/2fa/recovery-codes",
+      "functionName": "get2FARecoveryCodes",
+      "description": "Handles get2FARecoveryCodes"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "GET",
+      "path": "/auth/sessions",
+      "functionName": "getSessions",
+      "description": "Handles getSessions"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "DELETE",
+      "path": "/auth/sessions/:id",
+      "functionName": "deleteSession",
+      "description": "Handles deleteSession"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "DELETE",
+      "path": "/auth/sessions",
+      "functionName": "clearAllSessions",
+      "description": "Handles clearAllSessions"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "GET",
+      "path": "/auth/reports/funnel",
+      "functionName": "getRegistrationFunnelReport",
+      "description": "Auth Reports"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "GET",
+      "path": "/auth/reports/otp-success",
+      "functionName": "getOtpSuccessReport",
+      "description": "Handles getOtpSuccessReport"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/auth/auth.controller.ts",
+      "method": "GET",
+      "path": "/auth/reports/security-events",
+      "functionName": "getSecurityEventsReport",
+      "description": "Handles getSecurityEventsReport"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/admin-blogs.controller.ts",
+      "method": "POST",
+      "path": "/admin/blog-categories",
+      "functionName": "createCategory",
+      "description": "Handles createCategory"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/admin-blogs.controller.ts",
+      "method": "GET",
+      "path": "/admin/blog-categories",
+      "functionName": "getAllCategories",
+      "description": "Handles getAllCategories"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/admin-blogs.controller.ts",
+      "method": "GET",
+      "path": "/admin/blog-categories/:id",
+      "functionName": "getCategoryById",
+      "description": "Handles getCategoryById"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/admin-blogs.controller.ts",
+      "method": "PATCH",
+      "path": "/admin/blog-categories/:id",
+      "functionName": "updateCategory",
+      "description": "Handles updateCategory"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/admin-blogs.controller.ts",
+      "method": "DELETE",
+      "path": "/admin/blog-categories/:id",
+      "functionName": "deleteCategory",
+      "description": "Handles deleteCategory"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/admin-blogs.controller.ts",
+      "method": "GET",
+      "path": "/admin/blogs",
+      "functionName": "getAdminBlogs",
+      "description": "Handles getAdminBlogs"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/admin-blogs.controller.ts",
+      "method": "POST",
+      "path": "/admin/blogs/:id/publish",
+      "functionName": "publishBlog",
+      "description": "Handles publishBlog"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/admin-blogs.controller.ts",
+      "method": "POST",
+      "path": "/admin/blogs/:id/reject",
+      "functionName": "rejectBlog",
+      "description": "Handles rejectBlog"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/admin-blogs.controller.ts",
+      "method": "POST",
+      "path": "/admin/blogs",
+      "functionName": "FileInterceptor",
+      "description": "Handles FileInterceptor"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/admin-blogs.controller.ts",
+      "method": "PATCH",
+      "path": "/admin/blogs/:id",
+      "functionName": "FileInterceptor",
+      "description": "Handles FileInterceptor"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/admin-blogs.controller.ts",
+      "method": "DELETE",
+      "path": "/admin/blogs/:id",
+      "functionName": "deleteAdminBlog",
+      "description": "Handles deleteAdminBlog"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "GET",
+      "path": "/public/blogs",
+      "functionName": "getPublicBlogs",
+      "description": "Handles getPublicBlogs"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "GET",
+      "path": "/public/blogs/categories",
+      "functionName": "Get",
+      "description": "Handles Get"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "GET",
+      "path": "/public/blog-categories",
+      "functionName": "getPublicCategories",
+      "description": "Handles getPublicCategories"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "GET",
+      "path": "/public/blogs/:slugOrId",
+      "functionName": "getPublicBlogBySlugOrId",
+      "description": "Handles getPublicBlogBySlugOrId"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "GET",
+      "path": "/public/blogs/:id/comments",
+      "functionName": "getPublicBlogComments",
+      "description": "Handles getPublicBlogComments"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "POST",
+      "path": "/blogs",
+      "functionName": "FileInterceptor",
+      "description": "Handles FileInterceptor"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "PATCH",
+      "path": "/blogs/:id",
+      "functionName": "FileInterceptor",
+      "description": "Handles FileInterceptor"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "POST",
+      "path": "/blogs/:id/submit-for-review",
+      "functionName": "submitBlogForReview",
+      "description": "Handles submitBlogForReview"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "GET",
+      "path": "/blogs/my-blogs",
+      "functionName": "getMyBlogs",
+      "description": "Handles getMyBlogs"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "DELETE",
+      "path": "/blogs/:id",
+      "functionName": "deleteBlog",
+      "description": "Handles deleteBlog"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "POST",
+      "path": "/blogs/:id/like",
+      "functionName": "toggleLike",
+      "description": "Handles toggleLike"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "POST",
+      "path": "/blogs/:id/comments",
+      "functionName": "addComment",
+      "description": "Handles addComment"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "DELETE",
+      "path": "/blogs/comments/:commentId",
+      "functionName": "deleteComment",
+      "description": "Handles deleteComment"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/blogs/blogs.controller.ts",
+      "method": "POST",
+      "path": "/blogs/:id/share",
+      "functionName": "recordShare",
+      "description": "Handles recordShare"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "GET",
+      "path": "/public/pages",
+      "functionName": "getPublicPages",
+      "description": "Handles getPublicPages"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "GET",
+      "path": "/public/pages/:slug",
+      "functionName": "getPublicPageBySlug",
+      "description": "Handles getPublicPageBySlug"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "GET",
+      "path": "/public/sitemap.xml",
+      "functionName": "getSitemap",
+      "description": "Handles getSitemap"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "GET",
+      "path": "/public/site-metadata",
+      "functionName": "getSiteMetadata",
+      "description": "Handles getSiteMetadata"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "POST",
+      "path": "/admin/pages",
+      "functionName": "createAdminPage",
+      "description": "Handles createAdminPage"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "PATCH",
+      "path": "/admin/pages/:id",
+      "functionName": "updateAdminPage",
+      "description": "Handles updateAdminPage"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "DELETE",
+      "path": "/admin/pages/:id",
+      "functionName": "deleteAdminPage",
+      "description": "Handles deleteAdminPage"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "GET",
+      "path": "/public/legal-resources",
+      "functionName": "getPublicLegalResources",
+      "description": "Handles getPublicLegalResources"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "POST",
+      "path": "/admin/legal-resources",
+      "functionName": "createAdminLegalResource",
+      "description": "Handles createAdminLegalResource"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "GET",
+      "path": "/public/blog-posts",
+      "functionName": "getPublicBlogPosts",
+      "description": "Handles getPublicBlogPosts"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "GET",
+      "path": "/public/blog-posts/:slug",
+      "functionName": "getPublicBlogPostBySlug",
+      "description": "Handles getPublicBlogPostBySlug"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "POST",
+      "path": "/admin/blog-posts",
+      "functionName": "createAdminBlogPost",
+      "description": "Handles createAdminBlogPost"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "POST",
+      "path": "/public/contact",
+      "functionName": "createPublicContact",
+      "description": "Handles createPublicContact"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "GET",
+      "path": "/admin/contact",
+      "functionName": "getAdminContactTickets",
+      "description": "Handles getAdminContactTickets"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "GET",
+      "path": "/admin/contact/:id",
+      "functionName": "getAdminContactTicketById",
+      "description": "Handles getAdminContactTicketById"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "PATCH",
+      "path": "/admin/contact/:id",
+      "functionName": "updateAdminContactTicket",
+      "description": "Handles updateAdminContactTicket"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/cms/cms.controller.ts",
+      "method": "POST",
+      "path": "/admin/contact/:id/reply",
+      "functionName": "replyAdminContactTicket",
+      "description": "Handles replyAdminContactTicket"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+      "method": "GET",
+      "path": "/settings",
+      "functionName": "getSettings",
+      "description": "Handles getSettings"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+      "method": "PATCH",
+      "path": "/settings",
+      "functionName": "updateSettings",
+      "description": "Handles updateSettings"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+      "method": "POST",
+      "path": "/settings/propose-change",
+      "functionName": "proposeConfigChange",
+      "description": "Dual-Approval (Maker-Checker)"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+      "method": "POST",
+      "path": "/settings/approve-change/:proposalId",
+      "functionName": "approveConfigChange",
+      "description": "Handles approveConfigChange"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+      "method": "GET",
+      "path": "/settings/pending-proposals",
+      "functionName": "getPendingProposals",
+      "description": "Handles getPendingProposals"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+      "method": "POST",
+      "path": "/settings/reject-change/:proposalId",
+      "functionName": "rejectConfigChange",
+      "description": "Handles rejectConfigChange"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+      "method": "GET",
+      "path": "/settings/history",
+      "functionName": "getSettingsHistory",
+      "description": "Handles getSettingsHistory"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/configuration/configuration.controller.ts",
+      "method": "POST",
+      "path": "/settings/restore/:version",
+      "functionName": "restoreSettingsVersion",
+      "description": "Handles restoreSettingsVersion"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+      "method": "GET",
+      "path": "/discovery/attorneys",
+      "functionName": "getPublicAttorneys",
+      "description": "Handles getPublicAttorneys"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+      "method": "POST",
+      "path": "/discovery/questionnaire",
+      "functionName": "processQuestionnaire",
+      "description": "Handles processQuestionnaire"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+      "method": "GET",
+      "path": "/discovery/ranking-explanation",
+      "functionName": "getRankingExplanation",
+      "description": "Handles getRankingExplanation"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+      "method": "GET",
+      "path": "/discovery/attorneys/search",
+      "functionName": "searchPublicAttorneys",
+      "description": "Handles searchPublicAttorneys"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+      "method": "GET",
+      "path": "/discovery/attorneys/:slug",
+      "functionName": "getPublicAttorneyBySlug",
+      "description": "Handles getPublicAttorneyBySlug"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/discovery/discovery.controller.ts",
+      "method": "GET",
+      "path": "/discovery/search-index",
+      "functionName": "getSearchIndexProjection",
+      "description": "Handles getSearchIndexProjection"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+      "method": "GET",
+      "path": "/localization/languages",
+      "functionName": "getLanguages",
+      "description": "Handles getLanguages"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+      "method": "PATCH",
+      "path": "/localization/language",
+      "functionName": "updateDefaultLanguage",
+      "description": "Handles updateDefaultLanguage"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+      "method": "GET",
+      "path": "/[i18n/catalog/:locale, api/v1/i18n/catalog/:locale]",
+      "functionName": "getCatalog",
+      "description": "* Section 6.7: GET /api/v1/i18n/catalog/:locale?ns=&v= Public CDN-cached catalog endpoint (FR-LOC-01, BR-LOC-01). /"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+      "method": "PUT",
+      "path": "/[admin/i18n/strings/:key, api/v1/admin/i18n/strings/:key]",
+      "functionName": "createOrUpdateString",
+      "description": "* Section 6.7: PUT /api/v1/admin/i18n/strings/:key Create or update a string value (VR-LOC-01, FR-LOC-03). /"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+      "method": "POST",
+      "path": "/[admin/i18n/strings/:key/review, api/v1/admin/i18n/strings/:key/review]",
+      "functionName": "recordLegalReview",
+      "description": "* Section 6.7: POST /api/v1/admin/i18n/strings/:key/review Record legal review approval (FR-LOC-03, OQ#10/OQ#11). /"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+      "method": "GET",
+      "path": "/[admin/i18n/coverage, api/v1/admin/i18n/coverage, localization/dashboard]",
+      "functionName": "getCoverage",
+      "description": "* Section 6.7: GET /api/v1/admin/i18n/coverage Coverage metrics and missing keys backlog (FR-LOC-05). /"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+      "method": "PUT",
+      "path": "/[users/me/preferences/locale, api/v1/users/me/preferences/locale, user/preferences/locale]",
+      "functionName": "updateUserLocalePreference",
+      "description": "* FR-LOC-04: User preference locale sync. /"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/localization/localization.controller.ts",
+      "method": "PATCH",
+      "path": "/[translations/:id/approve-legal, api/v1/translations/:id/approve-legal]",
+      "functionName": "approveLegalTranslationAlias",
+      "description": "Handles approveLegalTranslationAlias"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "POST",
+      "path": "/bookings",
+      "functionName": "createBooking",
+      "description": "Handles createBooking"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "GET",
+      "path": "/bookings",
+      "functionName": "getMyBookings",
+      "description": "Handles getMyBookings"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "GET",
+      "path": "/bookings/:id",
+      "functionName": "getBookingDetails",
+      "description": "Handles getBookingDetails"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "POST",
+      "path": "/cases",
+      "functionName": "createCase",
+      "description": "Handles createCase"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "GET",
+      "path": "/cases",
+      "functionName": "getMyCases",
+      "description": "Handles getMyCases"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "GET",
+      "path": "/cases/:id",
+      "functionName": "getCaseDetails",
+      "description": "Handles getCaseDetails"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "POST",
+      "path": "/cases/:id/documents",
+      "functionName": "uploadCaseDocument",
+      "description": "Handles uploadCaseDocument"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "POST",
+      "path": "/payments",
+      "functionName": "createPayment",
+      "description": "Handles createPayment"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "POST",
+      "path": "/reviews",
+      "functionName": "submitReview",
+      "description": "Handles submitReview"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "GET",
+      "path": "/conversations",
+      "functionName": "getConversations",
+      "description": "Handles getConversations"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "POST",
+      "path": "/conversations/:id/messages",
+      "functionName": "sendMessage",
+      "description": "Handles sendMessage"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/portal-services/portal-services.controller.ts",
+      "method": "GET",
+      "path": "/notifications",
+      "functionName": "getNotifications",
+      "description": "Handles getNotifications"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/queues/queues.controller.ts",
+      "method": "GET",
+      "path": "/queues",
+      "functionName": "getQueues",
+      "description": "Handles getQueues"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/queues/queues.controller.ts",
+      "method": "GET",
+      "path": "/queues/statistics",
+      "functionName": "getQueueStatistics",
+      "description": "Handles getQueueStatistics"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/queues/queues.controller.ts",
+      "method": "POST",
+      "path": "/queues/retry/:jobId",
+      "functionName": "retryJob",
+      "description": "Handles retryJob"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/queues/queues.controller.ts",
+      "method": "DELETE",
+      "path": "/queues/:jobId",
+      "functionName": "deleteJob",
+      "description": "Handles deleteJob"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "GET",
+      "path": "/roles",
+      "functionName": "Get",
+      "description": "Handles Get"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "GET",
+      "path": "/rbac/roles",
+      "functionName": "getRoles",
+      "description": "Handles getRoles"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "POST",
+      "path": "/roles",
+      "functionName": "Post",
+      "description": "Handles Post"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "POST",
+      "path": "/rbac/roles",
+      "functionName": "createRole",
+      "description": "Handles createRole"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "GET",
+      "path": "/roles/:id",
+      "functionName": "getRoleById",
+      "description": "Handles getRoleById"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "PATCH",
+      "path": "/roles/:id",
+      "functionName": "updateRole",
+      "description": "Handles updateRole"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "DELETE",
+      "path": "/roles/:id",
+      "functionName": "deleteRole",
+      "description": "Handles deleteRole"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "POST",
+      "path": "/users/:id/roles",
+      "functionName": "assignRoleToUser",
+      "description": "Handles assignRoleToUser"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "DELETE",
+      "path": "/users/:id/roles/:roleId",
+      "functionName": "removeRoleFromUser",
+      "description": "Handles removeRoleFromUser"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "GET",
+      "path": "/permissions",
+      "functionName": "getPermissions",
+      "description": "Handles getPermissions"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "POST",
+      "path": "/permissions",
+      "functionName": "createPermission",
+      "description": "Handles createPermission"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "PATCH",
+      "path": "/permissions/:id",
+      "functionName": "updatePermission",
+      "description": "Handles updatePermission"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "DELETE",
+      "path": "/permissions/:id",
+      "functionName": "deletePermission",
+      "description": "Handles deletePermission"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "POST",
+      "path": "/roles/:id/permissions",
+      "functionName": "assignPermissionToRole",
+      "description": "Handles assignPermissionToRole"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/rbac/rbac.controller.ts",
+      "method": "DELETE",
+      "path": "/roles/:id/permissions/:permissionId",
+      "functionName": "removePermissionFromRole",
+      "description": "Handles removePermissionFromRole"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/search/search.controller.ts",
+      "method": "GET",
+      "path": "/search/users",
+      "functionName": "searchUsers",
+      "description": "Handles searchUsers"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/search/search.controller.ts",
+      "method": "GET",
+      "path": "/search/attorneys",
+      "functionName": "searchAttorneys",
+      "description": "Handles searchAttorneys"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/search/search.controller.ts",
+      "method": "GET",
+      "path": "/search/practice-areas",
+      "functionName": "searchPracticeAreas",
+      "description": "Handles searchPracticeAreas"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+      "method": "POST",
+      "path": "/files/upload",
+      "functionName": "uploadFile",
+      "description": "Handles uploadFile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+      "method": "DELETE",
+      "path": "/files/:id",
+      "functionName": "deleteFile",
+      "description": "Handles deleteFile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+      "method": "GET",
+      "path": "/files/:id",
+      "functionName": "getFile",
+      "description": "Handles getFile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+      "method": "GET",
+      "path": "/files/:id/download",
+      "functionName": "downloadFile",
+      "description": "Handles downloadFile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/storage/storage.controller.ts",
+      "method": "GET",
+      "path": "/files/:id/signed-url",
+      "functionName": "getSignedUrl",
+      "description": "Handles getSignedUrl"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "POST",
+      "path": "/users",
+      "functionName": "createUser",
+      "description": "Handles createUser"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "GET",
+      "path": "/users",
+      "functionName": "getUsers",
+      "description": "Handles getUsers"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "GET",
+      "path": "/users/me/profile",
+      "functionName": "getMyProfile",
+      "description": "Handles getMyProfile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "PATCH",
+      "path": "/users/me/profile",
+      "functionName": "updateMyProfile",
+      "description": "Handles updateMyProfile"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "POST",
+      "path": "/users/me/avatar",
+      "functionName": "uploadMyAvatar",
+      "description": "Handles uploadMyAvatar"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "DELETE",
+      "path": "/users/me/avatar",
+      "functionName": "deleteMyAvatar",
+      "description": "Handles deleteMyAvatar"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "PATCH",
+      "path": "/users/me/email",
+      "functionName": "updateMyEmail",
+      "description": "Handles updateMyEmail"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "PATCH",
+      "path": "/users/me/phone",
+      "functionName": "updateMyPhone",
+      "description": "Handles updateMyPhone"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "PATCH",
+      "path": "/users/me/address",
+      "functionName": "updateMyAddress",
+      "description": "Handles updateMyAddress"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "GET",
+      "path": "/users/me/preferences",
+      "functionName": "getMyPreferences",
+      "description": "Handles getMyPreferences"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "PATCH",
+      "path": "/users/me/preferences",
+      "functionName": "updateMyPreferences",
+      "description": "Handles updateMyPreferences"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "GET",
+      "path": "/users/:id",
+      "functionName": "getUserById",
+      "description": "Handles getUserById"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "PATCH",
+      "path": "/users/:id",
+      "functionName": "updateUser",
+      "description": "Handles updateUser"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/users/users.controller.ts",
+      "method": "PATCH",
+      "path": "/users/:id/status",
+      "functionName": "updateUserStatus",
+      "description": "Handles updateUserStatus"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "POST",
+      "path": "/verifications",
+      "functionName": "createVerification",
+      "description": "Handles createVerification"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "GET",
+      "path": "/verifications",
+      "functionName": "getVerifications",
+      "description": "Handles getVerifications"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "GET",
+      "path": "/verifications/my-case",
+      "functionName": "getAttorneyCaseView",
+      "description": "Handles getAttorneyCaseView"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "GET",
+      "path": "/verifications/fraud-workspace/:id",
+      "functionName": "getFraudWorkspace",
+      "description": "Handles getFraudWorkspace"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "GET",
+      "path": "/verifications/cases",
+      "functionName": "getVerificationsCases",
+      "description": "Handles getVerificationsCases"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "GET",
+      "path": "/verifications/:id",
+      "functionName": "getVerificationById",
+      "description": "Handles getVerificationById"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "PATCH",
+      "path": "/verifications/:id/checklist/:itemId",
+      "functionName": "updateChecklist",
+      "description": "Handles updateChecklist"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "PATCH",
+      "path": "/verifications/standing-check/:attorneyId",
+      "functionName": "updateBarStandingCheck",
+      "description": "Handles updateBarStandingCheck"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "PATCH",
+      "path": "/verifications/:id/approve",
+      "functionName": "approveVerification",
+      "description": "Handles approveVerification"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "PATCH",
+      "path": "/verifications/:id/reject",
+      "functionName": "rejectVerification",
+      "description": "Handles rejectVerification"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "POST",
+      "path": "/verifications/:id/request-amendment",
+      "functionName": "requestAmendment",
+      "description": "Handles requestAmendment"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "PATCH",
+      "path": "/verifications/:id/request-docs",
+      "functionName": "requestDocuments",
+      "description": "Handles requestDocuments"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "PATCH",
+      "path": "/verifications/:id/respond-info",
+      "functionName": "respondMoreInfo",
+      "description": "Handles respondMoreInfo"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "POST",
+      "path": "/verifications/:id/flag-fraud",
+      "functionName": "flagFraud",
+      "description": "Handles flagFraud"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "POST",
+      "path": "/verifications/bulk-claim",
+      "functionName": "bulkClaim",
+      "description": "Handles bulkClaim"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "POST",
+      "path": "/verifications/correction-case",
+      "functionName": "createCorrectionCase",
+      "description": "Handles createCorrectionCase"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "GET",
+      "path": "/verifications/cases/:id/attorney-view",
+      "functionName": "getAttorneyCaseViewAlias",
+      "description": "Handles getAttorneyCaseViewAlias"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "POST",
+      "path": "/verifications/:id/approve",
+      "functionName": "approveVerificationPost",
+      "description": "Handles approveVerificationPost"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "POST",
+      "path": "/verifications/:id/reject",
+      "functionName": "rejectVerificationPost",
+      "description": "Handles rejectVerificationPost"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "POST",
+      "path": "/verifications/:id/request-info",
+      "functionName": "requestInfoPost",
+      "description": "Handles requestInfoPost"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "POST",
+      "path": "/verifications/:id/guarded-changes/:changeId/approve",
+      "functionName": "approveGuardedChange",
+      "description": "Handles approveGuardedChange"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "POST",
+      "path": "/verifications/:id/guarded-changes/:changeId/reject",
+      "functionName": "rejectGuardedChange",
+      "description": "Handles rejectGuardedChange"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "PATCH",
+      "path": "/verifications/:id/request-documents",
+      "functionName": "requestDocumentsAlias",
+      "description": "Handles requestDocumentsAlias"
+    },
+    {
+      "service": "user-service",
+      "file": "apps/user-service/src/modules/verifications/verifications.controller.ts",
+      "method": "POST",
+      "path": "/verifications/:id/respond-more-info",
+      "functionName": "respondMoreInfoAlias",
+      "description": "Handles respondMoreInfoAlias"
+    }
+  ]
+}
