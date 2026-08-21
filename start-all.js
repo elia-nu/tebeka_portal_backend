@@ -25,7 +25,12 @@ function startService(svc, delayMs) {
 
     const proc = spawn(npxCmd, ['nx', 'serve', svc.project], {
       cwd: path.resolve(__dirname),
-      env: { ...process.env, FORCE_COLOR: 'true' },
+      env: {
+        ...process.env,
+        FORCE_COLOR: 'true',
+        TS_NODE_TRANSPILE_ONLY: 'true',
+        NODE_OPTIONS: (process.env.NODE_OPTIONS || '') + ' --max-old-space-size=4096',
+      },
       shell: isWin,
     });
 
@@ -57,7 +62,7 @@ function startService(svc, delayMs) {
 
 // Start core services first, then Gateway
 services.forEach((svc, index) => {
-  startService(svc, index * 1200);
+  startService(svc, index * 2000);
 });
 
 function cleanup() {
