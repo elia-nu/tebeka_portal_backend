@@ -208,27 +208,7 @@ export class EmailVerificationService {
       }
     }
 
-    const isTestBypass = (process.env.ENABLE_TEST_OTP_BYPASS === 'true' || process.env.NODE_ENV !== 'production') && (code === '123456' || code === '000000');
-
     if (!verificationRecord) {
-      if (isTestBypass) {
-        const continuationToken = `email_cont_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-        await this.prisma.verification.create({
-          data: {
-            identifier: email,
-            value: continuationToken,
-            expiresAt: new Date(Date.now() + 15 * 60 * 1000)
-          }
-        });
-        return {
-          status: 'success',
-          message: 'Email address successfully verified',
-          email,
-          emailVerified: true,
-          emailContinuationToken: continuationToken,
-          expiresInSeconds: 900
-        };
-      }
       throw new BadRequestException({
         code: 'INVALID_VERIFICATION_CODE',
         message: 'Invalid verification code or email. Please check your OTP and try again.'

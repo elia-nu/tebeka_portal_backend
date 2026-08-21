@@ -40,8 +40,7 @@ export class RegistrationService {
           where: { continuationToken: data.otpContinuationToken }
         });
 
-        const isTestBypass = process.env.ENABLE_TEST_OTP_BYPASS === 'true' && (data.otpContinuationToken.startsWith('tok-') || data.otpContinuationToken.startsWith('otp_cont_'));
-        if ((!otpRecord || otpRecord.usedAt || otpRecord.expiresAt < new Date()) && !isTestBypass) {
+        if (!otpRecord || otpRecord.usedAt || otpRecord.expiresAt < new Date()) {
           throw new BadRequestException({
             code: 'INVALID_OR_EXPIRED_TOKEN',
             message: 'Invalid or expired OTP continuation token. Please verify your phone number again.'
@@ -49,12 +48,10 @@ export class RegistrationService {
         }
 
         isPhoneVerified = true;
-        if (otpRecord) {
-          await tx.otpCode.update({
-            where: { id: otpRecord.id },
-            data: { usedAt: new Date() }
-          });
-        }
+        await tx.otpCode.update({
+          where: { id: otpRecord.id },
+          data: { usedAt: new Date() }
+        });
       }
 
       // 2. Validate Email OTP continuation token inside tx if provided
@@ -64,24 +61,24 @@ export class RegistrationService {
           where: { value: emailToken }
         });
 
-        const isTestBypass = process.env.ENABLE_TEST_OTP_BYPASS === 'true' && (emailToken.startsWith('email_cont_') || emailToken.startsWith('tok_') || emailToken.startsWith('email_'));
-        if (emailRecord) {
-          if (emailRecord.expiresAt < new Date()) {
-            throw new BadRequestException({
-              code: 'TOKEN_EXPIRED',
-              message: 'Email continuation token has expired. Please verify your email again.'
-            });
-          }
-          if (data.email && emailRecord.identifier.toLowerCase() !== data.email.trim().toLowerCase()) {
-            throw new BadRequestException({
-              code: 'EMAIL_TOKEN_MISMATCH',
-              message: 'Email address does not match the verified email continuation token'
-            });
-          }
-        } else if (!isTestBypass) {
+        if (!emailRecord) {
           throw new BadRequestException({
             code: 'INVALID_OR_EXPIRED_TOKEN',
             message: 'Invalid or expired email continuation token. Please verify your email again.'
+          });
+        }
+
+        if (emailRecord.expiresAt < new Date()) {
+          throw new BadRequestException({
+            code: 'TOKEN_EXPIRED',
+            message: 'Email continuation token has expired. Please verify your email again.'
+          });
+        }
+
+        if (data.email && emailRecord.identifier.toLowerCase() !== data.email.trim().toLowerCase()) {
+          throw new BadRequestException({
+            code: 'EMAIL_TOKEN_MISMATCH',
+            message: 'Email address does not match the verified email continuation token'
           });
         }
 
@@ -215,7 +212,7 @@ export class RegistrationService {
           where: { continuationToken: data.otpContinuationToken }
         });
 
-        if ((!otpRecord || otpRecord.usedAt || otpRecord.expiresAt < new Date()) && !data.otpContinuationToken.startsWith('tok-') && !data.otpContinuationToken.startsWith('otp_cont_')) {
+        if (!otpRecord || otpRecord.usedAt || otpRecord.expiresAt < new Date()) {
           throw new BadRequestException({
             code: 'INVALID_OR_EXPIRED_TOKEN',
             message: 'Invalid or expired OTP continuation token. Please verify your phone number again.'
@@ -223,12 +220,10 @@ export class RegistrationService {
         }
 
         isPhoneVerified = true;
-        if (otpRecord) {
-          await tx.otpCode.update({
-            where: { id: otpRecord.id },
-            data: { usedAt: new Date() }
-          });
-        }
+        await tx.otpCode.update({
+          where: { id: otpRecord.id },
+          data: { usedAt: new Date() }
+        });
       }
 
       // 2. Validate Email OTP continuation token if provided
@@ -238,23 +233,24 @@ export class RegistrationService {
           where: { value: emailToken }
         });
 
-        if (emailRecord) {
-          if (emailRecord.expiresAt < new Date()) {
-            throw new BadRequestException({
-              code: 'TOKEN_EXPIRED',
-              message: 'Email continuation token has expired. Please verify your email again.'
-            });
-          }
-          if (data.email && emailRecord.identifier.toLowerCase() !== data.email.trim().toLowerCase()) {
-            throw new BadRequestException({
-              code: 'EMAIL_TOKEN_MISMATCH',
-              message: 'Email address does not match the verified email continuation token'
-            });
-          }
-        } else if (!emailToken.startsWith('email_cont_') && !emailToken.startsWith('tok_') && !emailToken.startsWith('email_')) {
+        if (!emailRecord) {
           throw new BadRequestException({
             code: 'INVALID_OR_EXPIRED_TOKEN',
             message: 'Invalid or expired email continuation token. Please verify your email again.'
+          });
+        }
+
+        if (emailRecord.expiresAt < new Date()) {
+          throw new BadRequestException({
+            code: 'TOKEN_EXPIRED',
+            message: 'Email continuation token has expired. Please verify your email again.'
+          });
+        }
+
+        if (data.email && emailRecord.identifier.toLowerCase() !== data.email.trim().toLowerCase()) {
+          throw new BadRequestException({
+            code: 'EMAIL_TOKEN_MISMATCH',
+            message: 'Email address does not match the verified email continuation token'
           });
         }
 

@@ -111,17 +111,7 @@ export class OtpService {
       orderBy: { createdAt: 'desc' }
     });
 
-    const isTestBypass = process.env.ENABLE_TEST_OTP_BYPASS === 'true' && code === '123456';
-
     if (!otpRecord) {
-      if (isTestBypass) {
-        const continuationToken = `otp_cont_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-        return {
-          verified: true,
-          otpContinuationToken: continuationToken,
-          expiresInSeconds: 900
-        };
-      }
       throw new BadRequestException('No active OTP found for this phone number');
     }
 
@@ -133,7 +123,7 @@ export class OtpService {
       throw new BadRequestException('OTP attempt limit (3) exceeded. Please request a new OTP.');
     }
 
-    const codeValid = isTestBypass || await bcrypt.compare(code, otpRecord.codeHash);
+    const codeValid = await bcrypt.compare(code, otpRecord.codeHash);
     if (!codeValid) {
       // Conditional update guarded by the attempts value we read: if another concurrent
       // request already bumped attempts since our read, this affects 0 rows and we
