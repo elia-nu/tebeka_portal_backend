@@ -19,7 +19,7 @@
       "executor": "@nx/js:node",
       "options": {
         "buildTarget": "api-gateway:build",
-        "runtimeArgs": ["-r", "ts-node/register/transpile-only", "-r", "tsconfig-paths/register"],
+        "runtimeArgs": ["--max-old-space-size=4096", "-r", "ts-node/register/transpile-only", "-r", "tsconfig-paths/register"],
         "inspect": false
       }
     }
