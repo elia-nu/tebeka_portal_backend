@@ -134,8 +134,16 @@ export class PaymentService {
       });
     }
 
+    if (checkoutResult?.providerPaymentId) {
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { stripePaymentId: checkoutResult.providerPaymentId },
+      });
+    }
+
     return {
       ...payment,
+      stripePaymentId: checkoutResult?.providerPaymentId || payment.stripePaymentId,
       checkoutUrl: checkoutResult.checkoutUrl || `https://checkout.tebeka.et/pay/${txRef}`,
     };
   }
@@ -262,6 +270,7 @@ export class PaymentService {
             caseId: updated.caseId || null,
             payerId: updated.payerId,
             payeeId: updated.payeeId,
+            userId: updated.payerId,
             amount: Number(updated.amount),
             currency: updated.currency,
             status: 'COMPLETED',
@@ -275,14 +284,90 @@ export class PaymentService {
   }
 
   async markPaymentCompletedByReference(transactionReference: string, gatewayData?: any) {
+    if (!transactionReference) return null;
+
     const payment = await prisma.payment.findFirst({
-      where: { transactionReference },
+      where: {
+        OR: [
+          { transactionReference: String(transactionReference) },
+          { stripePaymentId: String(transactionReference) },
+          { id: String(transactionReference) },
+        ],
+      },
     });
+
     if (!payment) {
       this.logger.warn(`No payment found for transaction reference ${transactionReference}`);
       return null;
     }
-    return this.markPaymentCompleted(payment.id);
+
+    // If gateway provided additional payment ID (e.g. payment_intent), update stripePaymentId if missing
+    const providerPaymentId = gatewayData?.id || gatewayData?.payment_intent || gatewayData?.transaction_id;
+    if (providerPaymentId && !payment.stripePaymentId && String(providerPaymentId).startsWith('cs_') || String(providerPaymentId).startsWith('pi_')) {
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { stripePaymentId: String(providerPaymentId) },
+      });
+    }
+
+    return this.markPaymentCompleted(payment.id, 'GATEWAY_WEBHOOK');
+  }
+
+  async markPaymentFailedByReference(transactionReference: string, reason?: string, gatewayData?: any) {
+    if (!transactionReference) return null;
+
+    const payment = await prisma.payment.findFirst({
+      where: {
+        OR: [
+          { transactionReference: String(transactionReference) },
+          { stripePaymentId: String(transactionReference) },
+          { id: String(transactionReference) },
+        ],
+      },
+    });
+
+    if (!payment) {
+      this.logger.warn(`No payment found to mark as failed for reference ${transactionReference}`);
+      return null;
+    }
+
+    // Do not overwrite an already completed payment
+    if (payment.status === PaymentStatus.COMPLETED) {
+      this.logger.warn(`Payment ${payment.id} is already COMPLETED. Ignoring failure webhook for ${transactionReference}`);
+      return payment;
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const updated = await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentStatus.FAILED,
+        },
+      });
+
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'Payment',
+          aggregateId: updated.id,
+          eventType: 'PAYMENT_FAILED',
+          payload: {
+            paymentId: updated.id,
+            bookingId: updated.bookingId || null,
+            caseId: updated.caseId || null,
+            payerId: updated.payerId,
+            payeeId: updated.payeeId,
+            userId: updated.payerId,
+            amount: Number(updated.amount),
+            currency: updated.currency,
+            status: 'FAILED',
+            reason: reason || 'Payment failed at gateway',
+          },
+        },
+      });
+
+      this.logger.log(`Payment [${payment.id}] (${transactionReference}) marked as FAILED. Reason: ${reason || 'Gateway failure'}`);
+      return updated;
+    });
   }
 
   async getPayments(query: any = {}) {

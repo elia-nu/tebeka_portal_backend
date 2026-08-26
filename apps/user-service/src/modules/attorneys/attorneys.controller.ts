@@ -10,6 +10,7 @@ import { AttorneyProfileService } from './services/attorney-profile.service';
 import { AttorneyEducationService } from './services/attorney-education.service';
 import { AttorneyScheduleService } from './services/attorney-schedule.service';
 import { AttorneyProfileChangeService } from './services/attorney-profile-change.service';
+import { AttorneyGoogleCalendarService } from './services/google-calendar.service';
 import { UsersService } from '../users/users.service';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import {
@@ -32,6 +33,7 @@ export class AttorneysController {
     private readonly attorneyEducationService: AttorneyEducationService,
     private readonly attorneyScheduleService: AttorneyScheduleService,
     private readonly attorneyProfileChangeService: AttorneyProfileChangeService,
+    private readonly attorneyGoogleCalendarService: AttorneyGoogleCalendarService,
     private readonly usersService: UsersService,
   ) {}
 
@@ -201,6 +203,35 @@ export class AttorneysController {
   async setMyVacation(@Body() body: any, @Req() req: any) {
     await this.resolveProfileId(req);
     return this.attorneyScheduleService.setVacation(body);
+  }
+
+  // --- Google Calendar Sync ---
+  @AllowAnonymous()
+  @Get('attorneys/me/google-calendar/connect-url')
+  async getGoogleCalendarConnectUrl(@Req() req: any) {
+    const profileId = await this.resolveProfileId(req);
+    return this.attorneyGoogleCalendarService.generateAuthUrl(profileId);
+  }
+
+  @AllowAnonymous()
+  @Post('attorneys/me/google-calendar/callback')
+  async handleGoogleCalendarCallback(@Body() body: { code: string }, @Req() req: any) {
+    const profileId = await this.resolveProfileId(req);
+    return this.attorneyGoogleCalendarService.handleOAuthCallback(profileId, body.code);
+  }
+
+  @AllowAnonymous()
+  @Get('attorneys/me/google-calendar/status')
+  async getGoogleCalendarStatus(@Req() req: any) {
+    const profileId = await this.resolveProfileId(req);
+    return this.attorneyGoogleCalendarService.getSyncStatus(profileId);
+  }
+
+  @AllowAnonymous()
+  @Delete('attorneys/me/google-calendar/disconnect')
+  async disconnectGoogleCalendar(@Req() req: any) {
+    const profileId = await this.resolveProfileId(req);
+    return this.attorneyGoogleCalendarService.disconnect(profileId);
   }
 
   // --- My Practice Areas ---

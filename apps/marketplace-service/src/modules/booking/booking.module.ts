@@ -6,6 +6,7 @@ import { BookingRescheduleService } from './services/booking-reschedule.service'
 import { BookingDisputeService } from './services/booking-dispute.service';
 import { GoogleMeetService } from '../integrations/google-meet.service';
 import { CommunicationServiceClient } from '../../integrations/communication-service.client';
+import { UserServiceClient } from '../../integrations/user-service.client';
 
 @Module({
   controllers: [BookingController],
@@ -16,6 +17,7 @@ import { CommunicationServiceClient } from '../../integrations/communication-ser
     BookingDisputeService,
     GoogleMeetService,
     CommunicationServiceClient,
+    UserServiceClient,
   ],
   exports: [
     BookingService,

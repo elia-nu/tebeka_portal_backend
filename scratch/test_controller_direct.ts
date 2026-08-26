@@ -1,9 +1,12 @@
-import { AuthController } from '../apps/user-service/src/modules/auth/auth.controller';
-import { AuthService } from '../apps/user-service/src/modules/auth/auth.service';
+import { RegistrationService } from '../apps/user-service/src/modules/auth/services/registration.service';
+import { OtpService } from '../apps/user-service/src/modules/auth/services/otp.service';
+import { SessionTokenService } from '../apps/user-service/src/modules/auth/services/session-token.service';
+import { EmailVerificationService } from '../apps/user-service/src/modules/auth/services/email-verification.service';
 
 async function testDirect() {
-  const authService = new AuthService();
-  const authController = new AuthController(authService);
+  const sessionTokenService = new SessionTokenService({} as any, {} as any, {} as any);
+  const emailVerificationService = new EmailVerificationService({} as any);
+  const registrationService = new RegistrationService(sessionTokenService, emailVerificationService, {} as any);
 
   const testBody = {
     name: 'Form Data Attorney Direct',
@@ -16,10 +19,10 @@ async function testDirect() {
   };
 
   try {
-    const res = await authController.registerAttorney([], testBody, { headers: {} }, {});
-    console.log('DIRECT CONTROLLER REGISTRATION SUCCESS:', res);
+    const res = await registrationService.registerAttorney(testBody as any);
+    console.log('DIRECT REGISTRATION SUCCESS:', res);
   } catch (err: any) {
-    console.error('DIRECT CONTROLLER ERROR:', err);
+    console.error('DIRECT ERROR:', err);
   }
 }
 

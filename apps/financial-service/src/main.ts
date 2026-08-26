@@ -6,7 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { GlobalHttpExceptionFilter } from '@workspace/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const config = app.get(AppConfigService);
   const logger = app.get(AppLoggerService);
   app.useLogger(logger);

@@ -124,4 +124,14 @@ export class BookingController {
     const userId = req.user?.id || 'client-1';
     return this.bookingService.getOrCreateBookingChat(id, userId);
   }
+
+  @Get('attorneys/:attorneyId/available-slots')
+  async getAttorneyAvailableSlots(
+    @Param('attorneyId') attorneyId: string,
+    @Query('date') date: string,
+    @Query('duration') duration?: string,
+  ) {
+    const durationMinutes = duration ? Number(duration) : 60;
+    return this.bookingService.getAvailableSlotsForDate(attorneyId, date, durationMinutes);
+  }
 }

@@ -243,4 +243,51 @@ export class GoogleMeetService {
       return false;
     }
   }
+
+  /**
+   * Queries Google Calendar Free/Busy API for an attorney given their OAuth refresh token.
+   * Returns busy intervals [ { start: Date, end: Date } ] within the specified time range.
+   */
+  async getAttorneyBusyIntervals(
+    refreshToken: string,
+    timeMin: Date,
+    timeMax: Date,
+    calendarId = 'primary'
+  ): Promise<Array<{ start: Date; end: Date }>> {
+    if (!refreshToken || refreshToken.startsWith('mock-')) {
+      return [];
+    }
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      this.logger.debug('Google OAuth Client credentials not set; skipping live Free/Busy lookup.');
+      return [];
+    }
+
+    try {
+      const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+      oauth2Client.setCredentials({ refresh_token: refreshToken });
+      const userCalendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+      const res = await userCalendar.freebusy.query({
+        requestBody: {
+          timeMin: timeMin.toISOString(),
+          timeMax: timeMax.toISOString(),
+          timeZone: 'Africa/Addis_Ababa',
+          items: [{ id: calendarId }],
+        },
+      });
+
+      const busyItems = res.data.calendars?.[calendarId]?.busy || [];
+      return busyItems.map((item) => ({
+        start: new Date(item.start!),
+        end: new Date(item.end!),
+      }));
+    } catch (err: any) {
+      this.logger.warn(`Error querying Google Free/Busy API: ${err?.message || err}`);
+      return [];
+    }
+  }
 }

@@ -250,16 +250,44 @@ export class StripeStrategy implements IPaymentProviderStrategy {
     }
   }
 
-  verifyWebhookSignature(signature: string, payload: any): boolean {
-    if (!signature) return false;
+  /**
+   * Constructs and verifies a Stripe Event from webhook signature and raw body.
+   */
+  constructEvent(signature: string, payload: any, rawBody?: Buffer | string): Stripe.Event | null {
+    if (this.isMockMode || !this.webhookSecret || !this.stripe) {
+      // In mock mode or dev without secret, parse payload safely
+      return typeof payload === 'string' ? JSON.parse(payload) : payload;
+    }
+
+    if (!signature) {
+      this.logger.warn('Stripe webhook received without stripe-signature header');
+      return null;
+    }
+
+    try {
+      const raw = rawBody
+        ? rawBody
+        : (typeof payload === 'string' ? payload : JSON.stringify(payload));
+
+      return this.stripe.webhooks.constructEvent(raw, signature, this.webhookSecret);
+    } catch (err: any) {
+      this.logger.warn(`Stripe webhook signature validation failed: ${err.message}`);
+      return null;
+    }
+  }
+
+  verifyWebhookSignature(signature: string, payload: any, rawBody?: Buffer | string): boolean {
+    if (!signature) {
+      return this.isMockMode || !this.webhookSecret || !this.stripe;
+    }
     if (this.isMockMode || !this.webhookSecret || !this.stripe) return true;
 
     try {
-      this.stripe.webhooks.constructEvent(
-        typeof payload === 'string' ? payload : JSON.stringify(payload),
-        signature,
-        this.webhookSecret
-      );
+      const raw = rawBody
+        ? rawBody
+        : (typeof payload === 'string' ? payload : JSON.stringify(payload));
+
+      this.stripe.webhooks.constructEvent(raw, signature, this.webhookSecret);
       return true;
     } catch (err: any) {
       this.logger.warn(`Stripe webhook signature validation failed: ${err.message}`);

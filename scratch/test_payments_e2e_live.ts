@@ -126,7 +126,7 @@ async function runE2ETest() {
   console.log(`✅ Client [${clientETB}] Transactions count: ${clientTxs.summary.totalTransactions}`);
   console.log(`   - Total ETB Spent: ${clientTxs.summary.spent.ETB.totalSpent} ETB`);
   console.log(`   - Transaction List (${clientTxs.data.length} items):`);
-  clientTxs.data.forEach((t) => console.log(`     * Ref: ${t.transactionReference} | Amount: ${t.amount} ${t.currency} | Status: ${t.status}`));
+  clientTxs.data.forEach((t: any) => console.log(`     * Ref: ${t.transactionReference} | Amount: ${t.amount} ${t.currency} | Status: ${t.status}`));
 
   console.log('\n--- 5. TESTING ATTORNEY TRANSACTION LEDGER & TAKE-HOME ---');
   const attorneyTxs = await transactionService.getAttorneyTransactions(attorneyETB, { page: 1, limit: 10 });
