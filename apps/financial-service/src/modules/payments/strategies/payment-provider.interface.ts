@@ -26,5 +26,5 @@ export interface PaymentCheckoutResponse {
 export interface IPaymentProviderStrategy {
   initializePayment(request: PaymentCheckoutRequest): Promise<PaymentCheckoutResponse>;
   verifyPayment(transactionReference: string): Promise<{ status: 'COMPLETED' | 'FAILED' | 'PENDING'; amount: number }>;
-  verifyWebhookSignature(signature: string, payload: any): boolean;
+  verifyWebhookSignature(signature: string, payload: any, rawBody?: Buffer | string): boolean;
 }

@@ -200,14 +200,37 @@ export class ChapaStrategy implements IPaymentProviderStrategy {
     }
   }
 
-  verifyWebhookSignature(signature: string, payload: any): boolean {
+  verifyWebhookSignature(signature: string, payload: any, rawBody?: Buffer | string): boolean {
     if (!signature) return false;
     const secret = process.env.CHAPA_WEBHOOK_SECRET_HASH || this.secretKey;
     if (!secret) return true;
+
+    // 1. Direct secret hash comparison (Chapa secret hash mode)
     if (signature === secret) return true;
-    const payloadStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
-    const hash = crypto.createHmac('sha256', secret).update(payloadStr).digest('hex');
-    return hash === signature;
+
+    // 2. HMAC-SHA256 signature calculation over raw or stringified payload
+    try {
+      const payloadStr = rawBody
+        ? (Buffer.isBuffer(rawBody) ? rawBody.toString('utf8') : String(rawBody))
+        : (typeof payload === 'string' ? payload : JSON.stringify(payload));
+
+      const hash = crypto.createHmac('sha256', secret).update(payloadStr).digest('hex');
+
+      if (hash.toLowerCase() === signature.toLowerCase()) {
+        return true;
+      }
+
+      // Timing-safe comparison if lengths match
+      const signatureBuf = Buffer.from(signature.toLowerCase(), 'utf8');
+      const hashBuf = Buffer.from(hash.toLowerCase(), 'utf8');
+      if (signatureBuf.length === hashBuf.length && crypto.timingSafeEqual(signatureBuf, hashBuf)) {
+        return true;
+      }
+    } catch (err: any) {
+      this.logger.warn(`Chapa signature check exception: ${err.message}`);
+    }
+
+    return false;
   }
 
   getCircuitBreakerMetrics() {
