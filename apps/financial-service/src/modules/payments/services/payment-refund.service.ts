@@ -5,18 +5,67 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class PaymentRefundService {
-  async getRefunds(query?: { status?: any; payeeId?: string; payerId?: string }) {
-    return prisma.refund.findMany({
-      where: {
-        ...(query?.status && { status: query.status }),
-        ...(query?.payeeId && { payment: { payeeId: query.payeeId } }),
-        ...(query?.payerId && { payment: { payerId: query.payerId } }),
+  async getRefunds(query?: {
+    status?: any;
+    payeeId?: string;
+    payerId?: string;
+    paymentId?: string;
+    page?: number | string;
+    limit?: number | string;
+    startDate?: string;
+    endDate?: string;
+    search?: string;
+  }) {
+    const page = Math.max(1, Number(query?.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query?.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      ...(query?.status && { status: query.status }),
+      ...(query?.paymentId && { paymentId: query.paymentId }),
+      ...(query?.payeeId && { payment: { payeeId: query.payeeId } }),
+      ...(query?.payerId && { payment: { payerId: query.payerId } }),
+    };
+
+    if (query?.startDate || query?.endDate) {
+      where.createdAt = {};
+      if (query.startDate) where.createdAt.gte = new Date(query.startDate);
+      if (query.endDate) where.createdAt.lte = new Date(query.endDate);
+    }
+
+    if (query?.search) {
+      const term = query.search.trim();
+      where.OR = [
+        { reason: { contains: term, mode: 'insensitive' } },
+        { payment: { transactionReference: { contains: term, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [refunds, total] = await Promise.all([
+      prisma.refund.findMany({
+        where,
+        include: {
+          payment: true,
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.refund.count({ where }),
+    ]);
+
+    return {
+      success: true,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1,
       },
-      include: {
-        payment: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+      data: refunds,
+    };
   }
 
   async processManualRefund(refundId: string, processedBy: string, notes?: string) {

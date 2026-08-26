@@ -8,6 +8,9 @@ export interface PaymentCheckoutRequest {
   phone?: string;
   txRef: string;
   subaccountId?: string;
+  stripeAccountId?: string;
+  commission?: number;
+  splitPercentage?: number;
   callbackUrl?: string;
   returnUrl?: string;
 }

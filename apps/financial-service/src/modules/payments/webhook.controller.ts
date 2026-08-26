@@ -52,6 +52,13 @@ export class PaymentWebhookController {
         await this.paymentService.markPaymentCompletedByReference(txRef, session);
         return { status: 'success', message: 'Payment reference marked as COMPLETED' };
       }
+    } else if (body?.type === 'payment_intent.succeeded') {
+      const intent = body?.data?.object;
+      const txRef = intent?.metadata?.txRef;
+      if (txRef) {
+        await this.paymentService.markPaymentCompletedByReference(txRef, intent);
+        return { status: 'success', message: 'Payment reference marked as COMPLETED' };
+      }
     }
 
     return { status: 'acknowledged' };

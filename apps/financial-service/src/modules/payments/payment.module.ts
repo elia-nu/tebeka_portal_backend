@@ -8,6 +8,10 @@ import { PayoutWalletService } from './services/payout-wallet.service';
 import { ChapaStrategy } from './strategies/chapa.strategy';
 import { StripeStrategy } from './strategies/stripe.strategy';
 
+import { GeoPaymentService } from './services/geo-payment.service';
+import { TransactionService } from './services/transaction.service';
+import { FinancialAnalyticsService } from './services/financial-analytics.service';
+
 @Module({
   imports: [AppConfigModule],
   controllers: [PaymentController, PaymentWebhookController],
@@ -15,6 +19,9 @@ import { StripeStrategy } from './strategies/stripe.strategy';
     PaymentService,
     PaymentRefundService,
     PayoutWalletService,
+    GeoPaymentService,
+    TransactionService,
+    FinancialAnalyticsService,
     ChapaStrategy,
     StripeStrategy,
   ],
@@ -22,6 +29,9 @@ import { StripeStrategy } from './strategies/stripe.strategy';
     PaymentService,
     PaymentRefundService,
     PayoutWalletService,
+    GeoPaymentService,
+    TransactionService,
+    FinancialAnalyticsService,
     ChapaStrategy,
     StripeStrategy,
   ],

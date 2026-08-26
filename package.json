@@ -61,6 +61,7 @@
     "express": "^4.18.2",
     "express-rate-limit": "^7.5.1",
     "firebase-admin": "^14.2.0",
+    "geoip-lite": "^1.4.10",
     "googleapis": "^176.0.0",
     "handlebars": "^4.7.8",
     "helmet": "^7.2.0",
@@ -75,6 +76,7 @@
     "reflect-metadata": "^0.2.1",
     "rxjs": "^7.8.1",
     "socket.io": "^4.7.4",
+    "stripe": "^22.5.0",
     "winston": "^3.11.0",
     "zod": "^3.22.4"
   },
@@ -91,6 +93,7 @@
     "@types/amqplib": "^0.10.5",
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^4.17.21",
+    "@types/geoip-lite": "^1.4.4",
     "@types/jest": "^29.5.14",
     "@types/multer": "^1.4.11",
     "@types/node": "^20.11.16",
