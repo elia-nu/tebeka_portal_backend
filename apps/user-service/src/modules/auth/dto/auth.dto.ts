@@ -351,8 +351,12 @@ export interface TwoFactorPasswordDto {
 }
 
 export interface RefreshTokenDto {
-  refreshToken: string;
+  refreshToken?: string;
 }
+
+export const RefreshTokenSchema = Joi.object({
+  refreshToken: Joi.string().trim().optional(),
+});
 
 export interface SwitchAccountDto {
   targetRole?: string;

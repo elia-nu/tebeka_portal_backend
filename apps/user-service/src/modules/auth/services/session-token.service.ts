@@ -54,10 +54,32 @@ export class SessionTokenService {
     return { status: 'success', message: 'All sessions revoked successfully (Token family revoked)' };
   }
 
-  async refreshToken(data: Partial<RefreshTokenDto>) {
-    const presentedToken = data?.refreshToken;
+  async refreshToken(data?: Partial<RefreshTokenDto>, headers?: any) {
+    let presentedToken = data?.refreshToken;
+
+    if (!presentedToken && headers) {
+      const authHeader = headers['authorization'] || headers['Authorization'];
+      if (authHeader && typeof authHeader === 'string') {
+        const parts = authHeader.split(' ');
+        if (parts.length === 2 && parts[0].toLowerCase() === 'bearer') {
+          presentedToken = parts[1];
+        } else {
+          presentedToken = authHeader;
+        }
+      }
+      if (!presentedToken) {
+        presentedToken = headers['x-refresh-token'] || headers['refresh-token'] || headers['x-token'];
+      }
+      if (!presentedToken && headers.cookie) {
+        const match = headers.cookie.match(/refreshToken=([^;]+)/);
+        if (match) {
+          presentedToken = match[1];
+        }
+      }
+    }
+
     if (!presentedToken) {
-      throw new BadRequestException('refreshToken is required');
+      throw new BadRequestException('Refresh token is required via Authorization Bearer or x-refresh-token header');
     }
 
     let payload: { sub: string; family: string; type: string };

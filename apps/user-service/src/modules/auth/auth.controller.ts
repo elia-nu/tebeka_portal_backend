@@ -30,6 +30,8 @@ import {
   ResetPasswordSchema,
   Verify2FaDto,
   Verify2FaSchema,
+  RefreshTokenDto,
+  RefreshTokenSchema,
 } from './dto/auth.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
@@ -189,6 +191,15 @@ export class AuthController {
   @Post('sign-out')
   async logout(@Req() req: any) {
     return this.sessionTokenService.logout(req.headers);
+  }
+
+  @AllowAnonymous()
+  @HttpCode(HttpStatus.OK)
+  @Post('refresh-token')
+  @Post('refresh')
+  @Post('token/refresh')
+  async refreshToken(@Req() req: any, @Body() body?: any) {
+    return this.sessionTokenService.refreshToken(body, req.headers);
   }
 
   @AllowAnonymous()
