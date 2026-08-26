@@ -147,6 +147,9 @@ async function bootstrap() {
         '/api/v1/subscriptions/**',
         '/api/v1/refunds/**',
       ],
+      pathRewrite: {
+        '^/api/v1/financial': '/api/v1',
+      },
     })
   );
 
