@@ -5,7 +5,7 @@ import { AttorneyProfileService } from './services/attorney-profile.service';
 import { AttorneyVaultService } from './services/attorney-vault.service';
 import { AttorneyEducationService } from './services/attorney-education.service';
 import { AttorneyScheduleService } from './services/attorney-schedule.service';
-import { AttorneyProfileChangeService } from './services/attorney-profile-change.service';
+import { AttorneyGoogleCalendarService } from './services/google-calendar.service';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -17,7 +17,8 @@ import { UsersModule } from '../users/users.module';
     AttorneyEducationService,
     AttorneyScheduleService,
     AttorneyProfileChangeService,
+    AttorneyGoogleCalendarService,
   ],
-  exports: [AttorneyProfileService, AttorneyVaultService],
+  exports: [AttorneyProfileService, AttorneyVaultService, AttorneyGoogleCalendarService],
 })
 export class AttorneysModule {}
