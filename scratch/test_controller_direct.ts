@@ -4,10 +4,9 @@ import { SessionTokenService } from '../apps/user-service/src/modules/auth/servi
 import { EmailVerificationService } from '../apps/user-service/src/modules/auth/services/email-verification.service';
 
 async function testDirect() {
-  const otpService = new OtpService({} as any, {} as any, {} as any);
   const sessionTokenService = new SessionTokenService({} as any, {} as any, {} as any);
-  const emailVerificationService = new EmailVerificationService({} as any, {} as any, {} as any);
-  const registrationService = new RegistrationService(otpService, sessionTokenService, emailVerificationService, {} as any, {} as any);
+  const emailVerificationService = new EmailVerificationService({} as any);
+  const registrationService = new RegistrationService(sessionTokenService, emailVerificationService, {} as any);
 
   const testBody = {
     name: 'Form Data Attorney Direct',
