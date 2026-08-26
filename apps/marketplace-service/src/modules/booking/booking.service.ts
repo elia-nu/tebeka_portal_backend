@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import { PrismaClient, BookingStatus, ConsultationType } from '@prisma/client/marketplace';
 import { CommunicationServiceClient } from '../../integrations/communication-service.client';
+import { GoogleMeetService } from '../integrations/google-meet.service';
+import { UserServiceClient } from '../../integrations/user-service.client';
 import { BookingCancellationService } from './services/booking-cancellation.service';
 import { BookingRescheduleService } from './services/booking-reschedule.service';
 import { BookingDisputeService } from './services/booking-dispute.service';
@@ -21,6 +23,8 @@ export class BookingService {
     private readonly rescheduleService: BookingRescheduleService,
     private readonly disputeService: BookingDisputeService,
     @Optional() private readonly communicationServiceClient?: CommunicationServiceClient,
+    @Optional() private readonly googleMeetService?: GoogleMeetService,
+    @Optional() private readonly userServiceClient?: UserServiceClient,
   ) {}
 
   // =========================================================================
@@ -33,6 +37,40 @@ export class BookingService {
     if (!data.startTime || !data.endTime) throw new BadRequestException('startTime and endTime are required');
 
     const bookingDate = new Date(data.bookingDate);
+    const dateStr = typeof data.bookingDate === 'string' ? data.bookingDate.split('T')[0] : data.bookingDate.toISOString().split('T')[0];
+
+    // Check Google Calendar Free/Busy if attorney has connected their calendar
+    if (this.userServiceClient && this.googleMeetService) {
+      try {
+        const attorneyProfile = await this.userServiceClient.getAttorneyProfile(data.attorneyId);
+        if (attorneyProfile?.isGoogleSyncEnabled && attorneyProfile?.googleRefreshToken) {
+          const reqSlotStart = new Date(`${dateStr}T${data.startTime}:00+03:00`);
+          const reqSlotEnd = new Date(`${dateStr}T${data.endTime}:00+03:00`);
+          const dayStart = new Date(`${dateStr}T00:00:00+03:00`);
+          const dayEnd = new Date(`${dateStr}T23:59:59+03:00`);
+
+          const busyBlocks = await this.googleMeetService.getAttorneyBusyIntervals(
+            attorneyProfile.googleRefreshToken,
+            dayStart,
+            dayEnd,
+            attorneyProfile.googleCalendarId || 'primary',
+          );
+
+          const hasGoogleConflict = busyBlocks.some(
+            (b) => reqSlotStart < b.end && reqSlotEnd > b.start,
+          );
+
+          if (hasGoogleConflict) {
+            throw new ConflictException({
+              code: 'GOOGLE_CALENDAR_BUSY',
+              message: 'The attorney is unavailable at the selected time (busy on Google Calendar).',
+            });
+          }
+        }
+      } catch (err: any) {
+        if (err instanceof ConflictException) throw err;
+      }
+    }
 
     // Double booking conflict prevention inside Interactive Transaction
     return prisma.$transaction(async (tx) => {
@@ -355,6 +393,166 @@ export class BookingService {
       clientId: booking.clientId,
       attorneyId: booking.attorneyId,
       message: 'Chat conversation created/linked with consultation',
+    };
+  }
+
+  // =========================================================================
+  // 4. DYNAMIC AVAILABLE SLOTS (GOOGLE FREE/BUSY + BLACKOUTS + WEEKLY WINDOWS)
+  // =========================================================================
+
+  private parseTimeToMinutes(timeStr: string): number {
+    const [h, m] = timeStr.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  }
+
+  private formatMinutesToTime(totalMinutes: number): string {
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+  }
+
+  private generateTimeIntervals(startTime: string, endTime: string, durationMinutes: number): Array<{ startTime: string; endTime: string }> {
+    const startMin = this.parseTimeToMinutes(startTime);
+    const endMin = this.parseTimeToMinutes(endTime);
+    const slots: Array<{ startTime: string; endTime: string }> = [];
+
+    let current = startMin;
+    while (current + durationMinutes <= endMin) {
+      slots.push({
+        startTime: this.formatMinutesToTime(current),
+        endTime: this.formatMinutesToTime(current + durationMinutes),
+      });
+      current += durationMinutes;
+    }
+
+    return slots;
+  }
+
+  async getAvailableSlotsForDate(
+    attorneyId: string,
+    targetDateStr: string,
+    slotDurationMinutes = 60,
+  ) {
+    const targetDate = new Date(targetDateStr);
+    if (isNaN(targetDate.getTime())) {
+      throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD');
+    }
+
+    const weekday = targetDate.getDay(); // 0 = Sunday, 1 = Monday, ...
+    const dateFormatted = targetDate.toISOString().split('T')[0];
+
+    // 1. Check if the date is blocked by an attorney blackout / vacation
+    const blackout = await prisma.availabilityBlackout.findFirst({
+      where: {
+        attorneyId,
+        startDate: { lte: targetDate },
+        endDate: { gte: targetDate },
+      },
+    });
+
+    if (blackout) {
+      return {
+        attorneyId,
+        date: dateFormatted,
+        isAvailable: false,
+        reason: blackout.reason || 'Attorney is on vacation / blackout',
+        availableSlots: [],
+      };
+    }
+
+    // 2. Fetch the attorney's weekly recurring availability window for this weekday
+    const window = await prisma.availabilityWindow.findFirst({
+      where: {
+        attorneyId,
+        weekday,
+        isAvailable: true,
+      },
+    });
+
+    // Fallback default window (09:00 - 17:00 on weekdays) if no explicit custom window stored
+    const workingStartTime = window?.startTime || (weekday >= 1 && weekday <= 5 ? '09:00' : null);
+    const workingEndTime = window?.endTime || (weekday >= 1 && weekday <= 5 ? '17:00' : null);
+
+    if (!workingStartTime || !workingEndTime) {
+      return {
+        attorneyId,
+        date: dateFormatted,
+        isAvailable: false,
+        reason: 'Attorney does not have working hours configured for this day',
+        availableSlots: [],
+      };
+    }
+
+    // 3. Fetch existing confirmed / active portal bookings for this date
+    const existingBookings = await prisma.booking.findMany({
+      where: {
+        attorneyId,
+        bookingDate: targetDate,
+        status: { in: [BookingStatus.CONFIRMED, BookingStatus.ACCEPTED_PENDING_PAYMENT, BookingStatus.REQUESTED] },
+      },
+    });
+
+    // 4. Fetch Google Calendar Free/Busy if connected
+    let googleBusyIntervals: Array<{ start: Date; end: Date }> = [];
+    let isGoogleSyncActive = false;
+
+    if (this.userServiceClient && this.googleMeetService) {
+      try {
+        const attorneyProfile = await this.userServiceClient.getAttorneyProfile(attorneyId);
+        if (attorneyProfile?.isGoogleSyncEnabled && attorneyProfile?.googleRefreshToken) {
+          isGoogleSyncActive = true;
+          const dayStart = new Date(`${dateFormatted}T00:00:00+03:00`);
+          const dayEnd = new Date(`${dateFormatted}T23:59:59+03:00`);
+
+          googleBusyIntervals = await this.googleMeetService.getAttorneyBusyIntervals(
+            attorneyProfile.googleRefreshToken,
+            dayStart,
+            dayEnd,
+            attorneyProfile.googleCalendarId || 'primary',
+          );
+        }
+      } catch (err: any) {
+        // Fallback silently if user-service is temporarily unavailable
+      }
+    }
+
+    // 5. Generate candidate slots from working hours
+    const candidateSlots = this.generateTimeIntervals(workingStartTime, workingEndTime, slotDurationMinutes);
+
+    // 6. Filter out slots colliding with either portal bookings or Google Calendar busy intervals
+    const availableSlots = candidateSlots.filter((slot) => {
+      const slotStartMinutes = this.parseTimeToMinutes(slot.startTime);
+      const slotEndMinutes = this.parseTimeToMinutes(slot.endTime);
+
+      // Check collision with portal bookings
+      const hasBookingConflict = existingBookings.some((b) => {
+        const bStart = this.parseTimeToMinutes(b.startTime);
+        const bEnd = this.parseTimeToMinutes(b.endTime);
+        return slotStartMinutes < bEnd && slotEndMinutes > bStart;
+      });
+      if (hasBookingConflict) return false;
+
+      // Check collision with Google Calendar busy intervals
+      const slotStartDate = new Date(`${dateFormatted}T${slot.startTime}:00+03:00`);
+      const slotEndDate = new Date(`${dateFormatted}T${slot.endTime}:00+03:00`);
+
+      const hasGoogleConflict = googleBusyIntervals.some(
+        (busy) => slotStartDate < busy.end && slotEndDate > busy.start,
+      );
+      if (hasGoogleConflict) return false;
+
+      return true;
+    });
+
+    return {
+      attorneyId,
+      date: dateFormatted,
+      weekday,
+      workingHours: { startTime: workingStartTime, endTime: workingEndTime },
+      slotDurationMinutes,
+      isGoogleSyncActive,
+      availableSlotsCount: availableSlots.length,
+      availableSlots,
     };
   }
 }
