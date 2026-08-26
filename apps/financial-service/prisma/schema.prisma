@@ -139,10 +139,22 @@ model Wallet {
   accountNumber      String?  @map("account_number")
   accountName        String?  @map("account_name")
   splitPercentage    Float    @default(15.0) @map("split_percentage")
+  stripeAccountId    String?  @map("stripe_account_id")
+  stripeAccountStatus String? @default("unlinked") @map("stripe_account_status")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@map("wallets")
+}
+
+model PlatformCommissionSetting {
+  id                         String   @id @default("global-platform-setting")
+  defaultCommissionPercentage Float    @default(15.0) @map("default_commission_percentage")
+  updatedBy                  String?  @map("updated_by")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_commission_settings")
 }
 
 model OutboxEvent {
