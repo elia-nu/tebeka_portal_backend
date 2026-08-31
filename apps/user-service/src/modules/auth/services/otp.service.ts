@@ -67,27 +67,38 @@ export class OtpService {
     try {
       const token = process.env.AFROMESSAGE_TOKEN;
       const baseUrl = process.env.AFROMESSAGE_BASE_URL || 'https://api.afromessage.com/api';
-      const sender = process.env.AFROMESSAGE_SENDER || 'NORDIC ICT';
+      const sender = process.env.AFROMESSAGE_SENDER;
       const identifier = process.env.AFROMESSAGE_IDENTIFIER;
       const messageText = `Your Tebeka Legal Portal verification code is: ${rawCode}. Valid for 5 minutes.`;
 
       if (token) {
         const queryParams = new URLSearchParams({
-          from: identifier || '',
-          sender: sender,
           to: phone,
-          message: messageText
+          message: messageText,
         });
+        if (identifier) queryParams.set('from', identifier);
+        if (sender) queryParams.set('sender', sender);
 
-        const apiRes = await fetch(`${baseUrl}/send?${queryParams.toString()}`, {
+        let apiRes = await fetch(`${baseUrl}/send?${queryParams.toString()}`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            'Authorization': `Bearer ${token}`,
+          },
         });
-        const resData = await apiRes.json();
-        smsDispatched = apiRes.ok;
-        this.logger.log(`AfroMessage dispatch result: ${JSON.stringify(resData)}`, 'OtpService');
+        let resData: any = await apiRes.json().catch(() => null);
+
+        // If sender ID is not approved or invalid, retry with default sender
+        if (resData?.acknowledge === 'error' && sender && resData?.response?.errors?.[0]?.includes('sender id/name')) {
+          queryParams.delete('sender');
+          apiRes = await fetch(`${baseUrl}/send?${queryParams.toString()}`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          resData = await apiRes.json().catch(() => null);
+        }
+
+        smsDispatched = apiRes.ok && resData?.acknowledge === 'success';
+        this.logger.log(`AfroMessage dispatch result for ${phone}: status=${apiRes.status}, data=${JSON.stringify(resData)}`, 'OtpService');
       }
     } catch (error: any) {
       this.logger.error(`AfroMessage dispatch failed for ${phone}: ${error?.message || error}`, error?.stack, 'OtpService');
