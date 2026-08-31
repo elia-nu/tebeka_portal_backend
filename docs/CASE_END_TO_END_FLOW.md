@@ -10,34 +10,42 @@
   [1] Create / Upgrade Case ────────────►│                             │                          │
         │   POST /api/v1/cases           │ (Status: OPEN)              │                          │
         │                                │────── RabbitMQ (CASE_CREATED) ────────────────────────►│
-        │                                │                             │       • Create Chat Room │
-        │                                │                             │       • Notify Attorney  │
+        │                                │                             │       • Create Locked    │
+        │                                │                             │         Chat Room        │
         │                                │                             │                          │
-  [2] Create Milestones ────────────────►│                             │                          │
+  [2] Tri-Party Agreement Room ─────────►│                             │                          │
+        │   GET /cases/:id/agreement     │ Terms: Non-circumvention,   │                          │
+        │   POST /cases/:id/agree/sign   │ Escrow & Conduct            │                          │
+        │                                │                             │                          │
+        │   (Mutual Signatures Verified) │ (Status: FULLY_EXECUTED)    │                          │
+        │                                │────── RabbitMQ (AGREEMENT_EXECUTED) ──────────────────►│
+        │                                │                             │       • Unlock Chat Room │
+        │                                │                             │                          │
+  [3] Create Milestones ────────────────►│                             │                          │
         │   POST /cases/:id/milestones   │ (Status: IN_PROGRESS)       │                          │
         │                                │                             │                          │
-  [3] Request Milestone Payment ──────────────────────────────────────►│                          │
+  [4] Request Milestone Payment ──────────────────────────────────────►│                          │
         │   POST /payments/request       │                             │ (Status: PENDING)        │
         │                                │                             │                          │
-  [4] Client Approves & Pays ─────────────────────────────────────────►│                          │
+  [5] Client Approves & Pays ─────────────────────────────────────────►│                          │
         │   POST /payments/approve       │                             │ Chapa Split (15% / 85%)  │
         │   POST /payments/checkout      │                             │ Returns Checkout URL     │
         │                                │                             │                          │
-  [5] Payment Verified ───────────────────────────────────────────────►│ (Status: COMPLETED)      │
+  [6] Payment Verified ───────────────────────────────────────────────►│ (Status: COMPLETED)      │
         │   Webhook / Verify             │                             │ Writes Outbox Event      │
         │                                │◄────── RabbitMQ ────────────│                          │
         │                                │   (PAYMENT_COMPLETED)       │                          │
         │                                │                             │                          │
-  [6] Timeline & Court Filings ─────────►│                             │                          │
+  [7] Timeline & Court Filings ─────────►│                             │                          │
         │   POST /cases/:id/timeline     │ (Logs Hearing / Filing)     │                          │
         │                                │────── RabbitMQ (CASE_UPDATED) ────────────────────────►│
         │                                │                             │       • Push Notification│
         │                                │                             │       • SMS / In-App     │
         │                                │                             │                          │
-  [7] Complete Milestone & Release ─────►│                             │                          │
+  [8] Complete Milestone & Release ─────►│                             │                          │
         │   PATCH /cases/:id/milestones/..                             │                          │
         │                                │                             │                          │
-  [8] Close Case & Review ──────────────►│                             │                          │
+  [9] Close Case & Review ──────────────►│                             │                          │
         │   PATCH /cases/:id/status      │ (Status: CLOSED)            │                          │
         │   POST /api/v1/reviews         │ Recalculates Ranking Score  │                          │
 ```
@@ -110,8 +118,79 @@ A client initiates a formal legal engagement with an attorney (either standalone
 
 ---
 
-### Step 2: Communication Service Auto-Provisions Case Chat & Document Vault
-Upon receiving `CASE_CREATED`, `communication-service` initializes a secure conversation thread linked to the case.
+### Step 2: Tri-Party Agreement Room & Non-Circumvention Gate
+Before Client and Attorney can exchange direct messages or begin legal representation, both parties enter the **Agreement Room** to review and digitally sign the standardized Tri-Party Non-Circumvention Agreement.
+
+#### 1. Fetch Agreement Status & Clauses:
+* **Endpoint**: `GET /api/v1/cases/c198a0e2-6612-4cf3-9912-108274a018bb/agreement`
+* **Headers**: `Authorization: Bearer <client_or_attorney_jwt>`
+
+```json
+{
+  "id": "agr_88192a01-4412-4ef1-9912-1049281a01bb",
+  "caseId": "c198a0e2-6612-4cf3-9912-108274a018bb",
+  "caseReference": "CASE-2026-000108",
+  "agreementType": "CASE_ENGAGEMENT_NON_CIRCUMVENTION",
+  "version": 1,
+  "status": "PENDING_SIGNATURES",
+  "clientSigned": false,
+  "attorneySigned": false,
+  "chatRoomUnlocked": false,
+  "termsContent": "# Tebeka Legal Portal — Tri-Party Engagement & Non-Circumvention Agreement..."
+}
+```
+
+#### 2. Parties Submit Digital Signature:
+* **Endpoint**: `POST /api/v1/cases/c198a0e2-6612-4cf3-9912-108274a018bb/agreement/sign`
+* **Headers**: `Authorization: Bearer <client_jwt>`
+
+```json
+{
+  "nonCircumventionAck": true,
+  "platformFeeAck": true,
+  "confidentialityAck": true,
+  "signerName": "Abebe Bikila"
+}
+```
+
+#### Response upon Mutual Execution (`200 OK`):
+```json
+{
+  "id": "agr_88192a01-4412-4ef1-9912-1049281a01bb",
+  "caseId": "c198a0e2-6612-4cf3-9912-108274a018bb",
+  "status": "FULLY_EXECUTED",
+  "clientSigned": true,
+  "clientSignedAt": "2026-08-19T14:50:30.000Z",
+  "clientSignerName": "Abebe Bikila",
+  "attorneySigned": true,
+  "attorneySignedAt": "2026-08-19T14:50:45.000Z",
+  "attorneySignerName": "Advocate Yared Tesfaye",
+  "fullyExecutedAt": "2026-08-19T14:50:45.000Z",
+  "chatRoomUnlocked": true,
+  "message": "Agreement fully executed! Direct communication and case workspace unlocked."
+}
+```
+
+#### Outbox Event (`AGREEMENT_EXECUTED`):
+```json
+{
+  "aggregateType": "CaseAgreement",
+  "aggregateId": "agr_88192a01-4412-4ef1-9912-1049281a01bb",
+  "eventType": "AGREEMENT_EXECUTED",
+  "payload": {
+    "caseId": "c198a0e2-6612-4cf3-9912-108274a018bb",
+    "agreementId": "agr_88192a01-4412-4ef1-9912-1049281a01bb",
+    "clientId": "client_usr_1048",
+    "attorneyId": "4a71b290-7c22-4a01-9f12-88192a0149bb",
+    "executedAt": "2026-08-19T14:50:45.000Z"
+  }
+}
+```
+
+---
+
+### Step 3: Communication Service Unlocks Case Chat & Document Vault
+Upon receiving `AGREEMENT_EXECUTED`, `communication-service` fully activates the secure direct conversation thread.
 
 * **Endpoint**: `GET /api/v1/cases/c198a0e2-6612-4cf3-9912-108274a018bb/chat`
 * **Headers**: `Authorization: Bearer <client_jwt>`

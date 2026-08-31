@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { PrismaClient } = require('./node_modules/@prisma/client/marketplace/index.js');
+const { PrismaClient } = require('@prisma/client/marketplace');
 const prisma = new PrismaClient();
 
 async function testMarketplaceE2E() {
@@ -55,7 +55,7 @@ async function testMarketplaceE2E() {
         startTime: '10:00',
         endTime: '11:00',
         consultationType: 'VIDEO',
-        status: 'PENDING',
+        status: 'REQUESTED',
         paymentStatus: 'UNPAID',
       },
     });
@@ -77,7 +77,7 @@ async function testMarketplaceE2E() {
   const filteredBookings = await prisma.booking.findMany({
     where: {
       attorneyId,
-      status: 'PENDING',
+      status: 'REQUESTED',
       paymentStatus: 'UNPAID',
       bookingDate: { gte: new Date() },
     },

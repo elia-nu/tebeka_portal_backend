@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes, Ip } from '@nestjs/common';
 import { CaseService } from './case.service';
 import { CreateCaseDto, CreateCaseSchema, UpdateCaseStatusDto, UpdateCaseStatusSchema, QueryCaseDto, QueryCaseSchema } from './dto/case.dto';
+import { SignAgreementDto, SignAgreementSchema, DeclineAgreementDto, DeclineAgreementSchema } from './dto/agreement.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
 @Controller('cases')
@@ -32,6 +33,36 @@ export class CaseController {
   async updateStatus(@Param('id') id: string, @Body() body: UpdateCaseStatusDto, @Req() req: any) {
     const userId = req.user?.id || 'system';
     return this.caseService.updateCaseStatus(id, body.status, userId);
+  }
+
+  @Get(':id/agreement')
+  async getCaseAgreement(@Param('id') id: string, @Req() req: any) {
+    const userId = req.user?.id || req.headers['x-user-id'] || 'client-1';
+    return this.caseService.getCaseAgreement(id, userId);
+  }
+
+  @Post(':id/agreement/sign')
+  @UsePipes(new JoiValidationPipe(SignAgreementSchema))
+  async signCaseAgreement(
+    @Param('id') id: string,
+    @Body() body: SignAgreementDto,
+    @Req() req: any,
+    @Ip() ip: string
+  ) {
+    const userId = req.user?.id || req.headers['x-user-id'] || 'client-1';
+    const clientIp = req.headers['x-forwarded-for'] || ip || '127.0.0.1';
+    return this.caseService.signCaseAgreement(id, body, userId, String(clientIp));
+  }
+
+  @Post(':id/agreement/decline')
+  @UsePipes(new JoiValidationPipe(DeclineAgreementSchema))
+  async declineCaseAgreement(
+    @Param('id') id: string,
+    @Body() body: DeclineAgreementDto,
+    @Req() req: any
+  ) {
+    const userId = req.user?.id || req.headers['x-user-id'] || 'client-1';
+    return this.caseService.declineCaseAgreement(id, body, userId);
   }
 
   @Post(':id/milestones')
