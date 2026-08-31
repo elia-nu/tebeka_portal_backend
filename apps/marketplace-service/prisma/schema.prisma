@@ -44,6 +44,19 @@ enum CaseStatus {
   PENDING_REVIEW
   CLOSED
   ARCHIVED
+  CANCELLED
+}
+
+enum AgreementStatus {
+  PENDING_SIGNATURES
+  FULLY_EXECUTED
+  DECLINED
+  VOIDED
+}
+
+enum AgreementType {
+  CASE_ENGAGEMENT_NON_CIRCUMVENTION
+  CONSULTATION_NON_CIRCUMVENTION
 }
 
 enum MilestoneStatus {
@@ -266,8 +279,42 @@ model Case {
   caseDocuments   CaseDocument[]
   caseMilestones  CaseMilestone[]
   caseTimelines   CaseTimeline[]
+  agreement       CaseAgreement?
 
   @@map("cases")
+}
+
+model CaseAgreement {
+  id                      String          @id @default(uuid())
+  caseId                  String          @unique @map("case_id")
+  case                    Case            @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  agreementType           AgreementType   @default(CASE_ENGAGEMENT_NON_CIRCUMVENTION) @map("agreement_type")
+  version                 Int             @default(1)
+  termsContent            String          @map("terms_content")
+  
+  nonCircumventionAck     Boolean         @default(false) @map("non_circumvention_ack")
+  platformFeeAck          Boolean         @default(false) @map("platform_fee_ack")
+  confidentialityAck      Boolean         @default(false) @map("confidentiality_ack")
+  
+  clientSigned            Boolean         @default(false) @map("client_signed")
+  clientSignedAt          DateTime?       @map("client_signed_at")
+  clientSignerIp          String?         @map("client_signer_ip")
+  clientSignerName        String?         @map("client_signer_name")
+
+  attorneySigned          Boolean         @default(false) @map("attorney_signed")
+  attorneySignedAt        DateTime?       @map("attorney_signed_at")
+  attorneySignerIp        String?         @map("attorney_signer_ip")
+  attorneySignerName      String?         @map("attorney_signer_name")
+
+  declinedBy              String?         @map("declined_by")
+  declineReason           String?         @map("decline_reason")
+
+  status                  AgreementStatus @default(PENDING_SIGNATURES)
+  fullyExecutedAt         DateTime?       @map("fully_executed_at")
+  createdAt               DateTime        @default(now()) @map("created_at")
+  updatedAt               DateTime        @updatedAt @map("updated_at")
+
+  @@map("case_agreements")
 }
 
 model CaseTimeline {

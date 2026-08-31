@@ -1,5 +1,7 @@
 import * as Joi from 'joi';
 
+export const PHONE_REGEX = /^(\+?[1-9]\d{6,14}|0[97]\d{8})$/;
+
 export interface SendPhoneOtpDto {
   phone: string;
   purpose?: string;
@@ -7,10 +9,10 @@ export interface SendPhoneOtpDto {
 
 export const SendPhoneOtpSchema = Joi.object({
   phone: Joi.string()
-    .regex(/^\+?[1-9]\d{6,14}$/)
+    .regex(PHONE_REGEX)
     .required()
     .messages({
-      'string.pattern.base': 'phone must be a valid E.164 phone number format (e.g. +251911223344)',
+      'string.pattern.base': 'phone must be a valid phone number (e.g. +251911223344 or 0911223344)',
     }),
 });
 
@@ -20,7 +22,7 @@ export interface VerifyPhoneOtpDto {
 }
 
 export const VerifyPhoneOtpSchema = Joi.object({
-  phone: Joi.string().regex(/^\+?[1-9]\d{6,14}$/).required(),
+  phone: Joi.string().regex(PHONE_REGEX).required(),
   code: Joi.string().length(6).regex(/^\d+$/).required().messages({
     'string.length': 'OTP code must be exactly 6 digits',
     'string.pattern.base': 'OTP code must contain numeric digits only',
@@ -46,7 +48,7 @@ export const RegisterClientSchema = Joi.object({
   password: Joi.string().min(8).max(128).required().messages({
     'string.min': 'password must be at least 8 characters long',
   }),
-  phone: Joi.string().regex(/^\+?[1-9]\d{6,14}$/).required(),
+  phone: Joi.string().regex(PHONE_REGEX).required(),
   otpContinuationToken: Joi.string().trim().optional(),
   emailContinuationToken: Joi.string().trim().optional(),
   emailToken: Joi.string().trim().optional(),
@@ -149,7 +151,7 @@ export const RegisterAttorneySchema = Joi.object({
   surname: Joi.string().trim().min(1).max(50).optional(),
   email: Joi.string().email().lowercase().trim().required(),
   password: Joi.string().min(8).max(128).required(),
-  phone: Joi.string().regex(/^\+?[1-9]\d{6,14}$/).required(),
+  phone: Joi.string().regex(PHONE_REGEX).required(),
   barNumber: Joi.string().trim().optional(),
   barRegistrationNumber: Joi.string().trim().optional(),
   barAdmissionYear: Joi.alternatives().try(Joi.number().integer(), Joi.string().trim()).optional(),
