@@ -1,9 +1,9 @@
 import { Injectable, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { CacheService } from '@workspace/cache';
 import { AppLoggerService } from '@workspace/logger';
+import { SmsService, validateEthiopianMobilePrefix } from '@workspace/sms';
 import * as bcrypt from 'bcrypt';
 import { prisma } from '../auth-shared/prisma';
-import { validateEthiopianMobilePrefix } from '../auth-shared/phone.util';
 import { OTP_HASH_SALT_ROUNDS } from '../auth-shared/constants';
 import { generateNumericOtp } from '../auth-shared/otp-code.util';
 import { SendPhoneOtpDto, VerifyPhoneOtpDto } from '../dto/auth.dto';
@@ -14,6 +14,7 @@ export class OtpService {
 
   constructor(
     private readonly cacheService: CacheService,
+    private readonly smsService: SmsService,
     private readonly logger: AppLoggerService,
   ) {}
 
@@ -59,57 +60,20 @@ export class OtpService {
       }
     });
 
-    // Send SMS via AfroMessage API gateway. The OTP row already exists regardless of
-    // dispatch outcome (the user can request a resend), so a dispatch failure here
-    // must not fail the request - but it must be surfaced via `smsDispatched` rather
-    // than silently claiming success, since the caller/UI may want to warn the user.
-    let smsDispatched = false;
-    try {
-      const token = process.env.AFROMESSAGE_TOKEN;
-      const baseUrl = process.env.AFROMESSAGE_BASE_URL || 'https://api.afromessage.com/api';
-      const sender = process.env.AFROMESSAGE_SENDER;
-      const identifier = process.env.AFROMESSAGE_IDENTIFIER;
-      const messageText = `Your Tebeka Legal Portal verification code is: ${rawCode}. Valid for 5 minutes.`;
-
-      if (token) {
-        const queryParams = new URLSearchParams({
-          to: phone,
-          message: messageText,
-        });
-        if (identifier) queryParams.set('from', identifier);
-        if (sender) queryParams.set('sender', sender);
-
-        let apiRes = await fetch(`${baseUrl}/send?${queryParams.toString()}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        let resData: any = await apiRes.json().catch(() => null);
-
-        // If sender ID is not approved or invalid, retry with default sender
-        if (resData?.acknowledge === 'error' && sender && resData?.response?.errors?.[0]?.includes('sender id/name')) {
-          queryParams.delete('sender');
-          apiRes = await fetch(`${baseUrl}/send?${queryParams.toString()}`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
-          resData = await apiRes.json().catch(() => null);
-        }
-
-        smsDispatched = apiRes.ok && resData?.acknowledge === 'success';
-        this.logger.log(`AfroMessage dispatch result for ${phone}: status=${apiRes.status}, data=${JSON.stringify(resData)}`, 'OtpService');
-      }
-    } catch (error: any) {
-      this.logger.error(`AfroMessage dispatch failed for ${phone}: ${error?.message || error}`, error?.stack, 'OtpService');
-    }
+    // Send SMS via shared SmsService (AfroMessage Provider)
+    const smsResult = await this.smsService.sendOtp({
+      to: phone,
+      otpCode: rawCode,
+      purpose: data.purpose || 'REGISTRATION',
+      validityMinutes: 5,
+    });
 
     return {
       status: 'success',
       purpose: data.purpose || 'REGISTRATION',
       expiresInSeconds: 300,
       resendCooldownSeconds: 60,
-      smsDispatched
+      smsDispatched: smsResult.success
     };
   }
 

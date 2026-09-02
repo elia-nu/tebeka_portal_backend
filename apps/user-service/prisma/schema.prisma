@@ -27,6 +27,33 @@ enum VerificationStatus {
   EXPIRED
 }
 
+enum AttorneyVerificationStatus {
+  DRAFT
+  SUBMITTED
+  PENDING_REVIEW
+  ADDITIONAL_INFO_REQUIRED
+  APPROVED
+  REJECTED
+  SUSPENDED
+  EXPIRED
+}
+
+enum CaseType {
+  NEW_ATTORNEY
+  GUARDED_CHANGE
+  ANNUAL
+  FRAUD_REVIEW
+}
+
+enum CaseStatus {
+  SUBMITTED
+  PENDING_REVIEW
+  ADDITIONAL_INFO_REQUIRED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
 enum ChecklistStatus {
   PENDING
   PASSED
@@ -318,7 +345,7 @@ model AttorneyProfile {
   nationalIdNumber      String?            @unique @map("national_id_number")
   nationalIdDocumentUrl String?            @map("national_id_document_url")
   otherSupportingDocuments String[]        @default([]) @map("other_supporting_documents")
-  verificationStatus    VerificationStatus @default(DRAFT) @map("verification_status")
+  verificationStatus    AttorneyVerificationStatus @default(DRAFT) @map("verification_status")
   verifiedAt            DateTime?          @map("verified_at")
   verifiedBy            String?            @map("verified_by")
   verificationNotes     String?            @map("verification_notes")
@@ -366,34 +393,35 @@ model AttorneyEducation {
 }
 
 model GuardedChange {
-  id                 String          @id @default(uuid())
-  attorneyId         String          @map("attorney_id")
-  attorney           AttorneyProfile @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
+  id                 String            @id @default(uuid())
+  attorneyId         String            @map("attorney_id")
+  attorney           AttorneyProfile   @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
   field              String
-  oldValue           String?         @map("old_value")
-  newValue           String?         @map("new_value")
-  verificationCaseId String?         @map("verification_case_id")
-  status             String          @default("PENDING")
+  oldValue           String?           @map("old_value")
+  newValue           String?           @map("new_value")
+  verificationCaseId String?           @map("verification_case_id")
+  verificationCase   VerificationCase? @relation(fields: [verificationCaseId], references: [id], onDelete: SetNull)
+  status             String            @default("PENDING")
   decision           String?
-  decisionBy         String?         @map("decision_by")
-  decisionAt         DateTime?       @map("decision_at")
-  createdAt          DateTime        @default(now()) @map("created_at")
-  updatedAt          DateTime        @updatedAt @map("updated_at")
+  decisionBy         String?           @map("decision_by")
+  decisionAt         DateTime?         @map("decision_at")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
 
   @@map("guarded_changes")
 }
 
 model Credential {
-  id                 String               @id @default(uuid())
-  attorneyId         String               @map("attorney_id")
-  attorney           AttorneyProfile      @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
-  credentialType     String               @map("credential_type")
+  id                 String                     @id @default(uuid())
+  attorneyId         String                     @map("attorney_id")
+  attorney           AttorneyProfile            @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
+  credentialType     String                     @map("credential_type")
   issuer             String
-  credentialNumber   String               @map("credential_number")
-  issueDate          DateTime?            @map("issue_date")
-  expiryDate         DateTime?            @map("expiry_date")
-  verificationStatus VerificationStatus   @default(DRAFT) @map("verification_status")
-  verifiedAt         DateTime?            @map("verified_at")
+  credentialNumber   String                     @map("credential_number")
+  issueDate          DateTime?                  @map("issue_date")
+  expiryDate         DateTime?                  @map("expiry_date")
+  verificationStatus AttorneyVerificationStatus @default(DRAFT) @map("verification_status")
+  verifiedAt         DateTime?                  @map("verified_at")
   
   documents          CredentialDocument[]
 
@@ -416,7 +444,8 @@ model VerificationCase {
   id                 String                  @id @default(uuid())
   attorneyId         String                  @map("attorney_id")
   attorney           AttorneyProfile         @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
-  status             VerificationStatus      @default(SUBMITTED)
+  caseType           CaseType                @default(NEW_ATTORNEY) @map("case_type")
+  status             CaseStatus              @default(SUBMITTED)
   fraudStatus        FraudStatus             @default(NONE) @map("fraud_status")
   assignedReviewerId String?                 @map("assigned_reviewer_id")
   slaDueDate         DateTime?               @map("sla_due_date")
@@ -435,7 +464,10 @@ model VerificationCase {
   previousCaseId     String?                 @map("previous_case_id")
   
   checklists         VerificationChecklist[]
+  guardedChanges     GuardedChange[]
 
+  @@index([caseType, status])
+  @@index([slaDueDate])
   @@map("verification_cases")
 }
 

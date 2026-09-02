@@ -61,6 +61,11 @@ export class VerificationsController {
     return this.verificationCaseService.findAll(query);
   }
 
+  @Get('sla-report')
+  async getSlaReport() {
+    return this.verificationCaseService.getSlaReport();
+  }
+
   @Get(':id')
   async getVerificationById(@Param('id') id: string, @Req() req: any) {
     if (req.user?.id) {

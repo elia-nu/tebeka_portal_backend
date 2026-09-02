@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { PrismaClient, QueueJobStatus, NotificationChannel } from '@prisma/client/communication';
 import { AppLoggerService } from '@workspace/logger';
@@ -7,10 +7,14 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class EmailDeliveryService {
+  private readonly logger: AppLoggerService;
+
   constructor(
-    private readonly mailerService: MailerService,
-    private readonly logger: AppLoggerService
-  ) {}
+    @Optional() private readonly mailerService?: MailerService,
+    @Optional() logger?: AppLoggerService
+  ) {
+    this.logger = logger || new AppLoggerService('EmailDeliveryService');
+  }
 
   async sendEmailJob(jobId: string) {
     const job = await prisma.emailQueue.findUnique({
@@ -21,11 +25,15 @@ export class EmailDeliveryService {
     if (!job || job.status === QueueJobStatus.COMPLETED) return;
 
     try {
-      await this.mailerService.sendMail({
-        to: job.recipientEmail,
-        subject: job.subject,
-        html: job.htmlContent,
-      });
+      if (this.mailerService && typeof this.mailerService.sendMail === 'function') {
+        await this.mailerService.sendMail({
+          to: job.recipientEmail,
+          subject: job.subject,
+          html: job.htmlContent,
+        });
+      } else {
+        this.logger.log(`[MOCK-EMAIL] Dispatched email to ${job.recipientEmail}: "${job.subject}"`, 'EmailDeliveryService');
+      }
 
       await prisma.emailQueue.update({
         where: { id: jobId },

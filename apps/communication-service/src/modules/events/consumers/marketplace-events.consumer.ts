@@ -15,6 +15,29 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    // 1. Consultation Requested
+    await this.eventBus.subscribe('BOOKING_REQUESTED', async (payload: any) => {
+      this.logger.log(`Received BOOKING_REQUESTED event for booking: ${payload.bookingId}`, 'MarketplaceEventsConsumer');
+      const appointmentTime = `${payload.bookingDate ? new Date(payload.bookingDate).toISOString().split('T')[0] : ''} ${payload.startTime || ''} - ${payload.endTime || ''}`;
+
+      if (payload.attorneyId) {
+        await this.notificationDispatcher.dispatch({
+          recipientId: payload.attorneyId,
+          recipientEmail: payload.attorneyEmail,
+          recipientPhone: payload.attorneyPhone,
+          templateKey: 'booking.requested',
+          variables: {
+            user_name: payload.attorneyName || 'Attorney',
+            reference_number: payload.referenceNumber || payload.bookingId,
+            appointment_time: appointmentTime,
+          },
+          category: 'BOOKING',
+          referenceNumber: payload.referenceNumber,
+        });
+      }
+    });
+
+    // 2. Booking / Consultation Created
     await this.eventBus.subscribe('BOOKING_CREATED', async (payload: any) => {
       this.logger.log(`Received BOOKING_CREATED event for booking: ${payload.bookingId}`, 'MarketplaceEventsConsumer');
       if (payload.clientId && payload.attorneyId) {
@@ -31,13 +54,14 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
       }
     });
 
+    // 3. Consultation Confirmed
     await this.eventBus.subscribe('BOOKING_CONFIRMED', async (payload: any) => {
       this.logger.log(`Received BOOKING_CONFIRMED event for booking: ${payload.bookingId}`, 'MarketplaceEventsConsumer');
       
       const meetingLink = payload.meetingLink || `https://meet.google.com/${payload.referenceNumber || payload.bookingId}`;
       const appointmentTime = `${payload.bookingDate ? new Date(payload.bookingDate).toISOString().split('T')[0] : ''} ${payload.startTime || ''} - ${payload.endTime || ''}`;
 
-      // 1. Notify Client
+      // Notify Client
       if (payload.clientId) {
         await this.notificationDispatcher.dispatch({
           recipientId: payload.clientId,
@@ -57,7 +81,7 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
         });
       }
 
-      // 2. Notify Attorney
+      // Notify Attorney
       if (payload.attorneyId) {
         await this.notificationDispatcher.dispatch({
           recipientId: payload.attorneyId,
@@ -78,6 +102,50 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
       }
     });
 
+    // 4. Consultation Rescheduled
+    await this.eventBus.subscribe('BOOKING_RESCHEDULED', async (payload: any) => {
+      this.logger.log(`Received BOOKING_RESCHEDULED event for booking: ${payload.bookingId}`, 'MarketplaceEventsConsumer');
+      const meetingLink = payload.meetingLink || `https://meet.google.com/${payload.referenceNumber || payload.bookingId}`;
+      const appointmentTime = `${payload.bookingDate ? new Date(payload.bookingDate).toISOString().split('T')[0] : ''} ${payload.startTime || ''} - ${payload.endTime || ''}`;
+
+      if (payload.clientId) {
+        await this.notificationDispatcher.dispatch({
+          recipientId: payload.clientId,
+          recipientEmail: payload.clientEmail,
+          recipientPhone: payload.clientPhone,
+          templateKey: 'booking.rescheduled',
+          variables: {
+            user_name: payload.clientName || 'Client',
+            reference_number: payload.referenceNumber || payload.bookingId,
+            appointment_time: appointmentTime,
+            meeting_link: meetingLink,
+          },
+          actionUrl: meetingLink,
+          category: 'BOOKING',
+          referenceNumber: payload.referenceNumber,
+        });
+      }
+
+      if (payload.attorneyId) {
+        await this.notificationDispatcher.dispatch({
+          recipientId: payload.attorneyId,
+          recipientEmail: payload.attorneyEmail,
+          recipientPhone: payload.attorneyPhone,
+          templateKey: 'booking.rescheduled',
+          variables: {
+            user_name: payload.attorneyName || 'Attorney',
+            reference_number: payload.referenceNumber || payload.bookingId,
+            appointment_time: appointmentTime,
+            meeting_link: meetingLink,
+          },
+          actionUrl: meetingLink,
+          category: 'BOOKING',
+          referenceNumber: payload.referenceNumber,
+        });
+      }
+    });
+
+    // 5. Consultation Cancelled
     await this.eventBus.subscribe('BOOKING_CANCELLED', async (payload: any) => {
       this.logger.log(`Received BOOKING_CANCELLED event for booking: ${payload.bookingId}`, 'MarketplaceEventsConsumer');
       if (payload.clientId) {
@@ -97,6 +165,7 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
       }
     });
 
+    // 6. Case Created
     await this.eventBus.subscribe('CASE_CREATED', async (payload: any) => {
       this.logger.log(`Received CASE_CREATED event for case: ${payload.caseId}`, 'MarketplaceEventsConsumer');
       if (payload.clientId && payload.attorneyId) {
@@ -110,6 +179,75 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
           },
           payload.clientId
         );
+
+        await this.notificationDispatcher.dispatch({
+          recipientId: payload.attorneyId,
+          recipientEmail: payload.attorneyEmail,
+          recipientPhone: payload.attorneyPhone,
+          templateKey: 'case.created',
+          variables: {
+            user_name: payload.attorneyName || 'Attorney',
+            case_reference: payload.referenceNumber || payload.caseId,
+            case_title: payload.title || 'Legal Representation',
+          },
+          category: 'CASE',
+          referenceNumber: payload.referenceNumber,
+        });
+      }
+    });
+
+    // 7. Case Agreement Executed & Funded
+    await this.eventBus.subscribe('AGREEMENT_EXECUTED', async (payload: any) => {
+      this.logger.log(`Received AGREEMENT_EXECUTED event for case: ${payload.caseId}`, 'MarketplaceEventsConsumer');
+      if (payload.clientId) {
+        await this.notificationDispatcher.dispatch({
+          recipientId: payload.clientId,
+          recipientEmail: payload.clientEmail,
+          recipientPhone: payload.clientPhone,
+          templateKey: 'agreement.executed',
+          variables: {
+            user_name: payload.clientName || 'Client',
+            case_reference: payload.referenceNumber || payload.caseId,
+            amount: payload.totalFee || payload.amount || 0,
+          },
+          category: 'CASE',
+          referenceNumber: payload.referenceNumber,
+        });
+      }
+      if (payload.attorneyId) {
+        await this.notificationDispatcher.dispatch({
+          recipientId: payload.attorneyId,
+          recipientEmail: payload.attorneyEmail,
+          recipientPhone: payload.attorneyPhone,
+          templateKey: 'agreement.executed',
+          variables: {
+            user_name: payload.attorneyName || 'Counselor',
+            case_reference: payload.referenceNumber || payload.caseId,
+            amount: payload.totalFee || payload.amount || 0,
+          },
+          category: 'CASE',
+          referenceNumber: payload.referenceNumber,
+        });
+      }
+    });
+
+    // 8. Review / Feedback Requested (Post-Appointment)
+    await this.eventBus.subscribe('REVIEW_REQUESTED', async (payload: any) => {
+      this.logger.log(`Received REVIEW_REQUESTED event for booking: ${payload.bookingId}`, 'MarketplaceEventsConsumer');
+      if (payload.clientId) {
+        await this.notificationDispatcher.dispatch({
+          recipientId: payload.clientId,
+          recipientEmail: payload.clientEmail,
+          recipientPhone: payload.clientPhone,
+          templateKey: 'review.requested',
+          variables: {
+            user_name: payload.clientName || 'Client',
+            attorney_name: payload.attorneyName || 'Attorney',
+            reference_number: payload.referenceNumber || payload.bookingId,
+          },
+          category: 'REVIEW',
+          referenceNumber: payload.referenceNumber,
+        });
       }
     });
   }

@@ -42,15 +42,24 @@ export class NotificationDispatcherService {
   }) {
     let title = data.title || 'Notification';
     let body = data.body || '';
-    let channels = data.channels || [NotificationChannel.IN_APP];
+    let rawChannels = data.channels || [NotificationChannel.IN_APP];
+    const category = (data.category || 'SYSTEM').toUpperCase();
+    const priority = data.priority || NotificationPriority.NORMAL;
 
-    // Resolve template if templateKey is provided
+    // 1. Fetch user's notification preferences to honor channel choices
+    let userPref = await prisma.userNotificationPreference.findUnique({
+      where: { userId: data.recipientId },
+    });
+
+    const activeLocale = data.locale || userPref?.preferredLocale || 'en';
+
+    // 2. Resolve template if templateKey is provided
     if (data.templateKey) {
       try {
         const template = await this.templateService.getTemplate(data.templateKey);
         if (template) {
-          channels = data.channels || template.channels;
-          const rendered = this.templateService.renderTemplate(template, data.locale || 'en', data.variables || {});
+          rawChannels = data.channels || template.channels;
+          const rendered = this.templateService.renderTemplate(template, activeLocale, data.variables || {});
           title = rendered.subject || title;
           body = rendered.body || body;
         }
@@ -58,6 +67,40 @@ export class NotificationDispatcherService {
         // Fallback to direct title and body
       }
     }
+
+    // 3. Filter channels based on user preferences (Critical/Auth notifications bypass user mute)
+    const isCritical = priority === NotificationPriority.CRITICAL || category === 'AUTHENTICATION' || category === 'VERIFICATION';
+    const channels = rawChannels.filter((channel) => {
+      if (isCritical) return true;
+
+      // Category-level preference gating
+      if (userPref) {
+        if (category === 'BOOKING') {
+          if (data.templateKey?.includes('reminder') && userPref.bookingReminders === false) {
+            return false;
+          }
+          if (userPref.bookingUpdates === false) return false;
+        }
+        if (category === 'CASE' && userPref.caseUpdates === false) return false;
+        if (category === 'PAYMENT' && userPref.paymentAlerts === false) return false;
+        if (category === 'MARKETING' && userPref.marketingPromotions === false) return false;
+      }
+
+      // Channel-level toggles
+      if (channel === NotificationChannel.EMAIL) {
+        return userPref ? userPref.emailEnabled : true;
+      }
+      if (channel === NotificationChannel.SMS) {
+        return userPref ? userPref.smsEnabled : true;
+      }
+      if (channel === NotificationChannel.PUSH) {
+        return userPref ? userPref.pushEnabled : true;
+      }
+      if (channel === NotificationChannel.IN_APP || channel === NotificationChannel.WEBSOCKET) {
+        return userPref ? userPref.inAppEnabled : true;
+      }
+      return true;
+    });
 
     // Look up registered active device tokens for mobile push
     const userDeviceTokens = await prisma.deviceToken.findMany({
@@ -78,8 +121,8 @@ export class NotificationDispatcherService {
           templateKey: data.templateKey || null,
           title,
           body,
-          category: data.category || 'SYSTEM',
-          priority: data.priority || NotificationPriority.NORMAL,
+          category,
+          priority,
           channels,
           status: NotificationStatus.SENT,
           actionUrl: data.actionUrl || null,
@@ -145,8 +188,8 @@ export class NotificationDispatcherService {
               dataPayload: {
                 actionUrl: data.actionUrl,
                 referenceNumber: data.referenceNumber,
-                category: data.category,
-                priority: data.priority,
+                category,
+                priority,
               },
               status: QueueJobStatus.PENDING,
             },

@@ -12,10 +12,11 @@ export class VerificationCaseService {
     return prisma.verificationCase.create({
       data: {
         attorneyId: data.attorneyId,
+        caseType: data.caseType || 'NEW_ATTORNEY',
         status: 'SUBMITTED',
         slaDueDate,
         checklists: {
-          create: [
+          create: data.checklists || [
             { itemName: 'identity_match', status: 'PENDING' },
             { itemName: 'bar_number_format', status: 'PENDING' },
             { itemName: 'certificate_authenticity', status: 'PENDING' },
@@ -33,6 +34,7 @@ export class VerificationCaseService {
     const skip = (page - 1) * limit;
 
     const where: any = {};
+    if (query.caseType) where.caseType = query.caseType;
     if (query.status) where.status = query.status;
     if (query.fraudStatus) where.fraudStatus = query.fraudStatus;
     if (query.assignedReviewerId) where.assignedReviewerId = query.assignedReviewerId;
@@ -49,6 +51,83 @@ export class VerificationCaseService {
     ]);
 
     return { items: sanitizeUser(items), total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async getSlaReport() {
+    const now = new Date();
+    const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    const activeCases = await prisma.verificationCase.findMany({
+      where: {
+        status: { in: ['SUBMITTED', 'PENDING_REVIEW', 'ADDITIONAL_INFO_REQUIRED'] as any }
+      },
+      include: {
+        attorney: { select: { id: true, fullName: true, licenseNumber: true, barRegistrationNumber: true } }
+      }
+    });
+
+    const totalActiveCases = activeCases.length;
+    let totalBreached = 0;
+    let atRiskCases = 0;
+    let pausedCases = 0;
+    const breachedCases: any[] = [];
+
+    const byCaseType: Record<string, { active: number; breached: number; atRisk: number; paused: number }> = {
+      NEW_ATTORNEY: { active: 0, breached: 0, atRisk: 0, paused: 0 },
+      GUARDED_CHANGE: { active: 0, breached: 0, atRisk: 0, paused: 0 },
+      ANNUAL: { active: 0, breached: 0, atRisk: 0, paused: 0 },
+      FRAUD_REVIEW: { active: 0, breached: 0, atRisk: 0, paused: 0 },
+    };
+
+    for (const c of activeCases) {
+      const type = (c as any).caseType || 'NEW_ATTORNEY';
+      if (!byCaseType[type]) {
+        byCaseType[type] = { active: 0, breached: 0, atRisk: 0, paused: 0 };
+      }
+      byCaseType[type].active++;
+
+      if (c.isSlaPaused) {
+        pausedCases++;
+        byCaseType[type].paused++;
+        continue;
+      }
+
+      if (c.slaDueDate) {
+        const dueDate = new Date(c.slaDueDate);
+        if (dueDate < now) {
+          totalBreached++;
+          byCaseType[type].breached++;
+          const hoursOverdue = Math.round((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60));
+          breachedCases.push({
+            caseId: c.id,
+            attorneyId: c.attorneyId,
+            attorneyName: c.attorney?.fullName || 'Attorney',
+            caseType: type,
+            status: c.status,
+            slaDueDate: c.slaDueDate,
+            hoursOverdue,
+            assignedReviewerId: c.assignedReviewerId,
+          });
+        } else if (dueDate <= in24h) {
+          atRiskCases++;
+          byCaseType[type].atRisk++;
+        }
+      }
+    }
+
+    const complianceRate = totalActiveCases > 0
+      ? Number((((totalActiveCases - totalBreached) / totalActiveCases) * 100).toFixed(1))
+      : 100.0;
+
+    return {
+      totalActiveCases,
+      totalBreached,
+      atRiskCases,
+      pausedCases,
+      complianceRate,
+      byCaseType,
+      breachedCases,
+    };
   }
 
   async findOne(id: string) {

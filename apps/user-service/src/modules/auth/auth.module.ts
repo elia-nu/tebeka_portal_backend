@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AppConfigModule, AppConfigService } from '@workspace/config';
 import { CacheModule } from '@workspace/cache';
+import { SmsModule } from '@workspace/sms';
 import { AuthController } from './auth.controller';
 import { RegistrationService } from './services/registration.service';
 import { OtpService } from './services/otp.service';
@@ -16,6 +17,7 @@ import { AuthReportsService } from './services/auth-reports.service';
   imports: [
     AppConfigModule,
     CacheModule,
+    SmsModule,
     JwtModule.registerAsync({
       imports: [AppConfigModule],
       inject: [AppConfigService],

@@ -339,6 +339,33 @@ export class AttorneyProfileService {
       }
     }
 
+    let guardedCase = null;
+    if (guardedChanges.length > 0) {
+      const slaDueDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+      guardedCase = await prisma.verificationCase.create({
+        data: {
+          attorneyId: id,
+          caseType: 'GUARDED_CHANGE',
+          status: 'SUBMITTED',
+          slaDueDate,
+          checklists: {
+            create: [
+              { itemName: 'guarded_field_accuracy', status: 'PENDING' },
+              { itemName: 'document_proof_verified', status: 'PENDING' }
+            ]
+          }
+        }
+      });
+
+      for (const gc of guardedChanges) {
+        await prisma.guardedChange.update({
+          where: { id: gc.id },
+          data: { verificationCaseId: guardedCase.id }
+        }).catch(() => {});
+        gc.verificationCaseId = guardedCase.id;
+      }
+    }
+
     if (Object.keys(updateData).length > 0) {
       await prisma.attorneyProfile.update({
         where: { id },
@@ -352,6 +379,7 @@ export class AttorneyProfileService {
         ? 'Open fields updated immediately. Guarded field updates submitted for verification approval.'
         : 'Profile updated successfully',
       verificationStatus: updateData.verificationStatus || attorney.verificationStatus,
+      verificationCaseId: guardedCase?.id || null,
       pendingGuardedChanges: guardedChanges
     };
   }

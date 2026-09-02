@@ -225,5 +225,54 @@ export class UsersService {
       update: data,
     });
   }
+
+  async getMyNotificationPreferences(userId: string) {
+    const pref = await this.getMyPreferences(userId);
+    return {
+      status: 'success',
+      userId,
+      channels: {
+        email: (pref as any).emailNotifications ?? true,
+        sms: (pref as any).smsNotifications ?? true,
+        push: (pref as any).pushNotifications ?? true,
+        in_app: true,
+      },
+      categories: (pref as any).notificationPreferences || {
+        bookingUpdates: true,
+        bookingReminders: true,
+        caseUpdates: true,
+        paymentAlerts: true,
+        marketingPromotions: false,
+      },
+    };
+  }
+
+  async updateMyNotificationPreferences(userId: string, data: any) {
+    const updatePayload: any = {};
+    if (data.emailEnabled !== undefined || data.email !== undefined) {
+      updatePayload.emailNotifications = data.emailEnabled ?? data.email;
+    }
+    if (data.smsEnabled !== undefined || data.sms !== undefined) {
+      updatePayload.smsNotifications = data.smsEnabled ?? data.sms;
+    }
+    if (data.pushEnabled !== undefined || data.push !== undefined) {
+      updatePayload.pushNotifications = data.pushEnabled ?? data.push;
+    }
+    if (data.categories || data.customSettings || data.bookingUpdates !== undefined || data.caseUpdates !== undefined) {
+      const currentPref = await this.getMyPreferences(userId);
+      const existingCategories = (currentPref as any).notificationPreferences || {};
+      updatePayload.notificationPreferences = {
+        ...existingCategories,
+        ...(data.categories || {}),
+        ...(data.bookingUpdates !== undefined ? { bookingUpdates: data.bookingUpdates } : {}),
+        ...(data.bookingReminders !== undefined ? { bookingReminders: data.bookingReminders } : {}),
+        ...(data.caseUpdates !== undefined ? { caseUpdates: data.caseUpdates } : {}),
+        ...(data.paymentAlerts !== undefined ? { paymentAlerts: data.paymentAlerts } : {}),
+        ...(data.marketingPromotions !== undefined ? { marketingPromotions: data.marketingPromotions } : {}),
+      };
+    }
+    return this.updateMyPreferences(userId, updatePayload);
+  }
 }
+
 

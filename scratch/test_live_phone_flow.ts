@@ -69,9 +69,10 @@ async function testWithTargetPhone(rawInputPhone = '0941893993') {
     signOptions: { expiresIn: '7d' },
   });
 
+  const smsService = new (require('../libs/sms/src').SmsService)(new (require('../libs/sms/src').AfroMessageProvider)(logger));
   const sessionTokenService = new SessionTokenService(jwtService, cacheService, appConfigService);
   const emailVerificationService = new EmailVerificationService(logger);
-  const otpService = new OtpService(cacheService, logger);
+  const otpService = new OtpService(cacheService, smsService, logger);
   const registrationService = new RegistrationService(sessionTokenService, emailVerificationService, logger);
   const loginService = new LoginService(cacheService, sessionTokenService, logger);
   const passwordService = new PasswordService(logger);

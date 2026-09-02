@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Query, Body, Req, UsePipes } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body, Req, UsePipes } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { NotificationDispatcherService } from './notification-dispatcher.service';
 import {
@@ -6,6 +6,10 @@ import {
   DispatchNotificationSchema,
   QueryNotificationDto,
   QueryNotificationSchema,
+  UpdateNotificationPreferenceDto,
+  UpdateNotificationPreferenceSchema,
+  UpdateChannelPreferencesDto,
+  UpdateChannelPreferencesSchema,
 } from './dto/notification.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
@@ -20,6 +24,39 @@ export class NotificationController {
   @UsePipes(new JoiValidationPipe(DispatchNotificationSchema))
   async dispatchNotification(@Body() body: DispatchNotificationDto) {
     return this.notificationDispatcherService.dispatch(body);
+  }
+
+  @Get('preferences')
+  async getMyPreferences(@Req() req: any, @Query('userId') queryUserId?: string) {
+    const userId = req.user?.id || queryUserId || 'client-user-1';
+    return this.notificationService.getUserPreferences(userId);
+  }
+
+  @Put('preferences')
+  @UsePipes(new JoiValidationPipe(UpdateNotificationPreferenceSchema))
+  async updateMyPreferences(
+    @Body() body: UpdateNotificationPreferenceDto,
+    @Req() req: any,
+    @Query('userId') queryUserId?: string
+  ) {
+    const userId = req.user?.id || queryUserId || 'client-user-1';
+    return this.notificationService.updateUserPreferences(userId, body);
+  }
+
+  @Put('preferences/channels')
+  @UsePipes(new JoiValidationPipe(UpdateChannelPreferencesSchema))
+  async updateChannelPreferences(
+    @Body() body: UpdateChannelPreferencesDto,
+    @Req() req: any,
+    @Query('userId') queryUserId?: string
+  ) {
+    const userId = req.user?.id || queryUserId || 'client-user-1';
+    return this.notificationService.updateChannelPreferences(userId, body);
+  }
+
+  @Get('preferences/:userId')
+  async getUserPreferencesById(@Param('userId') targetUserId: string) {
+    return this.notificationService.getUserPreferences(targetUserId);
   }
 
   @Get()
