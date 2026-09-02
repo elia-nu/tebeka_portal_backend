@@ -29,8 +29,8 @@ export class UserEventsConsumer implements OnModuleInit {
         recipientId: payload.userId || payload.attorneyId,
         recipientEmail: payload.email,
         recipientPhone: payload.phone,
-        title: 'Attorney Verification Approved',
-        body: 'Congratulations! Your legal practice credentials have been verified. Your profile is now live.',
+        templateKey: 'attorney.verified',
+        variables: { user_name: payload.name || payload.fullName || 'Counselor' },
         category: 'VERIFICATION',
       });
     });

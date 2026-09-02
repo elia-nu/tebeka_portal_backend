@@ -115,4 +115,83 @@ export class NotificationService {
       orderBy: { updatedAt: 'desc' },
     });
   }
+
+  async getUserPreferences(userId: string) {
+    let pref = await prisma.userNotificationPreference.findUnique({
+      where: { userId },
+    });
+
+    if (!pref) {
+      pref = await prisma.userNotificationPreference.create({
+        data: {
+          userId,
+          emailEnabled: true,
+          smsEnabled: true,
+          pushEnabled: true,
+          inAppEnabled: true,
+          bookingUpdates: true,
+          bookingReminders: true,
+          caseUpdates: true,
+          paymentAlerts: true,
+          marketingPromotions: false,
+          preferredLocale: 'en',
+        },
+      });
+    }
+
+    return {
+      status: 'success',
+      preferences: pref,
+      channels: {
+        email: pref.emailEnabled,
+        sms: pref.smsEnabled,
+        push: pref.pushEnabled,
+        in_app: pref.inAppEnabled,
+      },
+      categories: {
+        bookingUpdates: pref.bookingUpdates,
+        bookingReminders: pref.bookingReminders,
+        caseUpdates: pref.caseUpdates,
+        paymentAlerts: pref.paymentAlerts,
+        marketingPromotions: pref.marketingPromotions,
+      },
+    };
+  }
+
+  async updateUserPreferences(userId: string, data: any) {
+    const pref = await prisma.userNotificationPreference.upsert({
+      where: { userId },
+      update: {
+        ...data,
+        updatedAt: new Date(),
+      },
+      create: {
+        userId,
+        ...data,
+      },
+    });
+
+    return {
+      status: 'success',
+      message: 'Notification preferences updated successfully',
+      preferences: pref,
+      channels: {
+        email: pref.emailEnabled,
+        sms: pref.smsEnabled,
+        push: pref.pushEnabled,
+        in_app: pref.inAppEnabled,
+      },
+    };
+  }
+
+  async updateChannelPreferences(userId: string, channels: { email?: boolean; sms?: boolean; push?: boolean; in_app?: boolean }) {
+    const updateData: any = {};
+    if (channels.email !== undefined) updateData.emailEnabled = channels.email;
+    if (channels.sms !== undefined) updateData.smsEnabled = channels.sms;
+    if (channels.push !== undefined) updateData.pushEnabled = channels.push;
+    if (channels.in_app !== undefined) updateData.inAppEnabled = channels.in_app;
+
+    return this.updateUserPreferences(userId, updateData);
+  }
 }
+

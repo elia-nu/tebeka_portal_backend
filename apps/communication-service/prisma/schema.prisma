@@ -240,6 +240,27 @@ model NotificationTemplate {
   @@map("notification_templates")
 }
 
+model UserNotificationPreference {
+  id                  String   @id @default(uuid())
+  userId              String   @unique @map("user_id")
+  emailEnabled        Boolean  @default(true) @map("email_enabled")
+  smsEnabled          Boolean  @default(true) @map("sms_enabled")
+  pushEnabled         Boolean  @default(true) @map("push_enabled")
+  inAppEnabled        Boolean  @default(true) @map("in_app_enabled")
+  bookingUpdates      Boolean  @default(true) @map("booking_updates")
+  bookingReminders    Boolean  @default(true) @map("booking_reminders")
+  caseUpdates         Boolean  @default(true) @map("case_updates")
+  paymentAlerts       Boolean  @default(true) @map("payment_alerts")
+  marketingPromotions Boolean  @default(false) @map("marketing_promotions")
+  preferredLocale     String   @default("en") @map("preferred_locale")
+  customSettings      Json?    @map("custom_settings")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("user_notification_preferences")
+}
+
 model NotificationLog {
   id                String              @id @default(uuid())
   notificationId    String              @map("notification_id")

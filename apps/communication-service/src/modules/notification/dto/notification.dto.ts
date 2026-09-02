@@ -48,3 +48,45 @@ export const QueryNotificationSchema = Joi.object({
   isRead: Joi.boolean().optional(),
   category: Joi.string().optional(),
 });
+
+export interface UpdateNotificationPreferenceDto {
+  emailEnabled?: boolean;
+  smsEnabled?: boolean;
+  pushEnabled?: boolean;
+  inAppEnabled?: boolean;
+  bookingUpdates?: boolean;
+  bookingReminders?: boolean;
+  caseUpdates?: boolean;
+  paymentAlerts?: boolean;
+  marketingPromotions?: boolean;
+  preferredLocale?: string;
+  customSettings?: Record<string, any>;
+}
+
+export const UpdateNotificationPreferenceSchema = Joi.object({
+  emailEnabled: Joi.boolean().optional(),
+  smsEnabled: Joi.boolean().optional(),
+  pushEnabled: Joi.boolean().optional(),
+  inAppEnabled: Joi.boolean().optional(),
+  bookingUpdates: Joi.boolean().optional(),
+  bookingReminders: Joi.boolean().optional(),
+  caseUpdates: Joi.boolean().optional(),
+  paymentAlerts: Joi.boolean().optional(),
+  marketingPromotions: Joi.boolean().optional(),
+  preferredLocale: Joi.string().valid('en', 'am').optional(),
+  customSettings: Joi.object().optional(),
+});
+
+export interface UpdateChannelPreferencesDto {
+  email?: boolean;
+  sms?: boolean;
+  push?: boolean;
+  in_app?: boolean;
+}
+
+export const UpdateChannelPreferencesSchema = Joi.object({
+  email: Joi.boolean().optional(),
+  sms: Joi.boolean().optional(),
+  push: Joi.boolean().optional(),
+  in_app: Joi.boolean().optional(),
+});

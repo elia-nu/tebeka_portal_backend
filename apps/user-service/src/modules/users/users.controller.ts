@@ -91,6 +91,27 @@ export class UsersController {
   }
 
   @AllowAnonymous()
+  @Get('me/notification-preferences')
+  async getMyNotificationPreferences(@Req() req: any) {
+    const userId = await this.usersService.resolveUserId(req);
+    return this.usersService.getMyNotificationPreferences(userId);
+  }
+
+  @AllowAnonymous()
+  @Patch('me/notification-preferences')
+  async updateMyNotificationPreferences(@Req() req: any, @Body() body: any) {
+    const userId = await this.usersService.resolveUserId(req);
+    return this.usersService.updateMyNotificationPreferences(userId, body);
+  }
+
+  @AllowAnonymous()
+  @Patch('me/notification-preferences/channels')
+  async updateMyChannelPreferences(@Req() req: any, @Body() body: any) {
+    const userId = await this.usersService.resolveUserId(req);
+    return this.usersService.updateMyNotificationPreferences(userId, body);
+  }
+
+  @AllowAnonymous()
   @Get(':id')
   async getUserById(@Param('id') id: string) {
     return this.usersService.findOne(id);

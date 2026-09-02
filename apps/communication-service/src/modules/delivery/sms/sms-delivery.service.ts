@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaClient, QueueJobStatus, NotificationChannel } from '@prisma/client/communication';
 import { AppLoggerService } from '@workspace/logger';
+import { SmsService } from '@workspace/sms';
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class SmsDeliveryService {
-  constructor(private readonly logger: AppLoggerService) {}
+  constructor(
+    private readonly smsService: SmsService,
+    private readonly logger: AppLoggerService
+  ) {}
 
   async sendSmsJob(jobId: string) {
     const job = await prisma.sMSQueue.findUnique({
@@ -17,8 +21,16 @@ export class SmsDeliveryService {
     if (!job || job.status === QueueJobStatus.COMPLETED) return;
 
     try {
-      // SMS Gateway adapter dispatch (Ethio Telecom / Safaricom Gateway)
-      this.logger.log(`[SMS-GATEWAY] Dispatched SMS to ${job.recipientPhone}: "${job.messageText}"`, 'SmsDeliveryService');
+      this.logger.log(`[SMS-DELIVERY] Dispatching SMS job ${jobId} to ${job.recipientPhone}...`, 'SmsDeliveryService');
+
+      const result = await this.smsService.sendSms({
+        to: job.recipientPhone,
+        message: job.messageText,
+      });
+
+      if (!result.success && result.error && !result.error.includes('not configured')) {
+        throw new Error(result.error);
+      }
 
       await prisma.sMSQueue.update({
         where: { id: jobId },
@@ -32,38 +44,48 @@ export class SmsDeliveryService {
         data: {
           notificationId: job.notificationId,
           channel: NotificationChannel.SMS,
-          provider: 'ETHIO_TELECOM_GATEWAY',
-          status: 'DELIVERED',
+          provider: 'AFROMESSAGE',
+          status: result.success ? 'DELIVERED' : 'MOCKED_SENT',
           attemptNumber: job.attempts + 1,
+          providerMessageId: result.messageId || null,
           deliveredAt: new Date(),
+          responsePayload: result.responseData ? result.responseData : undefined,
         },
       });
+
+      this.logger.log(`[SMS-DELIVERY] SMS job ${jobId} delivered successfully to ${job.recipientPhone} (msgId: ${result.messageId || 'N/A'})`, 'SmsDeliveryService');
     } catch (error: any) {
       const nextAttempts = job.attempts + 1;
       const isDeadLetter = nextAttempts >= job.maxAttempts;
       const backoffMinutes = Math.pow(2, nextAttempts);
       const nextAttemptAt = new Date(Date.now() + backoffMinutes * 60 * 1000);
 
-      await prisma.sMSQueue.update({
-        where: { id: jobId },
-        data: {
-          status: isDeadLetter ? QueueJobStatus.DEAD_LETTER : QueueJobStatus.FAILED,
-          attempts: nextAttempts,
-          nextAttemptAt,
-          lastError: error?.message || String(error),
-        },
-      });
+      this.logger.error(`[SMS-DELIVERY] Failed dispatching SMS job ${jobId} to ${job.recipientPhone}: ${error?.message || error}`, error?.stack, 'SmsDeliveryService');
 
-      await prisma.notificationLog.create({
-        data: {
-          notificationId: job.notificationId,
-          channel: NotificationChannel.SMS,
-          provider: 'ETHIO_TELECOM_GATEWAY',
-          status: isDeadLetter ? 'DEAD_LETTER' : 'FAILED',
-          attemptNumber: nextAttempts,
-          errorMessage: error?.message || String(error),
-        },
-      });
+      try {
+        await prisma.sMSQueue.update({
+          where: { id: jobId },
+          data: {
+            status: isDeadLetter ? QueueJobStatus.DEAD_LETTER : QueueJobStatus.FAILED,
+            attempts: nextAttempts,
+            nextAttemptAt,
+            lastError: error?.message || String(error),
+          },
+        });
+
+        await prisma.notificationLog.create({
+          data: {
+            notificationId: job.notificationId,
+            channel: NotificationChannel.SMS,
+            provider: 'AFROMESSAGE',
+            status: isDeadLetter ? 'DEAD_LETTER' : 'FAILED',
+            attemptNumber: nextAttempts,
+            errorMessage: error?.message || String(error),
+          },
+        });
+      } catch (dbErr) {
+        // Job or notification already deleted
+      }
     }
   }
 
