@@ -583,6 +583,7 @@ export class RegistrationService {
       const createdCase = await tx.verificationCase.create({
         data: {
           attorneyId: createdUser.attorneyProfile!.id,
+          caseType: 'NEW_ATTORNEY',
           status: 'SUBMITTED',
           slaDueDate,
           checklists: {

@@ -40,9 +40,14 @@ export const FlagFraudSchema = Joi.object({
   notes: Joi.string().trim().max(1000).optional(),
 });
 
+export type CaseType = 'NEW_ATTORNEY' | 'GUARDED_CHANGE' | 'ANNUAL' | 'FRAUD_REVIEW';
+export type CaseStatus = 'SUBMITTED' | 'PENDING_REVIEW' | 'ADDITIONAL_INFO_REQUIRED' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+export type AttorneyVerificationStatus = 'DRAFT' | 'SUBMITTED' | 'PENDING_REVIEW' | 'ADDITIONAL_INFO_REQUIRED' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'EXPIRED';
+
 export interface QueryVerificationDto {
   page?: number;
   limit?: number;
+  caseType?: CaseType;
   status?: string;
   fraudStatus?: string;
   assignedReviewerId?: string;
@@ -53,6 +58,7 @@ export interface QueryVerificationDto {
 export const QueryVerificationSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
+  caseType: Joi.string().valid('NEW_ATTORNEY', 'GUARDED_CHANGE', 'ANNUAL', 'FRAUD_REVIEW').optional(),
   status: Joi.string().trim().optional(),
   fraudStatus: Joi.string().trim().optional(),
   assignedReviewerId: Joi.string().uuid().optional(),
