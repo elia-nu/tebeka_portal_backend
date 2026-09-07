@@ -19,6 +19,7 @@ import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { createMulterOptions } from '@workspace/storage';
 import { relative } from 'path';
 import { BlogsService } from './blogs.service';
+import { UsersService } from '../users/users.service';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 import {
   CreateBlogDto,
@@ -35,9 +36,27 @@ import {
 const BLOG_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const BLOG_IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
+@AllowAnonymous()
 @Controller()
 export class BlogsController {
-  constructor(private readonly blogsService: BlogsService) {}
+  constructor(
+    private readonly blogsService: BlogsService,
+    private readonly usersService: UsersService,
+  ) {}
+
+  private async resolveUserId(req: any): Promise<string> {
+    return this.usersService.resolveUserId(req);
+  }
+
+  private async resolveUserRole(req: any): Promise<string> {
+    try {
+      const userId = await this.usersService.resolveUserId(req);
+      const user = await this.usersService.findOne(userId);
+      return user.role;
+    } catch {
+      return 'ANONYMOUS';
+    }
+  }
 
   // =========================================================================
   // PUBLIC ENDPOINTS
@@ -51,15 +70,23 @@ export class BlogsController {
 
   @AllowAnonymous()
   @Get('public/blogs/categories')
+  async getPublicBlogsCategories() {
+    return this.blogsService.getAllCategories(false);
+  }
+
+  @AllowAnonymous()
   @Get('public/blog-categories')
-  async getPublicCategories() {
+  async getPublicBlogCategories() {
     return this.blogsService.getAllCategories(false);
   }
 
   @AllowAnonymous()
   @Get('public/blogs/:slugOrId')
   async getPublicBlogBySlugOrId(@Param('slugOrId') slugOrId: string, @Req() req: any) {
-    const currentUserId = req.user?.id || req.session?.user?.id;
+    let currentUserId: string | undefined;
+    try {
+      currentUserId = await this.resolveUserId(req);
+    } catch {}
     return this.blogsService.getPublicBlogBySlugOrId(slugOrId, currentUserId);
   }
 
@@ -77,6 +104,7 @@ export class BlogsController {
   // AUTHOR / ATTORNEY ENDPOINTS
   // =========================================================================
 
+  @AllowAnonymous()
   @Post('blogs')
   @UseInterceptors(
     FileInterceptor(
@@ -89,7 +117,7 @@ export class BlogsController {
     @Body() body: any,
     @Req() req: any,
   ) {
-    const authorId = req.user?.id || req.session?.user?.id;
+    const authorId = await this.resolveUserId(req);
     let featuredImageUrl: string | undefined;
 
     if (file) {
@@ -119,6 +147,7 @@ export class BlogsController {
     );
   }
 
+  @AllowAnonymous()
   @Patch('blogs/:id')
   @UseInterceptors(
     FileInterceptor(
@@ -132,8 +161,8 @@ export class BlogsController {
     @Body() body: any,
     @Req() req: any,
   ) {
-    const authorId = req.user?.id || req.session?.user?.id;
-    const role = req.user?.role || req.session?.user?.role;
+    const authorId = await this.resolveUserId(req);
+    const role = await this.resolveUserRole(req);
     let featuredImageUrl: string | undefined;
 
     if (file) {
@@ -161,22 +190,25 @@ export class BlogsController {
     );
   }
 
+  @AllowAnonymous()
   @Post('blogs/:id/submit-for-review')
   async submitBlogForReview(@Param('id') id: string, @Req() req: any) {
-    const authorId = req.user?.id || req.session?.user?.id;
+    const authorId = await this.resolveUserId(req);
     return this.blogsService.submitBlogForReview(id, authorId);
   }
 
+  @AllowAnonymous()
   @Get('blogs/my-blogs')
   async getMyBlogs(@Req() req: any, @Query() query: QueryBlogDto) {
-    const authorId = req.user?.id || req.session?.user?.id;
+    const authorId = await this.resolveUserId(req);
     return this.blogsService.getMyBlogs(authorId, query);
   }
 
+  @AllowAnonymous()
   @Delete('blogs/:id')
   async deleteBlog(@Param('id') id: string, @Req() req: any) {
-    const authorId = req.user?.id || req.session?.user?.id;
-    const role = req.user?.role || req.session?.user?.role;
+    const authorId = await this.resolveUserId(req);
+    const role = await this.resolveUserRole(req);
     return this.blogsService.deleteBlog(id, authorId, role);
   }
 
@@ -184,13 +216,15 @@ export class BlogsController {
   // INTERACTIVE USER ACTIONS: LIKES, COMMENTS, SHARES
   // =========================================================================
 
+  @AllowAnonymous()
   @HttpCode(HttpStatus.OK)
   @Post('blogs/:id/like')
   async toggleLike(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user?.id || req.session?.user?.id;
+    const userId = await this.resolveUserId(req);
     return this.blogsService.toggleLike(id, userId);
   }
 
+  @AllowAnonymous()
   @Post('blogs/:id/comments')
   @UsePipes(new JoiValidationPipe(CreateCommentSchema))
   async addComment(
@@ -198,14 +232,15 @@ export class BlogsController {
     @Body() body: CreateCommentDto,
     @Req() req: any,
   ) {
-    const userId = req.user?.id || req.session?.user?.id;
+    const userId = await this.resolveUserId(req);
     return this.blogsService.addComment(id, userId, body);
   }
 
+  @AllowAnonymous()
   @Delete('blogs/comments/:commentId')
   async deleteComment(@Param('commentId') commentId: string, @Req() req: any) {
-    const userId = req.user?.id || req.session?.user?.id;
-    const role = req.user?.role || req.session?.user?.role;
+    const userId = await this.resolveUserId(req);
+    const role = await this.resolveUserRole(req);
     return this.blogsService.deleteComment(commentId, userId, role);
   }
 
@@ -217,7 +252,10 @@ export class BlogsController {
     @Body() body: ShareBlogDto,
     @Req() req: any,
   ) {
-    const userId = req.user?.id || req.session?.user?.id;
+    let userId: string | undefined;
+    try {
+      userId = await this.resolveUserId(req);
+    } catch {}
     return this.blogsService.recordShare(id, userId, body);
   }
 }

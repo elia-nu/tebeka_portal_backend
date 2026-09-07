@@ -6,8 +6,10 @@ import { BlogCategoriesService } from './services/blog-categories.service';
 import { BlogModerationService } from './services/blog-moderation.service';
 import { BlogInteractionsService } from './services/blog-interactions.service';
 import { CommunicationServiceClient } from '../../integrations/communication-service.client';
+import { UsersModule } from '../users/users.module';
 
 @Module({
+  imports: [UsersModule],
   controllers: [BlogsController, AdminBlogsController],
   providers: [
     BlogsService,
