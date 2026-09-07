@@ -1,0 +1,1203 @@
+{
+  "info": {
+    "_postman_id": "tebeka-blog-service-rbac-collection-v1",
+    "name": "Tebeka Portal - Blog Service (Role-Based API Collection)",
+    "description": "Production-grade, end-to-end Postman collection for Tebeka Portal Blog & Editorial Engine. Structured by RBAC Role: Public/Anonymous Visitor, Attorney Author, Client/Reader Community, and Admin/Moderator.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. 🌐 Role: Public / Anonymous Visitor",
+      "description": "Open endpoints accessible to unauthenticated public visitors for blog discovery, category browsing, article reading, and social sharing.",
+      "item": [
+        {
+          "name": "1.1 GET Public Published Blogs (Filter & Search)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/blogs?page=1&limit=12&category=Commercial Law&tag=M&A&search=Commercial&sortBy=newest",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "blogs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "12",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "category",
+                  "value": "Commercial Law",
+                  "description": "Filter by category slug/name"
+                },
+                {
+                  "key": "tag",
+                  "value": "M&A",
+                  "description": "Filter by tag"
+                },
+                {
+                  "key": "search",
+                  "value": "Commercial",
+                  "description": "Full-text search in title, excerpt, and content"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "newest",
+                  "description": "Sorting: newest | popular | most_liked | most_viewed"
+                }
+              ]
+            },
+            "description": "Returns paginated list of published articles with author and category info."
+          },
+          "event": [],
+          "response": []
+        },
+        {
+          "name": "1.2 GET Public Blog Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/blog-categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "blog-categories"
+              ]
+            },
+            "description": "Lists all active blog categories along with live publishedPostCount counters."
+          },
+          "event": [],
+          "response": []
+        },
+        {
+          "name": "1.3 GET Public Blog Post by Slug or ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/blogs/:blogSlug",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "blogs",
+                "{{blogSlug}}"
+              ]
+            },
+            "description": "Fetches full published article details. Automatically increments view count and returns comments tree."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "  var data = pm.response.json();",
+                  "  pm.environment.set(\"blogId\", data.id);",
+                  "  pm.environment.set(\"blogSlug\", data.slug);",
+                  "}",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "1.4 GET Public Comments for Blog Post",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/blogs/:blogId/comments?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "blogs",
+                "{{blogId}}",
+                "comments"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of top-level comments per page"
+                }
+              ]
+            },
+            "description": "Retrieves top-level approved comments and their nested replies."
+          },
+          "event": [],
+          "response": []
+        },
+        {
+          "name": "1.5 POST Record Article Share",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": \"TELEGRAM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/blogs/:blogId/share",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blogs",
+                "{{blogId}}",
+                "share"
+              ]
+            },
+            "description": "Records an article share to LinkedIn, Telegram, Twitter, Facebook, or Direct Link. Open to all users."
+          },
+          "event": [],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. ⚖️ Role: Attorney / Author",
+      "description": "Authoring workflows for attorneys: creating drafts, updating articles, submitting drafts for admin moderation, and tracking personal article statistics.",
+      "item": [
+        {
+          "name": "2.1 POST Create Blog Post (Draft)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{attorneyAuthToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ethiopian Commercial Code Reform: Guidelines for Cross-Border M&A\",\n  \"content\": \"The revised Ethiopian Commercial Code introduces groundbreaking modernizations for private limited companies and corporate structuring in Addis Ababa. Here are key legal considerations for foreign investors...\",\n  \"excerpt\": \"Key takeaways and legal updates on the newly revised Commercial Code.\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"caseCategory\": \"Commercial Law\",\n  \"tags\": [\n    \"Commercial Law\",\n    \"M&A\",\n    \"Foreign Investment\"\n  ],\n  \"isFeatured\": false,\n  \"submitForReview\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/blogs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blogs"
+              ]
+            },
+            "description": "Creates a new blog post in DRAFT status."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "  var data = pm.response.json();",
+                  "  pm.environment.set(\"blogId\", data.id);",
+                  "  pm.environment.set(\"blogSlug\", data.slug);",
+                  "}",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "2.2 POST Create Blog Post with Featured Image (Multipart)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{attorneyAuthToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Arbitration Clauses in Ethiopian Construction Contracts",
+                  "type": "text"
+                },
+                {
+                  "key": "content",
+                  "value": "Arbitration remains the preferred mechanism for resolving dispute in large scale infrastructure projects in Ethiopia...",
+                  "type": "text"
+                },
+                {
+                  "key": "excerpt",
+                  "value": "Legal insights on drafting effective arbitration clauses under Ethiopian law.",
+                  "type": "text"
+                },
+                {
+                  "key": "caseCategory",
+                  "value": "Arbitration",
+                  "type": "text"
+                },
+                {
+                  "key": "tags",
+                  "value": "Arbitration, Construction Law, Dispute Resolution",
+                  "type": "text"
+                },
+                {
+                  "key": "submitForReview",
+                  "value": "false",
+                  "type": "text"
+                },
+                {
+                  "key": "featuredImage",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/blogs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blogs"
+              ]
+            },
+            "description": "Uploads a blog post with an image attachment (JPEG, PNG, WebP up to 5MB)."
+          },
+          "event": [],
+          "response": []
+        },
+        {
+          "name": "2.3 GET My Blogs List (Attorney Workspace)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{attorneyAuthToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/blogs/my-blogs?status=DRAFT&page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blogs",
+                "my-blogs"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "DRAFT",
+                  "description": "Filter by status: DRAFT | PENDING_REVIEW | PUBLISHED | REJECTED"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Limit"
+                }
+              ]
+            },
+            "description": "Lists all articles authored by the authenticated attorney with reaction and comment counters."
+          },
+          "event": [],
+          "response": []
+        },
+        {
+          "name": "2.4 PATCH Update My Blog Post",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{attorneyAuthToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ethiopian Commercial Code Reform: Guidelines for Cross-Border M&A (Updated)\",\n  \"excerpt\": \"Updated guidance incorporating Ministry of Trade registration regulations.\",\n  \"tags\": [\n    \"Commercial Law\",\n    \"M&A\",\n    \"Trade Ministry\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/blogs/:blogId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blogs",
+                "{{blogId}}"
+              ]
+            },
+            "description": "Updates content, title, tags, or excerpt of an existing draft or rejected article."
+          },
+          "event": [],
+          "response": []
+        },
+        {
+          "name": "2.5 POST Submit Blog Post for Editorial Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{attorneyAuthToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/blogs/:blogId/submit-for-review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blogs",
+                "{{blogId}}",
+                "submit-for-review"
+              ]
+            },
+            "description": "Submits draft or revised article to admin moderation queue. Sets status to PENDING_REVIEW and sends in-app notification to administrators."
+          },
+          "event": [],
+          "response": []
+        },
+        {
+          "name": "2.6 DELETE Delete My Blog Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{attorneyAuthToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/blogs/:blogId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blogs",
+                "{{blogId}}"
+              ]
+            },
+            "description": "Allows authors to delete their own unapproved or draft articles."
+          },
+          "event": [],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. 👤 Role: Client / Reader Community",
+      "description": "Interactive social endpoints for registered clients and portal users (liking, commenting, threaded discussions).",
+      "item": [
+        {
+          "name": "3.1 POST Toggle Like / Unlike on Article",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientAuthToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/blogs/:blogId/like",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blogs",
+                "{{blogId}}",
+                "like"
+              ]
+            },
+            "description": "Idempotently toggles article like. Returns { liked: boolean, likesCount: number }. Alerts article author on first like."
+          },
+          "event": [],
+          "response": []
+        },
+        {
+          "name": "3.2 POST Add Top-Level Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientAuthToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Excellent analysis! Does the new legislation mandate specific quorum requirements for private limited company board meetings?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/blogs/:blogId/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blogs",
+                "{{blogId}}",
+                "comments"
+              ]
+            },
+            "description": "Posts a top-level comment on the article."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "  var data = pm.response.json();",
+                  "  pm.environment.set(\"commentId\", data.id);",
+                  "}",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "3.3 POST Reply to Comment (Threaded)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{attorneyAuthToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Thank you Sara! Under Article 324, board meetings require a quorum of at least 50% voting shareholders unless otherwise specified in the articles of association.\",\n  \"parentId\": \"{{commentId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/blogs/:blogId/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blogs",
+                "{{blogId}}",
+                "comments"
+              ]
+            },
+            "description": "Creates a nested reply to an existing comment. Automatically alerts parent commenter."
+          },
+          "event": [],
+          "response": []
+        },
+        {
+          "name": "3.4 DELETE Delete My Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientAuthToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/blogs/comments/:commentId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blogs",
+                "comments",
+                "{{commentId}}"
+              ]
+            },
+            "description": "Deletes a comment authored by the authenticated user and decrements the post commentsCount."
+          },
+          "event": [],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. 🛡️ Role: Admin / Moderator",
+      "description": "Administrative controls for blog categories, moderation queues, editorial approvals, rejections with feedback, and direct portal announcements.",
+      "item": [
+        {
+          "name": "4.1 Blog Category Governance",
+          "item": [
+            {
+              "name": "4.1.1 POST Create Blog Category",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Corporate Governance & M&A\",\n  \"description\": \"Insights on corporate law, foreign investment, and joint ventures in Ethiopia.\",\n  \"isActive\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/blog-categories",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "blog-categories"
+                  ]
+                },
+                "description": "Creates a new category for organizing legal articles."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "",
+                      "if (pm.response.code === 201 || pm.response.code === 200) {",
+                      "  var data = pm.response.json();",
+                      "  pm.environment.set(\"categoryId\", data.id);",
+                      "}",
+                      ""
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "4.1.2 GET All Categories (Admin View)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/blog-categories",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "blog-categories"
+                  ]
+                },
+                "description": "Returns all categories including inactive ones with post counts."
+              },
+              "event": [],
+              "response": []
+            },
+            {
+              "name": "4.1.3 GET Category by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/blog-categories/:categoryId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "blog-categories",
+                    "{{categoryId}}"
+                  ]
+                },
+                "description": "Fetches category details by UUID."
+              },
+              "event": [],
+              "response": []
+            },
+            {
+              "name": "4.1.4 PATCH Update Blog Category",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Updated overview of commercial litigation and corporate governance in Ethiopia.\",\n  \"isActive\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/blog-categories/:categoryId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "blog-categories",
+                    "{{categoryId}}"
+                  ]
+                },
+                "description": "Modifies category name, description, icon URL, or status."
+              },
+              "event": [],
+              "response": []
+            },
+            {
+              "name": "4.1.5 DELETE Delete / Deactivate Category",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/blog-categories/:categoryId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "blog-categories",
+                    "{{categoryId}}"
+                  ]
+                },
+                "description": "Deletes empty category or soft-deactivates category if it contains published articles."
+              },
+              "event": [],
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "4.2 Editorial Moderation & Approval Queue",
+          "item": [
+            {
+              "name": "4.2.1 GET Admin Moderation Queue",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/blogs?status=PENDING_REVIEW&search=&page=1&limit=15",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "blogs"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "PENDING_REVIEW",
+                      "description": "PENDING_REVIEW | DRAFT | PUBLISHED | REJECTED"
+                    },
+                    {
+                      "key": "search",
+                      "value": "",
+                      "description": "Search by title, content, or author"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "description": "Page number"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "15",
+                      "description": "Limit"
+                    }
+                  ]
+                },
+                "description": "Fetches submitted articles awaiting editorial review."
+              },
+              "event": [],
+              "response": []
+            },
+            {
+              "name": "4.2.2 POST Reject Article with Revision Feedback",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Please expand on Section 2 regarding the legal prerequisites for foreign branch registrations with the Ministry of Trade.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/blogs/:blogId/reject",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "blogs",
+                    "{{blogId}}",
+                    "reject"
+                  ]
+                },
+                "description": "Rejects submission with structured guidance. Emits BLOG_POST_REJECTED outbox event and alerts author."
+              },
+              "event": [],
+              "response": []
+            },
+            {
+              "name": "4.2.3 POST Publish Article",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/blogs/:blogId/publish",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "blogs",
+                    "{{blogId}}",
+                    "publish"
+                  ]
+                },
+                "description": "Approves and publishes article to public portal. Emits BLOG_POST_PUBLISHED event and notifies author via email and push."
+              },
+              "event": [],
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "4.3 Direct Admin Content & Oversight",
+          "item": [
+            {
+              "name": "4.3.1 POST Create & Publish Direct Admin Article",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Ministry of Justice Notice: Legal Representation Guidelines 2026\",\n  \"content\": \"Official communication regarding compliance standards and code of conduct for registered attorneys...\",\n  \"excerpt\": \"Official regulatory notice from the Federal Ministry of Justice.\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"isFeatured\": true,\n  \"publishImmediately\": true,\n  \"tags\": [\n    \"Ministry of Justice\",\n    \"Official Notice\",\n    \"Regulations\"\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/blogs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "blogs"
+                  ]
+                },
+                "description": "Allows admins to publish portal announcements directly without submitting to review queues."
+              },
+              "event": [],
+              "response": []
+            },
+            {
+              "name": "4.3.2 PATCH Admin Update Any Blog Post",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"isFeatured\": true,\n  \"excerpt\": \"Featured: Essential guidance for cross-border transactions.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/blogs/:blogId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "blogs",
+                    "{{blogId}}"
+                  ]
+                },
+                "description": "Enables admins to feature articles or edit content."
+              },
+              "event": [],
+              "response": []
+            },
+            {
+              "name": "4.3.3 DELETE Admin Delete Any Blog Post",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/blogs/:blogId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "blogs",
+                    "{{blogId}}"
+                  ]
+                },
+                "description": "Administrative removal of any blog post from the system."
+              },
+              "event": [],
+              "response": []
+            },
+            {
+              "name": "4.3.4 DELETE Admin Delete Inappropriate Comment",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAuthToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/blogs/comments/:commentId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "blogs",
+                    "comments",
+                    "{{commentId}}"
+                  ]
+                },
+                "description": "Moderation removal of spam or abusive comments by an administrator."
+              },
+              "event": [],
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
