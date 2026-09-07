@@ -135,7 +135,8 @@ export class VerificationCaseService {
       where: { id },
       include: {
         attorney: { include: { user: true, credentials: { include: { documents: true } } } },
-        checklists: true
+        checklists: true,
+        guardedChanges: true
       },
     });
     if (!vCase) throw new NotFoundException(`Verification case ${id} not found`);
