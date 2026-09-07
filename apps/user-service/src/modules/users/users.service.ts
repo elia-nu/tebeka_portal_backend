@@ -12,8 +12,15 @@ export function sanitizeUser<T>(user: T): T {
   if (typeof user === 'object' && user !== null) {
     const copy: any = { ...user };
     delete copy.passwordHash;
+    delete copy.password;
     delete copy.twoFactorSecret;
+    delete copy.twoFactorBackupCodes;
     delete copy.otpHash;
+    delete copy.otpCode;
+    delete copy.otp;
+    delete copy.codeHash;
+    delete copy.backupCodes;
+    delete copy.secret;
     delete copy.lastLoginIp;
     delete copy.registeredIp;
     delete copy.googleRefreshToken;

@@ -4,3 +4,4 @@ export * from './pagination.dto';
 export * from './resilience';
 export * from './metrics';
 export * from './tracing';
+export * from './interceptors/sanitize-response.interceptor';
