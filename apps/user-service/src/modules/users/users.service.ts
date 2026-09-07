@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 
 export function sanitizeUser<T>(user: T): T {
   if (!user) return user;
+  if (user instanceof Date) return user;
   if (Array.isArray(user)) {
     return user.map(u => sanitizeUser(u)) as unknown as T;
   }
@@ -15,9 +16,13 @@ export function sanitizeUser<T>(user: T): T {
     delete copy.otpHash;
     delete copy.lastLoginIp;
     delete copy.registeredIp;
+    delete copy.googleRefreshToken;
 
-    if (copy.user) {
-      copy.user = sanitizeUser(copy.user);
+    for (const key of Object.keys(copy)) {
+      const val = copy[key];
+      if (val && typeof val === 'object' && !(val instanceof Date)) {
+        copy[key] = sanitizeUser(val);
+      }
     }
 
     if (Array.isArray(copy.verificationCases)) {

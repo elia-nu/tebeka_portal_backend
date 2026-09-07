@@ -20,6 +20,7 @@ import {
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
 import { UsersService } from '../users/users.service';
+import { AttorneyProfileChangeService } from '../attorneys/services/attorney-profile-change.service';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
 @AllowAnonymous()
@@ -30,6 +31,7 @@ export class VerificationsController {
     private readonly verificationDecisionService: VerificationDecisionService,
     private readonly verificationFraudService: VerificationFraudService,
     private readonly usersService: UsersService,
+    private readonly attorneyProfileChangeService: AttorneyProfileChangeService,
   ) {}
 
   @Post()
@@ -172,13 +174,25 @@ export class VerificationsController {
   }
 
   @Post(':id/guarded-changes/:changeId/approve')
-  async approveGuardedChange(@Param('id') id: string, @Param('changeId') changeId: string) {
-    return { status: 'APPROVED', changeId, caseId: id };
+  async approveGuardedChange(
+    @Param('id') id: string,
+    @Param('changeId') changeId: string,
+    @Req() req: any
+  ) {
+    const reviewerId = req?.user?.id || 'admin-reviewer';
+    return this.attorneyProfileChangeService.approveProfileChange(changeId || id, reviewerId);
   }
 
   @Post(':id/guarded-changes/:changeId/reject')
-  async rejectGuardedChange(@Param('id') id: string, @Param('changeId') changeId: string) {
-    return { status: 'REJECTED', changeId, caseId: id };
+  async rejectGuardedChange(
+    @Param('id') id: string,
+    @Param('changeId') changeId: string,
+    @Body() body: any,
+    @Req() req: any
+  ) {
+    const reviewerId = req?.user?.id || 'admin-reviewer';
+    const reason = body?.reason || body?.rejectionReason || 'Guarded change rejected by admin';
+    return this.attorneyProfileChangeService.rejectProfileChange(changeId || id, reason, reviewerId);
   }
 
   @Patch(':id/request-documents')
