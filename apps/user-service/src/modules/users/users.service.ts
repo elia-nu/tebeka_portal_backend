@@ -24,6 +24,8 @@ export function sanitizeUser<T>(user: T): T {
     delete copy.lastLoginIp;
     delete copy.registeredIp;
     delete copy.googleRefreshToken;
+    delete copy.nationalIdNumber;
+    delete copy.nationalIdDocumentUrl;
 
     for (const key of Object.keys(copy)) {
       const val = copy[key];

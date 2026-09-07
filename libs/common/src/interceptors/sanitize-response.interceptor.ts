@@ -16,6 +16,8 @@ export const SENSITIVE_KEYS = new Set([
   'googleRefreshToken',
   'lastLoginIp',
   'registeredIp',
+  'nationalIdNumber',
+  'nationalIdDocumentUrl',
 ]);
 
 export function deepSanitize(data: any): any {
