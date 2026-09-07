@@ -2,12 +2,14 @@ import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/com
 import { EventBusService } from '@workspace/event-bus';
 import { prisma } from '../verifications-shared/prisma';
 import { VerificationCaseService } from './verification-case.service';
+import { AttorneyProfileChangeService } from '../../attorneys/services/attorney-profile-change.service';
 
 @Injectable()
 export class VerificationDecisionService {
   constructor(
     private readonly eventBus: EventBusService,
     private readonly verificationCaseService: VerificationCaseService,
+    private readonly attorneyProfileChangeService: AttorneyProfileChangeService,
   ) {}
 
   async approveVerification(id: string, reviewerId: string) {
@@ -24,13 +26,15 @@ export class VerificationDecisionService {
       });
     }
 
-    // Check mandatory 4 checklist items
-    const unpassed = vCase.checklists.filter(c => c.status !== 'PASSED');
-    if (unpassed.length > 0) {
-      throw new BadRequestException({
-        code: 'CHECKLIST_INCOMPLETE',
-        message: `All 4 mandatory checklist items must be PASSED before approval. Pending: ${unpassed.map(c => c.itemName).join(', ')}`
-      });
+    // Check checklist items: For NEW_ATTORNEY, require all mandatory items. For GUARDED_CHANGE, only require guarded checklists if any
+    if (vCase.caseType !== 'GUARDED_CHANGE') {
+      const unpassed = vCase.checklists.filter(c => c.status !== 'PASSED');
+      if (unpassed.length > 0) {
+        throw new BadRequestException({
+          code: 'CHECKLIST_INCOMPLETE',
+          message: `All mandatory checklist items must be PASSED before approval. Pending: ${unpassed.map(c => c.itemName).join(', ')}`
+        });
+      }
     }
 
     await prisma.attorneyProfile.update({
@@ -41,6 +45,14 @@ export class VerificationDecisionService {
         credentialClaimsMatch: true
       }
     });
+
+    // If case has linked guardedChanges, approve them and apply to profile
+    const pendingChanges = await prisma.guardedChange.findMany({
+      where: { verificationCaseId: id, status: 'PENDING' }
+    });
+    for (const change of pendingChanges) {
+      await this.attorneyProfileChangeService.approveProfileChange(change.id, reviewerId);
+    }
 
     const updatedCase = await prisma.verificationCase.update({
       where: { id },
