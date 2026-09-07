@@ -8,7 +8,7 @@ import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
 import { LocalizationModule } from '@workspace/localization';
 import { StorageModule } from '@workspace/storage';
-import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware } from '@workspace/common';
+import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware, SanitizeResponseInterceptor } from '@workspace/common';
 
 import { ConversationModule } from './modules/conversation/conversation.module';
 import { MessageModule } from './modules/message/message.module';
@@ -85,6 +85,10 @@ import { CommunicationSchedulerModule } from './modules/scheduler/scheduler.modu
     {
       provide: APP_INTERCEPTOR,
       useClass: HttpLoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: SanitizeResponseInterceptor,
     },
   ],
 })

@@ -5,7 +5,7 @@ import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware, HttpLogging
 import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
 import { DatabaseModule } from '@workspace/database';
-import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware } from '@workspace/common';
+import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware, SanitizeResponseInterceptor } from '@workspace/common';
 import { PaymentModule } from './modules/payments/payment.module';
 import { FinancialEventsModule } from './modules/events/financial-events.module';
 
@@ -33,6 +33,10 @@ import { FinancialEventsModule } from './modules/events/financial-events.module'
     {
       provide: APP_INTERCEPTOR,
       useClass: HttpLoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: SanitizeResponseInterceptor,
     },
   ],
 })
