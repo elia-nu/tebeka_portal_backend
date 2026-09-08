@@ -13,22 +13,6 @@ export class AttorneyProfileChangeService {
       throw new NotFoundException(`Attorney profile not found for ${attorneyId}`);
     }
 
-    const slaDueDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000); // 2-day SLA for guarded change review
-    const vCase = await prisma.verificationCase.create({
-      data: {
-        attorneyId: profile.id,
-        caseType: 'GUARDED_CHANGE',
-        status: 'SUBMITTED',
-        slaDueDate,
-        checklists: {
-          create: [
-            { itemName: 'guarded_field_accuracy', status: 'PENDING' },
-            { itemName: 'document_proof_verified', status: 'PENDING' }
-          ]
-        }
-      }
-    });
-
     const changesToProcess: Array<{ field: string; newValue: any }> = [];
 
     if (data && typeof data === 'object') {
@@ -55,14 +39,59 @@ export class AttorneyProfileChangeService {
       }
     }
 
+    const checklistsToCreate = [
+      { itemName: 'guarded_field_accuracy', status: 'PENDING' },
+      { itemName: 'document_proof_verified', status: 'PENDING' }
+    ];
+
+    const requestedFields = changesToProcess.map(c => c.field);
+    if (requestedFields.some(f => ['barNumber', 'barRegistrationNumber', 'licenseNumber', 'bar_registration_number'].includes(f))) {
+      checklistsToCreate.push({ itemName: 'bar_number_verification', status: 'PENDING' });
+    }
+    if (requestedFields.some(f => ['practiceAreas', 'practiceAreaIds', 'practice_areas'].includes(f))) {
+      checklistsToCreate.push({ itemName: 'practice_area_qualification', status: 'PENDING' });
+    }
+    if (requestedFields.some(f => ['licenseBookUrl', 'barRegistrationUrl', 'nationalIdDocumentUrl', 'nationalIdNumber', 'otherSupportingDocuments', 'credentials'].includes(f))) {
+      checklistsToCreate.push({ itemName: 'credential_document_verified', status: 'PENDING' });
+    }
+    if (requestedFields.some(f => ['feeBand', 'fee_band', 'consultationFeeBand'].includes(f))) {
+      checklistsToCreate.push({ itemName: 'fee_band_tier_compliance', status: 'PENDING' });
+    }
+
+    const slaDueDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000); // 2-day SLA for guarded change review
+    const vCase = await prisma.verificationCase.create({
+      data: {
+        attorneyId: profile.id,
+        caseType: 'GUARDED_CHANGE',
+        status: 'SUBMITTED',
+        slaDueDate,
+        checklists: {
+          create: checklistsToCreate as any
+        }
+      }
+    });
+
     const guardedChanges: any[] = [];
     for (const item of changesToProcess) {
+      let rawOldValue = (profile as any)[item.field];
+      if (item.field === 'barNumber' && !rawOldValue) rawOldValue = profile.barRegistrationNumber || profile.licenseNumber;
+      if (item.field === 'practiceAreaIds' && !rawOldValue) rawOldValue = profile.practiceAreas;
+      if (item.field === 'fee_band' && !rawOldValue) rawOldValue = profile.feeBand;
+
+      const formattedOldValue = typeof rawOldValue === 'object' && rawOldValue !== null
+        ? JSON.stringify(rawOldValue)
+        : String(rawOldValue || '');
+
+      const formattedNewValue = typeof item.newValue === 'object' && item.newValue !== null
+        ? JSON.stringify(item.newValue)
+        : String(item.newValue);
+
       const gc = await prisma.guardedChange.create({
         data: {
           attorneyId: profile.id,
           field: item.field,
-          oldValue: String((profile as any)[item.field] || ''),
-          newValue: String(item.newValue),
+          oldValue: formattedOldValue,
+          newValue: formattedNewValue,
           verificationCaseId: vCase.id,
           status: 'PENDING'
         }
@@ -159,7 +188,7 @@ export class AttorneyProfileChangeService {
     const intFields = ['barAdmissionYear', 'yearsOfExperience', 'experienceYears', 'bufferTimeMinutes', 'maxBookingsPerDay', 'age'];
     const floatFields = ['consultationFee', 'consultationFees', 'latitude', 'longitude', 'rating'];
     const boolFields = ['onlineConsultation', 'videoSupport', 'hasVerifiedBadge', 'credentialClaimsMatch'];
-    const arrayFields = ['practiceAreas', 'languages', 'languagesSpoken', 'otherSupportingDocuments'];
+    const arrayFields = ['practiceAreas', 'practiceAreaIds', 'languages', 'languagesSpoken', 'otherSupportingDocuments'];
 
     let convertedValue: any = actualNewValue;
     if (intFields.includes(actualField)) {
@@ -178,7 +207,19 @@ export class AttorneyProfileChangeService {
     }
 
     const profileUpdate: any = {};
-    profileUpdate[actualField] = convertedValue;
+    if (actualField === 'barNumber' || actualField === 'barRegistrationNumber') {
+      profileUpdate.barRegistrationNumber = convertedValue;
+      profileUpdate.licenseNumber = convertedValue;
+    } else if (actualField === 'licenseNumber') {
+      profileUpdate.licenseNumber = convertedValue;
+      profileUpdate.barRegistrationNumber = convertedValue;
+    } else if (actualField === 'practiceAreaIds') {
+      profileUpdate.practiceAreas = convertedValue;
+    } else if (actualField === 'fee_band' || actualField === 'consultationFeeBand') {
+      profileUpdate.feeBand = convertedValue;
+    } else {
+      profileUpdate[actualField] = convertedValue;
+    }
 
     try {
       await prisma.attorneyProfile.update({
@@ -187,6 +228,16 @@ export class AttorneyProfileChangeService {
       });
     } catch (e) {
       console.error(`Failed to update attorneyProfile field ${actualField}:`, e);
+    }
+
+    // Sync credentials if document was approved
+    if (actualField === 'barRegistrationUrl' || actualField === 'licenseBookUrl' || actualField === 'nationalIdDocumentUrl') {
+      const credType = actualField === 'barRegistrationUrl' ? 'BAR_CERTIFICATE'
+        : (actualField === 'licenseBookUrl' ? 'BAR_LICENSE' : 'NATIONAL_ID');
+      await prisma.credential.updateMany({
+        where: { attorneyId: change.attorneyId, credentialType: credType },
+        data: { verificationStatus: 'APPROVED', verifiedAt: new Date() }
+      }).catch(() => {});
     }
 
     if (actualField === 'fullName') {

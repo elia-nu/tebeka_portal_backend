@@ -84,10 +84,19 @@ export class VerificationDecisionService {
       });
     }
 
-    await prisma.attorneyProfile.update({
-      where: { id: vCase.attorneyId },
-      data: { verificationStatus: 'REJECTED' }
-    });
+    if (vCase.caseType === 'GUARDED_CHANGE') {
+      const pendingChanges = await prisma.guardedChange.findMany({
+        where: { verificationCaseId: id, status: 'PENDING' }
+      });
+      for (const change of pendingChanges) {
+        await this.attorneyProfileChangeService.rejectProfileChange(change.id, reason, reviewerId);
+      }
+    } else {
+      await prisma.attorneyProfile.update({
+        where: { id: vCase.attorneyId },
+        data: { verificationStatus: 'REJECTED' }
+      });
+    }
 
     return prisma.verificationCase.update({
       where: { id },
