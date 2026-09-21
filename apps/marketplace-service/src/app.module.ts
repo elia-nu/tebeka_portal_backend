@@ -5,7 +5,7 @@ import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware, HttpLogging
 import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
 import { StorageModule } from '@workspace/storage';
-import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware, SanitizeResponseInterceptor } from '@workspace/common';
+import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware, SanitizeResponseInterceptor, AppHealthModule } from '@workspace/common';
 
 import { EventsModule } from './modules/events/events.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
@@ -18,12 +18,15 @@ import { ReviewModule } from './modules/review/review.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { MarketplaceDatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
+    MarketplaceDatabaseModule,
     AppConfigModule,
     AppLoggerModule,
     MetricsModule,
+    AppHealthModule,
     EventBusModule,
     AuthModule,
     StorageModule,

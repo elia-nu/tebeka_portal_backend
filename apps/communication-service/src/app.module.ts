@@ -8,7 +8,7 @@ import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
 import { LocalizationModule } from '@workspace/localization';
 import { StorageModule } from '@workspace/storage';
-import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware, SanitizeResponseInterceptor } from '@workspace/common';
+import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware, SanitizeResponseInterceptor, AppHealthModule } from '@workspace/common';
 
 import { ConversationModule } from './modules/conversation/conversation.module';
 import { MessageModule } from './modules/message/message.module';
@@ -18,14 +18,17 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { WebsocketCommunicationModule } from './modules/websocket/websocket.module';
 import { CommunicationEventsModule } from './modules/events/events.module';
 import { CommunicationSchedulerModule } from './modules/scheduler/scheduler.module';
+import { CommunicationDatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
     AppConfigModule,
     AppLoggerModule,
     MetricsModule,
+    AppHealthModule,
     EventBusModule,
     AuthModule,
+    CommunicationDatabaseModule,
     LocalizationModule,
     StorageModule,
     ConversationModule,

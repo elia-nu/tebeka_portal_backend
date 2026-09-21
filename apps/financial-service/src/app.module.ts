@@ -4,8 +4,8 @@ import { AppConfigModule } from '@workspace/config';
 import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware, HttpLoggingInterceptor } from '@workspace/logger';
 import { EventBusModule } from '@workspace/event-bus';
 import { AuthModule } from '@workspace/auth';
-import { DatabaseModule } from '@workspace/database';
-import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware, SanitizeResponseInterceptor } from '@workspace/common';
+import { FinancialDatabaseModule } from './database/database.module';
+import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware, SanitizeResponseInterceptor, AppHealthModule } from '@workspace/common';
 import { PaymentModule } from './modules/payments/payment.module';
 import { FinancialEventsModule } from './modules/events/financial-events.module';
 
@@ -14,9 +14,10 @@ import { FinancialEventsModule } from './modules/events/financial-events.module'
     AppConfigModule,
     AppLoggerModule,
     MetricsModule,
+    AppHealthModule,
     EventBusModule,
     AuthModule,
-    DatabaseModule,
+    FinancialDatabaseModule,
     FinancialEventsModule,
     PaymentModule,
   ],
