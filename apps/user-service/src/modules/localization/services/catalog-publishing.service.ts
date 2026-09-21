@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { prisma } from '../localization-shared/prisma';
+import { PrismaService } from '@workspace/database';
 import { I18nStatus } from '../localization-shared/enums';
 
 @Injectable()
 export class CatalogPublishingService {
   private readonly logger = new Logger(CatalogPublishingService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * GET /api/v1/i18n/catalog/:locale?ns=&v=
@@ -16,7 +18,7 @@ export class CatalogPublishingService {
     const whereNs = namespace ? { namespace } : {};
 
     // 1. Fetch published strings for target locale
-    const targetStrings = await prisma.i18nString.findMany({
+    const targetStrings = await this.prisma.i18nString.findMany({
       where: {
         locale: targetLocale,
         status: I18nStatus.PUBLISHED,
@@ -31,7 +33,7 @@ export class CatalogPublishingService {
 
     // 2. If target locale is not 'en', fetch English fallback strings
     if (targetLocale !== 'en') {
-      const enStrings = await prisma.i18nString.findMany({
+      const enStrings = await this.prisma.i18nString.findMany({
         where: {
           locale: 'en',
           status: I18nStatus.PUBLISHED,
@@ -62,8 +64,8 @@ export class CatalogPublishingService {
    * Coverage metrics & missing key backlog dashboard (FR-LOC-05).
    */
   async getCoverageMetrics() {
-    const allStrings = await prisma.i18nString.findMany();
-    const missingKeys = await prisma.i18nMissingKeyLog.findMany({
+    const allStrings = await this.prisma.i18nString.findMany();
+    const missingKeys = await this.prisma.i18nMissingKeyLog.findMany({
       orderBy: { requestedCount: 'desc' },
       take: 50,
     });
@@ -106,7 +108,7 @@ export class CatalogPublishingService {
    */
   async logMissingKeyGap(key: string, namespace: string, locale: string) {
     try {
-      await prisma.i18nMissingKeyLog.upsert({
+      await this.prisma.i18nMissingKeyLog.upsert({
         where: { key_locale: { key, locale } },
         update: {
           requestedCount: { increment: 1 },

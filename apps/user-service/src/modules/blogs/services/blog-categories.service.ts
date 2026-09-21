@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaClient, BlogStatus } from '@prisma/client';
+import { BlogStatus } from '@prisma/client';
+import { PrismaService } from '@workspace/database';
 import { CreateBlogCategoryDto, UpdateBlogCategoryDto } from '../dto/blog.dto';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class BlogCategoriesService {
+  constructor(private readonly prisma: PrismaService) {}
   async createCategory(dto: CreateBlogCategoryDto) {
     const slug = dto.name
       .toLowerCase()
@@ -13,14 +13,14 @@ export class BlogCategoriesService {
       .replace(/[^\w\s-]/g, '')
       .replace(/[\s_-]+/g, '-');
 
-    const existing = await prisma.blogCategory.findFirst({
+    const existing = await this.prisma.blogCategory.findFirst({
       where: { OR: [{ name: dto.name }, { slug }] },
     });
     if (existing) {
       throw new BadRequestException(`Category "${dto.name}" already exists`);
     }
 
-    return prisma.blogCategory.create({
+    return this.prisma.blogCategory.create({
       data: {
         name: dto.name,
         slug,
@@ -33,7 +33,7 @@ export class BlogCategoriesService {
 
   async getAllCategories(includeInactive = false) {
     const where = includeInactive ? {} : { isActive: true };
-    const categories = await prisma.blogCategory.findMany({
+    const categories = await this.prisma.blogCategory.findMany({
       where,
       include: {
         _count: {
@@ -57,7 +57,7 @@ export class BlogCategoriesService {
   }
 
   async getCategoryById(id: string) {
-    const category = await prisma.blogCategory.findUnique({
+    const category = await this.prisma.blogCategory.findUnique({
       where: { id },
       include: {
         _count: { select: { posts: true } },
@@ -68,7 +68,7 @@ export class BlogCategoriesService {
   }
 
   async updateCategory(id: string, dto: UpdateBlogCategoryDto) {
-    const category = await prisma.blogCategory.findUnique({ where: { id } });
+    const category = await this.prisma.blogCategory.findUnique({ where: { id } });
     if (!category) throw new NotFoundException(`Category ${id} not found`);
 
     let slug = category.slug;
@@ -80,7 +80,7 @@ export class BlogCategoriesService {
         .replace(/[\s_-]+/g, '-');
     }
 
-    return prisma.blogCategory.update({
+    return this.prisma.blogCategory.update({
       where: { id },
       data: {
         name: dto.name !== undefined ? dto.name : category.name,
@@ -93,19 +93,19 @@ export class BlogCategoriesService {
   }
 
   async deleteCategory(id: string) {
-    const category = await prisma.blogCategory.findUnique({
+    const category = await this.prisma.blogCategory.findUnique({
       where: { id },
       include: { _count: { select: { posts: true } } },
     });
     if (!category) throw new NotFoundException(`Category ${id} not found`);
 
     if (category._count.posts > 0) {
-      return prisma.blogCategory.update({
+      return this.prisma.blogCategory.update({
         where: { id },
         data: { isActive: false },
       });
     }
 
-    return prisma.blogCategory.delete({ where: { id } });
+    return this.prisma.blogCategory.delete({ where: { id } });
   }
 }

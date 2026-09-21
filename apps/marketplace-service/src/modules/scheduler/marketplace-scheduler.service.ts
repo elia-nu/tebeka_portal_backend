@@ -1,12 +1,13 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient, BookingStatus } from '@prisma/client/marketplace';
-
-const prisma = new PrismaClient();
+import { BookingStatus } from '@prisma/client/marketplace';
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class MarketplaceSchedulerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MarketplaceSchedulerService.name);
   private timer: NodeJS.Timeout | null = null;
+
+  constructor(private readonly prisma: PrismaService) {}
 
   onModuleInit() {
     this.timer = setInterval(() => this.runScheduledJobs(), 60000); // Runs every 1 minute
@@ -30,7 +31,7 @@ export class MarketplaceSchedulerService implements OnModuleInit, OnModuleDestro
   private async expireUnansweredRequests() {
     try {
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const expiredRequests = await prisma.booking.findMany({
+      const expiredRequests = await this.prisma.booking.findMany({
         where: {
           status: BookingStatus.REQUESTED,
           createdAt: { lt: twentyFourHoursAgo },
@@ -38,7 +39,7 @@ export class MarketplaceSchedulerService implements OnModuleInit, OnModuleDestro
       });
 
       for (const booking of expiredRequests) {
-        await prisma.$transaction(async (tx) => {
+        await this.prisma.$transaction(async (tx) => {
           await tx.booking.update({
             where: { id: booking.id },
             data: { status: BookingStatus.EXPIRED },
@@ -82,7 +83,7 @@ export class MarketplaceSchedulerService implements OnModuleInit, OnModuleDestro
   private async expireUnpaidAcceptedBookings() {
     try {
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const unpaidBookings = await prisma.booking.findMany({
+      const unpaidBookings = await this.prisma.booking.findMany({
         where: {
           status: BookingStatus.ACCEPTED_PENDING_PAYMENT,
           createdAt: { lt: twentyFourHoursAgo },
@@ -90,7 +91,7 @@ export class MarketplaceSchedulerService implements OnModuleInit, OnModuleDestro
       });
 
       for (const booking of unpaidBookings) {
-        await prisma.$transaction(async (tx) => {
+        await this.prisma.$transaction(async (tx) => {
           await tx.booking.update({
             where: { id: booking.id },
             data: { status: BookingStatus.EXPIRED },
@@ -134,7 +135,7 @@ export class MarketplaceSchedulerService implements OnModuleInit, OnModuleDestro
   private async expirePendingRescheduleProposals() {
     try {
       const now = new Date();
-      const expiredProposals = await prisma.booking.findMany({
+      const expiredProposals = await this.prisma.booking.findMany({
         where: {
           rescheduleExpiresAt: { lte: now },
           proposedBookingDate: { not: null },
@@ -142,7 +143,7 @@ export class MarketplaceSchedulerService implements OnModuleInit, OnModuleDestro
       });
 
       for (const booking of expiredProposals) {
-        await prisma.$transaction(async (tx) => {
+        await this.prisma.$transaction(async (tx) => {
           await tx.booking.update({
             where: { id: booking.id },
             data: {

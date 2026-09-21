@@ -1,18 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
-import { PrismaClient, PaymentStatus, PaymentType, PaymentProvider, LedgerEntryType } from '@prisma/client/financial';
+import { PaymentStatus, PaymentType, PaymentProvider, LedgerEntryType } from '@prisma/client/financial';
+import { PrismaService } from '../../database/prisma.service';
 import { ChapaStrategy } from './strategies/chapa.strategy';
 import { StripeStrategy } from './strategies/stripe.strategy';
 import { PaymentRefundService } from './services/payment-refund.service';
 import { PayoutWalletService } from './services/payout-wallet.service';
 import { GeoPaymentService, GeoGatewayResolution } from './services/geo-payment.service';
 
-const prisma = new PrismaClient();
-
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly chapaStrategy: ChapaStrategy,
     private readonly stripeStrategy: StripeStrategy,
     private readonly refundService: PaymentRefundService,
@@ -52,7 +52,7 @@ export class PaymentService {
     const txRef = `TX-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     // Lookup payee wallet & Admin configured commission
-    const payeeWallet = await prisma.wallet.findUnique({ where: { userId: data.payeeId } });
+    const payeeWallet = await this.prisma.wallet.findUnique({ where: { userId: data.payeeId } });
     const globalDefaultCommission = await this.walletService.getGlobalPlatformCommission();
     const splitPercentage = payeeWallet?.splitPercentage ?? globalDefaultCommission;
     const calculatedCommission = (Number(data.amount) * splitPercentage) / 100;
@@ -60,7 +60,7 @@ export class PaymentService {
       ? payeeWallet?.stripeAccountId || null
       : payeeWallet?.chapaSubaccountId || null;
 
-    const payment = await prisma.$transaction(async (tx) => {
+    const payment = await this.prisma.$transaction(async (tx) => {
       const p = await tx.payment.create({
         data: {
           bookingId: data.bookingId || null,
@@ -135,7 +135,7 @@ export class PaymentService {
     }
 
     if (checkoutResult?.providerPaymentId) {
-      await prisma.payment.update({
+      await this.prisma.payment.update({
         where: { id: payment.id },
         data: { stripePaymentId: checkoutResult.providerPaymentId },
       });
@@ -156,7 +156,7 @@ export class PaymentService {
     const paymentType = data.paymentType || PaymentType.CASE_MILESTONE;
     const txRef = `TX-REQ-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const payment = await tx.payment.create({
         data: {
           caseId: data.caseId,
@@ -197,7 +197,7 @@ export class PaymentService {
   }
 
   async approvePayment(paymentId: string, clientId: string) {
-    const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+    const payment = await this.prisma.payment.findUnique({ where: { id: paymentId } });
     if (!payment) throw new NotFoundException(`Payment ${paymentId} not found`);
     if (payment.payerId !== clientId) throw new BadRequestException('Only the designated payer can approve this payment request');
 
@@ -205,7 +205,7 @@ export class PaymentService {
   }
 
   async markPaymentCompleted(paymentId: string, approvedBy?: string) {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const payment = await tx.payment.findUnique({ where: { id: paymentId } });
       if (!payment) throw new NotFoundException(`Payment ${paymentId} not found`);
 
@@ -286,7 +286,7 @@ export class PaymentService {
   async markPaymentCompletedByReference(transactionReference: string, gatewayData?: any) {
     if (!transactionReference) return null;
 
-    const payment = await prisma.payment.findFirst({
+    const payment = await this.prisma.payment.findFirst({
       where: {
         OR: [
           { transactionReference: String(transactionReference) },
@@ -304,7 +304,7 @@ export class PaymentService {
     // If gateway provided additional payment ID (e.g. payment_intent), update stripePaymentId if missing
     const providerPaymentId = gatewayData?.id || gatewayData?.payment_intent || gatewayData?.transaction_id;
     if (providerPaymentId && !payment.stripePaymentId && String(providerPaymentId).startsWith('cs_') || String(providerPaymentId).startsWith('pi_')) {
-      await prisma.payment.update({
+      await this.prisma.payment.update({
         where: { id: payment.id },
         data: { stripePaymentId: String(providerPaymentId) },
       });
@@ -316,7 +316,7 @@ export class PaymentService {
   async markPaymentFailedByReference(transactionReference: string, reason?: string, gatewayData?: any) {
     if (!transactionReference) return null;
 
-    const payment = await prisma.payment.findFirst({
+    const payment = await this.prisma.payment.findFirst({
       where: {
         OR: [
           { transactionReference: String(transactionReference) },
@@ -337,7 +337,7 @@ export class PaymentService {
       return payment;
     }
 
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const updated = await tx.payment.update({
         where: { id: payment.id },
         data: {
@@ -408,14 +408,14 @@ export class PaymentService {
     }
 
     const [payments, total] = await Promise.all([
-      prisma.payment.findMany({
+      this.prisma.payment.findMany({
         where,
         include: { refunds: true },
         skip,
         take: limit,
         orderBy: { [query.sortBy || 'paidAt']: query.sortOrder || 'desc' },
       }),
-      prisma.payment.count({ where }),
+      this.prisma.payment.count({ where }),
     ]);
 
     return {

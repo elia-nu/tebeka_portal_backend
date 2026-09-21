@@ -1,15 +1,16 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client/marketplace';
+import { PrismaService } from '../../database/prisma.service';
 import { StorageService } from '@workspace/storage';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class DocumentService {
-  constructor(private readonly storageService: StorageService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+  ) {}
 
   private async assertCaseAccess(caseId: string, userId: string, userRole?: string) {
-    const caseItem = await prisma.case.findUnique({
+    const caseItem = await this.prisma.case.findUnique({
       where: { id: caseId },
     });
 
@@ -48,7 +49,7 @@ export class DocumentService {
     if (!fileName) throw new BadRequestException('fileName or uploaded file is required');
     if (!fileKey) throw new BadRequestException('fileKey or uploaded file is required');
 
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const doc = await tx.caseDocument.create({
         data: {
           caseId,
@@ -101,13 +102,13 @@ export class DocumentService {
     const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const [items, total] = await Promise.all([
-      prisma.caseDocument.findMany({
+      this.prisma.caseDocument.findMany({
         where,
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
       }),
-      prisma.caseDocument.count({ where }),
+      this.prisma.caseDocument.count({ where }),
     ]);
 
     return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
@@ -116,7 +117,7 @@ export class DocumentService {
   async downloadDocument(caseId: string, docId: string, user: { id: string; role?: string }) {
     await this.assertCaseAccess(caseId, user.id, user.role);
 
-    const doc = await prisma.caseDocument.findUnique({
+    const doc = await this.prisma.caseDocument.findUnique({
       where: { id: docId },
     });
 
@@ -141,7 +142,7 @@ export class DocumentService {
   async getDocumentStream(caseId: string, docId: string, user: { id: string; role?: string }) {
     await this.assertCaseAccess(caseId, user.id, user.role);
 
-    const doc = await prisma.caseDocument.findUnique({
+    const doc = await this.prisma.caseDocument.findUnique({
       where: { id: docId },
     });
 

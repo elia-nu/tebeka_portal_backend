@@ -1,8 +1,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { prisma } from '../localization-shared/prisma';
+import { PrismaService } from '@workspace/database';
 
 @Injectable()
 export class LanguagePreferenceService {
+  constructor(private readonly prisma: PrismaService) {}
   /**
    * Returns list of supported platform languages.
    */
@@ -31,15 +32,15 @@ export class LanguagePreferenceService {
       throw new BadRequestException(`Invalid locale: ${locale}. MVP supports 'en' and 'am'.`);
     }
 
-    let user = await prisma.user.findUnique({ where: { id: userId } });
+    let user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      const activeUser = await prisma.user.findFirst({ where: { status: 'ACTIVE' } });
+      const activeUser = await this.prisma.user.findFirst({ where: { status: 'ACTIVE' } });
       if (activeUser) userId = activeUser.id;
     }
 
-    let pref = await prisma.userPreference.findUnique({ where: { userId } });
+    let pref = await this.prisma.userPreference.findUnique({ where: { userId } });
     if (pref) {
-      pref = await prisma.userPreference.update({
+      pref = await this.prisma.userPreference.update({
         where: { userId },
         data: {
           locale,
@@ -47,7 +48,7 @@ export class LanguagePreferenceService {
         },
       });
     } else {
-      pref = await prisma.userPreference.create({
+      pref = await this.prisma.userPreference.create({
         data: {
           userId,
           locale,
@@ -57,7 +58,7 @@ export class LanguagePreferenceService {
     }
 
     // Also update main User locale field
-    await prisma.user.update({
+    await this.prisma.user.update({
       where: { id: userId },
       data: { locale },
     });

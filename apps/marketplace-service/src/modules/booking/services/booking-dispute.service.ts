@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaClient, BookingStatus } from '@prisma/client/marketplace';
-
-const prisma = new PrismaClient();
+import { BookingStatus } from '@prisma/client/marketplace';
+import { PrismaService } from '../../../database/prisma.service';
 
 @Injectable()
 export class BookingDisputeService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async reportNoShow(id: string, userId: string, reason?: string) {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({ where: { id } });
       if (!booking) throw new NotFoundException(`Booking ${id} not found`);
 

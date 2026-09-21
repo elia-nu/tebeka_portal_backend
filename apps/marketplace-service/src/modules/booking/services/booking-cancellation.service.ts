@@ -4,19 +4,19 @@ import {
   BadRequestException,
   Optional,
 } from '@nestjs/common';
-import { PrismaClient, BookingStatus } from '@prisma/client/marketplace';
+import { BookingStatus } from '@prisma/client/marketplace';
+import { PrismaService } from '../../../database/prisma.service';
 import { GoogleMeetService } from '../../integrations/google-meet.service';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class BookingCancellationService {
   constructor(
+    private readonly prisma: PrismaService,
     @Optional() private readonly googleMeetService?: GoogleMeetService,
   ) {}
 
   async cancelBooking(id: string, userId: string, reason?: string) {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({ where: { id } });
       if (!booking) throw new NotFoundException(`Booking ${id} not found`);
 

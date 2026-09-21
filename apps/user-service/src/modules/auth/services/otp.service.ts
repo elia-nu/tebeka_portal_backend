@@ -3,16 +3,15 @@ import { CacheService } from '@workspace/cache';
 import { AppLoggerService } from '@workspace/logger';
 import { SmsService, validateEthiopianMobilePrefix } from '@workspace/sms';
 import * as bcrypt from 'bcrypt';
-import { prisma } from '../auth-shared/prisma';
+import { PrismaService } from '@workspace/database';
 import { OTP_HASH_SALT_ROUNDS } from '../auth-shared/constants';
 import { generateNumericOtp } from '../auth-shared/otp-code.util';
 import { SendPhoneOtpDto, VerifyPhoneOtpDto } from '../dto/auth.dto';
 
 @Injectable()
 export class OtpService {
-  private prisma = prisma;
-
   constructor(
+    private readonly prisma: PrismaService,
     private readonly cacheService: CacheService,
     private readonly smsService: SmsService,
     private readonly logger: AppLoggerService,

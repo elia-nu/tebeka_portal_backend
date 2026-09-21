@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient, BookingStatus, CaseStatus } from '@prisma/client/marketplace';
-
-const prisma = new PrismaClient();
+import { BookingStatus, CaseStatus } from '@prisma/client/marketplace';
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class AnalyticsService {
+  constructor(private readonly prisma: PrismaService) {}
   async getOverviewAnalytics() {
     const [
       totalBookings,
@@ -19,17 +19,17 @@ export class AnalyticsService {
       inProgressCases,
       closedCases
     ] = await Promise.all([
-      prisma.booking.count(),
-      prisma.case.count(),
-      prisma.review.count(),
-      prisma.practiceArea.count(),
-      prisma.booking.count({ where: { status: { in: [BookingStatus.REQUESTED, BookingStatus.ACCEPTED_PENDING_PAYMENT] } } }),
-      prisma.booking.count({ where: { status: BookingStatus.CONFIRMED } }),
-      prisma.booking.count({ where: { status: BookingStatus.COMPLETED } }),
-      prisma.booking.count({ where: { status: BookingStatus.CANCELLED } }),
-      prisma.case.count({ where: { status: CaseStatus.OPEN } }),
-      prisma.case.count({ where: { status: CaseStatus.IN_PROGRESS } }),
-      prisma.case.count({ where: { status: CaseStatus.CLOSED } })
+      this.prisma.booking.count(),
+      this.prisma.case.count(),
+      this.prisma.review.count(),
+      this.prisma.practiceArea.count(),
+      this.prisma.booking.count({ where: { status: { in: [BookingStatus.REQUESTED, BookingStatus.ACCEPTED_PENDING_PAYMENT] } } }),
+      this.prisma.booking.count({ where: { status: BookingStatus.CONFIRMED } }),
+      this.prisma.booking.count({ where: { status: BookingStatus.COMPLETED } }),
+      this.prisma.booking.count({ where: { status: BookingStatus.CANCELLED } }),
+      this.prisma.case.count({ where: { status: CaseStatus.OPEN } }),
+      this.prisma.case.count({ where: { status: CaseStatus.IN_PROGRESS } }),
+      this.prisma.case.count({ where: { status: CaseStatus.CLOSED } })
     ]);
 
     return {
@@ -56,7 +56,7 @@ export class AnalyticsService {
   }
 
   async getAttorneyAnalytics() {
-    const discoveryItems = await prisma.discoveryIndex.findMany({
+    const discoveryItems = await this.prisma.discoveryIndex.findMany({
       take: 20,
       orderBy: { searchScore: 'desc' }
     });
@@ -70,9 +70,9 @@ export class AnalyticsService {
 
   async getBookingAnalytics() {
     const [inPersonCount, videoCount, phoneCount] = await Promise.all([
-      prisma.booking.count({ where: { consultationType: 'IN_PERSON' } }),
-      prisma.booking.count({ where: { consultationType: 'VIDEO' } }),
-      prisma.booking.count({ where: { consultationType: 'PHONE' } })
+      this.prisma.booking.count({ where: { consultationType: 'IN_PERSON' } }),
+      this.prisma.booking.count({ where: { consultationType: 'VIDEO' } }),
+      this.prisma.booking.count({ where: { consultationType: 'PHONE' } })
     ]);
 
     return {
@@ -86,7 +86,7 @@ export class AnalyticsService {
   }
 
   async getRevenueAnalytics() {
-    const paidBookings = await prisma.booking.count({ where: { paymentStatus: 'PAID' } });
+    const paidBookings = await this.prisma.booking.count({ where: { paymentStatus: 'PAID' } });
     const estimatedVolume = paidBookings * 1500;
     const estimatedPlatformCommission = estimatedVolume * 0.15;
 

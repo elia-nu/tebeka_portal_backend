@@ -1,7 +1,6 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaClient, PaymentStatus, PaymentProvider, PaymentType } from '@prisma/client/financial';
-
-const prisma = new PrismaClient();
+import { PaymentStatus, PaymentProvider, PaymentType } from '@prisma/client/financial';
+import { PrismaService } from '../../../database/prisma.service';
 
 export interface TransactionFilterQuery {
   page?: number | string;
@@ -32,6 +31,8 @@ export interface UserContext {
 export class TransactionService {
   private readonly logger = new Logger(TransactionService.name);
 
+  constructor(private readonly prisma: PrismaService) {}
+
   // =========================================================================
   // 1. ADMIN OVERALL TRANSACTIONS VIEW & ANALYTICS
   // =========================================================================
@@ -47,7 +48,7 @@ export class TransactionService {
     const where = this.buildWhereClause(query);
 
     const [transactions, total] = await Promise.all([
-      prisma.payment.findMany({
+      this.prisma.payment.findMany({
         where,
         include: {
           refunds: true,
@@ -61,11 +62,11 @@ export class TransactionService {
           [query.sortBy || 'createdAt']: query.sortOrder || 'desc',
         },
       }),
-      prisma.payment.count({ where }),
+      this.prisma.payment.count({ where }),
     ]);
 
     // Calculate aggregated overall financial metrics for Admin
-    const allMatching = await prisma.payment.findMany({
+    const allMatching = await this.prisma.payment.findMany({
       where,
       select: {
         amount: true,
@@ -185,7 +186,7 @@ export class TransactionService {
     };
 
     const [transactions, total, wallet] = await Promise.all([
-      prisma.payment.findMany({
+      this.prisma.payment.findMany({
         where,
         include: {
           refunds: true,
@@ -199,12 +200,12 @@ export class TransactionService {
           [query.sortBy || 'createdAt']: query.sortOrder || 'desc',
         },
       }),
-      prisma.payment.count({ where }),
-      prisma.wallet.findUnique({ where: { userId: attorneyId } }),
+      this.prisma.payment.count({ where }),
+      this.prisma.wallet.findUnique({ where: { userId: attorneyId } }),
     ]);
 
     // Aggregate Attorney specific metrics
-    const allAttorneyTxs = await prisma.payment.findMany({
+    const allAttorneyTxs = await this.prisma.payment.findMany({
       where,
       select: {
         amount: true,
@@ -314,7 +315,7 @@ export class TransactionService {
     };
 
     const [transactions, total] = await Promise.all([
-      prisma.payment.findMany({
+      this.prisma.payment.findMany({
         where,
         include: {
           refunds: true,
@@ -325,10 +326,10 @@ export class TransactionService {
           [query.sortBy || 'createdAt']: query.sortOrder || 'desc',
         },
       }),
-      prisma.payment.count({ where }),
+      this.prisma.payment.count({ where }),
     ]);
 
-    const allClientTxs = await prisma.payment.findMany({
+    const allClientTxs = await this.prisma.payment.findMany({
       where,
       select: {
         amount: true,
@@ -420,7 +421,7 @@ export class TransactionService {
    * Retrieves single transaction details with role authorization.
    */
   async getTransactionDetails(identifier: string, user?: UserContext) {
-    const transaction = await prisma.payment.findFirst({
+    const transaction = await this.prisma.payment.findFirst({
       where: {
         OR: [{ id: identifier }, { transactionReference: identifier }],
       },

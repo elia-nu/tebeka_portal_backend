@@ -1,12 +1,13 @@
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { EventBusService } from '@workspace/event-bus';
-import { prisma } from '../verifications-shared/prisma';
+import { PrismaService } from '@workspace/database';
 import { VerificationCaseService } from './verification-case.service';
 import { AttorneyProfileChangeService } from '../../attorneys/services/attorney-profile-change.service';
 
 @Injectable()
 export class VerificationDecisionService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
     private readonly verificationCaseService: VerificationCaseService,
     private readonly attorneyProfileChangeService: AttorneyProfileChangeService,
@@ -16,7 +17,7 @@ export class VerificationDecisionService {
     const vCase = await this.verificationCaseService.findOne(id);
 
     // Segregation of duties: reviewer who flagged fraud cannot approve case
-    const fraudCase = await prisma.fraudReviewCase.findFirst({
+    const fraudCase = await this.prisma.fraudReviewCase.findFirst({
       where: { verificationCaseId: id }
     });
     if (fraudCase && fraudCase.flaggedByUserId === reviewerId) {
@@ -37,7 +38,7 @@ export class VerificationDecisionService {
       }
     }
 
-    await prisma.attorneyProfile.update({
+    await this.prisma.attorneyProfile.update({
       where: { id: vCase.attorneyId },
       data: {
         verificationStatus: 'APPROVED',
@@ -47,14 +48,14 @@ export class VerificationDecisionService {
     });
 
     // If case has linked guardedChanges, approve them and apply to profile
-    const pendingChanges = await prisma.guardedChange.findMany({
+    const pendingChanges = await this.prisma.guardedChange.findMany({
       where: { verificationCaseId: id, status: 'PENDING' }
     });
     for (const change of pendingChanges) {
       await this.attorneyProfileChangeService.approveProfileChange(change.id, reviewerId);
     }
 
-    const updatedCase = await prisma.verificationCase.update({
+    const updatedCase = await this.prisma.verificationCase.update({
       where: { id },
       data: {
         status: 'APPROVED',
@@ -74,7 +75,7 @@ export class VerificationDecisionService {
   async rejectVerification(id: string, reason: string, reviewerId: string) {
     const vCase = await this.verificationCaseService.findOne(id);
 
-    const fraudCase = await prisma.fraudReviewCase.findFirst({
+    const fraudCase = await this.prisma.fraudReviewCase.findFirst({
       where: { verificationCaseId: id }
     });
     if (fraudCase && fraudCase.flaggedByUserId === reviewerId) {
@@ -85,20 +86,20 @@ export class VerificationDecisionService {
     }
 
     if (vCase.caseType === 'GUARDED_CHANGE') {
-      const pendingChanges = await prisma.guardedChange.findMany({
+      const pendingChanges = await this.prisma.guardedChange.findMany({
         where: { verificationCaseId: id, status: 'PENDING' }
       });
       for (const change of pendingChanges) {
         await this.attorneyProfileChangeService.rejectProfileChange(change.id, reason, reviewerId);
       }
     } else {
-      await prisma.attorneyProfile.update({
+      await this.prisma.attorneyProfile.update({
         where: { id: vCase.attorneyId },
         data: { verificationStatus: 'REJECTED' }
       });
     }
 
-    return prisma.verificationCase.update({
+    return this.prisma.verificationCase.update({
       where: { id },
       data: {
         status: 'REJECTED',
@@ -112,12 +113,12 @@ export class VerificationDecisionService {
   async requestAmendment(id: string, data: { notes: string; requestedFields?: string[] }, reviewerId: string) {
     const vCase = await this.verificationCaseService.findOne(id);
 
-    await prisma.attorneyProfile.update({
+    await this.prisma.attorneyProfile.update({
       where: { id: vCase.attorneyId },
       data: { verificationStatus: 'ADDITIONAL_INFO_REQUIRED' }
     });
 
-    const updatedCase = await prisma.verificationCase.update({
+    const updatedCase = await this.prisma.verificationCase.update({
       where: { id },
       data: {
         status: 'ADDITIONAL_INFO_REQUIRED',
@@ -146,12 +147,12 @@ export class VerificationDecisionService {
   async requestDocuments(id: string, notes: string, requestedFields?: string[]) {
     const vCase = await this.verificationCaseService.findOne(id);
 
-    await prisma.attorneyProfile.update({
+    await this.prisma.attorneyProfile.update({
       where: { id: vCase.attorneyId },
       data: { verificationStatus: 'ADDITIONAL_INFO_REQUIRED' }
     });
 
-    return prisma.verificationCase.update({
+    return this.prisma.verificationCase.update({
       where: { id },
       data: {
         status: 'ADDITIONAL_INFO_REQUIRED',
@@ -169,12 +170,12 @@ export class VerificationDecisionService {
   async respondMoreInfo(id: string, replyNotes?: string) {
     const vCase = await this.verificationCaseService.findOne(id);
 
-    await prisma.attorneyProfile.update({
+    await this.prisma.attorneyProfile.update({
       where: { id: vCase.attorneyId },
       data: { verificationStatus: 'PENDING_REVIEW' }
     });
 
-    const updatedCase = await prisma.verificationCase.update({
+    const updatedCase = await this.prisma.verificationCase.update({
       where: { id },
       data: {
         status: 'PENDING_REVIEW',

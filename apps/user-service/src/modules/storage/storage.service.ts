@@ -1,8 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { StorageService as SharedStorageService } from '@workspace/storage';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '@workspace/database';
 
 @Injectable()
 export class StorageService {
@@ -10,7 +8,10 @@ export class StorageService {
     { id: 'f-1', fileName: 'license.pdf', fileKey: 'credentials/license.pdf', mimeType: 'application/pdf', size: 524288, uploadedAt: new Date() },
   ];
 
-  constructor(private readonly sharedStorage: SharedStorageService) {}
+  constructor(
+    private readonly sharedStorage: SharedStorageService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async uploadFile(fileData: any, uploadedFile?: any) {
     if (uploadedFile) {
@@ -67,9 +68,9 @@ export class StorageService {
 
   async uploadAttorneyDocument(attorneyIdentifier: string, docData: any, uploadedFile?: any) {
     // 1. Resolve attorney profile by attorneyProfileId or userId
-    let profile = await prisma.attorneyProfile.findUnique({ where: { id: attorneyIdentifier } });
+    let profile = await this.prisma.attorneyProfile.findUnique({ where: { id: attorneyIdentifier } });
     if (!profile) {
-      profile = await prisma.attorneyProfile.findUnique({ where: { userId: attorneyIdentifier } });
+      profile = await this.prisma.attorneyProfile.findUnique({ where: { userId: attorneyIdentifier } });
     }
     if (!profile) {
       throw new NotFoundException(`Attorney profile not found for identifier "${attorneyIdentifier}".`);
@@ -93,7 +94,7 @@ export class StorageService {
     const issuer = docData?.issuer || 'Federal Ministry of Justice';
 
     // 2. Find or create Credential container record for this attorney
-    let credential = await prisma.credential.findFirst({
+    let credential = await this.prisma.credential.findFirst({
       where: {
         attorneyId: profile.id,
         credentialType,
@@ -101,7 +102,7 @@ export class StorageService {
     });
 
     if (!credential) {
-      credential = await prisma.credential.create({
+      credential = await this.prisma.credential.create({
         data: {
           attorneyId: profile.id,
           credentialType,
@@ -113,7 +114,7 @@ export class StorageService {
     }
 
     // 3. Create CredentialDocument row in Prisma
-    const credentialDoc = await prisma.credentialDocument.create({
+    const credentialDoc = await this.prisma.credentialDocument.create({
       data: {
         credentialId: credential.id,
         fileKey: fileKey || `credentials/${profile.id}/${fileName || 'document.pdf'}`,
@@ -133,7 +134,7 @@ export class StorageService {
     }
 
     // Recalculate completeness
-    const countDocs = await prisma.credentialDocument.count({
+    const countDocs = await this.prisma.credentialDocument.count({
       where: { credential: { attorneyId: profile.id } }
     });
     let newCompleteness = profile.profileCompleteness;
@@ -145,12 +146,12 @@ export class StorageService {
     if (profile.verificationStatus === 'ADDITIONAL_INFO_REQUIRED') {
       profileUpdates.verificationStatus = 'PENDING_REVIEW';
 
-      const activeCase = await prisma.verificationCase.findFirst({
+      const activeCase = await this.prisma.verificationCase.findFirst({
         where: { attorneyId: profile.id },
         orderBy: { submittedAt: 'desc' }
       });
       if (activeCase) {
-        await prisma.verificationCase.update({
+        await this.prisma.verificationCase.update({
           where: { id: activeCase.id },
           data: {
             status: 'PENDING_REVIEW',
@@ -161,7 +162,7 @@ export class StorageService {
       }
     }
 
-    await prisma.attorneyProfile.update({
+    await this.prisma.attorneyProfile.update({
       where: { id: profile.id },
       data: profileUpdates
     });
@@ -186,28 +187,28 @@ export class StorageService {
   }
 
   async getAttorneyCredentials(attorneyIdentifier: string) {
-    let profile = await prisma.attorneyProfile.findUnique({ where: { id: attorneyIdentifier } });
+    let profile = await this.prisma.attorneyProfile.findUnique({ where: { id: attorneyIdentifier } });
     if (!profile) {
-      profile = await prisma.attorneyProfile.findUnique({ where: { userId: attorneyIdentifier } });
+      profile = await this.prisma.attorneyProfile.findUnique({ where: { userId: attorneyIdentifier } });
     }
     if (!profile) {
       throw new NotFoundException(`Attorney profile not found for identifier "${attorneyIdentifier}".`);
     }
 
-    return prisma.credential.findMany({
+    return this.prisma.credential.findMany({
       where: { attorneyId: profile.id },
       include: { documents: true }
     });
   }
 
   async deleteAttorneyDocument(documentId: string) {
-    const doc = await prisma.credentialDocument.findUnique({
+    const doc = await this.prisma.credentialDocument.findUnique({
       where: { id: documentId },
     });
 
     if (doc) {
       await this.sharedStorage.deleteFile(doc.fileKey);
-      await prisma.credentialDocument.delete({ where: { id: documentId } });
+      await this.prisma.credentialDocument.delete({ where: { id: documentId } });
     }
 
     return { status: 'success', message: `Attorney document ${documentId} deleted successfully` };

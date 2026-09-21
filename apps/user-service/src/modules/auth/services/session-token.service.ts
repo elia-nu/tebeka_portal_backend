@@ -4,14 +4,13 @@ import { CacheService } from '@workspace/cache';
 import { AppConfigService } from '@workspace/config';
 import * as crypto from 'crypto';
 import { auth } from '../../../auth';
-import { prisma } from '../auth-shared/prisma';
+import { PrismaService } from '@workspace/database';
 import { RefreshTokenDto, SwitchAccountDto, RevokeSessionDto } from '../dto/auth.dto';
 
 @Injectable()
 export class SessionTokenService {
-  private prisma = prisma;
-
   constructor(
+    private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly cacheService: CacheService,
     private readonly appConfigService: AppConfigService,

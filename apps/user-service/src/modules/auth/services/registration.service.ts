@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, ForbiddenException, HttpException, HttpStatus } from '@nestjs/common';
 import { hashPassword as betterAuthHash } from 'better-auth/crypto';
 import { AppLoggerService } from '@workspace/logger';
-import { prisma } from '../auth-shared/prisma';
+import { PrismaService } from '@workspace/database';
 import { validateEthiopianMobilePrefix } from '../auth-shared/phone.util';
 import { SessionTokenService } from './session-token.service';
 import { EmailVerificationService } from './email-verification.service';
@@ -9,9 +9,8 @@ import { RegisterClientDto, RegisterAttorneyDto, RegisterAdminDto, RegisterInvit
 
 @Injectable()
 export class RegistrationService {
-  private prisma = prisma;
-
   constructor(
+    private readonly prisma: PrismaService,
     private readonly sessionTokenService: SessionTokenService,
     private readonly emailVerificationService: EmailVerificationService,
     private readonly logger: AppLoggerService,

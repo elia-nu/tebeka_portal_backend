@@ -1,15 +1,14 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client/financial';
+import { PrismaService } from '../../../database/prisma.service';
 import { ChapaStrategy } from '../strategies/chapa.strategy';
 import { StripeStrategy } from '../strategies/stripe.strategy';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class PayoutWalletService {
   private readonly logger = new Logger(PayoutWalletService.name);
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly chapaStrategy: ChapaStrategy,
     private readonly stripeStrategy: StripeStrategy,
   ) {}
@@ -22,7 +21,7 @@ export class PayoutWalletService {
    * Retrieves the global default commission percentage set by Admin.
    */
   async getGlobalPlatformCommission(): Promise<number> {
-    const setting = await prisma.platformCommissionSetting.findUnique({
+    const setting = await this.prisma.platformCommissionSetting.findUnique({
       where: { id: 'global-platform-setting' },
     });
     return setting?.defaultCommissionPercentage ?? 15.0;
@@ -36,7 +35,7 @@ export class PayoutWalletService {
       throw new BadRequestException('Commission percentage must be between 0 and 100');
     }
 
-    const setting = await prisma.platformCommissionSetting.upsert({
+    const setting = await this.prisma.platformCommissionSetting.upsert({
       where: { id: 'global-platform-setting' },
       update: {
         defaultCommissionPercentage: commissionPercentage,
@@ -65,7 +64,7 @@ export class PayoutWalletService {
       throw new BadRequestException('Commission percentage must be between 0 and 100');
     }
 
-    const wallet = await prisma.wallet.upsert({
+    const wallet = await this.prisma.wallet.upsert({
       where: { userId: attorneyId },
       update: {
         splitPercentage: commissionPercentage,
@@ -119,7 +118,7 @@ export class PayoutWalletService {
     const chapaSubaccountId = subaccountRes.subaccountId || `sub_${attorneyId}_${Date.now()}`;
 
     // Upsert attorney wallet with subaccount link
-    const wallet = await prisma.wallet.upsert({
+    const wallet = await this.prisma.wallet.upsert({
       where: { userId: attorneyId },
       update: {
         chapaSubaccountId,
@@ -189,7 +188,7 @@ export class PayoutWalletService {
     );
 
     // Save Stripe account ID on wallet
-    const wallet = await prisma.wallet.upsert({
+    const wallet = await this.prisma.wallet.upsert({
       where: { userId: attorneyId },
       update: {
         stripeAccountId,
@@ -222,11 +221,11 @@ export class PayoutWalletService {
   }
 
   async getAttorneyWallet(attorneyId: string) {
-    const wallet = await prisma.wallet.findUnique({
+    const wallet = await this.prisma.wallet.findUnique({
       where: { userId: attorneyId },
     });
 
-    const pendingRefunds = await prisma.refund.findMany({
+    const pendingRefunds = await this.prisma.refund.findMany({
       where: {
         payment: { payeeId: attorneyId },
         status: 'PENDING',

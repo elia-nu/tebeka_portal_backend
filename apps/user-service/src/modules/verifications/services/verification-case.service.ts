@@ -1,15 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { sanitizeUser } from '../../users/users.service';
-import { prisma } from '../verifications-shared/prisma';
+import { PrismaService } from '@workspace/database';
 
 @Injectable()
 export class VerificationCaseService {
+  constructor(private readonly prisma: PrismaService) {}
   async createVerification(data: any) {
     // 3 business day SLA target calculation (skipping weekends)
     const now = new Date();
     const slaDueDate = new Date(now.valueOf() + 3 * 24 * 60 * 60 * 1000);
 
-    return prisma.verificationCase.create({
+    return this.prisma.verificationCase.create({
       data: {
         attorneyId: data.attorneyId,
         caseType: data.caseType || 'NEW_ATTORNEY',
@@ -40,14 +41,14 @@ export class VerificationCaseService {
     if (query.assignedReviewerId) where.assignedReviewerId = query.assignedReviewerId;
 
     const [items, total] = await Promise.all([
-      prisma.verificationCase.findMany({
+      this.prisma.verificationCase.findMany({
         where,
         skip,
         take: limit,
         include: { attorney: { include: { user: true } }, checklists: true },
         orderBy: { submittedAt: 'desc' },
       }),
-      prisma.verificationCase.count({ where }),
+      this.prisma.verificationCase.count({ where }),
     ]);
 
     return { items: sanitizeUser(items), total, page, limit, totalPages: Math.ceil(total / limit) };
@@ -57,7 +58,7 @@ export class VerificationCaseService {
     const now = new Date();
     const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-    const activeCases = await prisma.verificationCase.findMany({
+    const activeCases = await this.prisma.verificationCase.findMany({
       where: {
         status: { in: ['SUBMITTED', 'PENDING_REVIEW', 'ADDITIONAL_INFO_REQUIRED'] as any }
       },
@@ -131,7 +132,7 @@ export class VerificationCaseService {
   }
 
   async findOne(id: string) {
-    const vCase = await prisma.verificationCase.findUnique({
+    const vCase = await this.prisma.verificationCase.findUnique({
       where: { id },
       include: {
         attorney: { include: { user: true, credentials: { include: { documents: true } } } },
@@ -144,7 +145,7 @@ export class VerificationCaseService {
   }
 
   async updateChecklist(caseId: string, itemId: string, data: { status: 'PASSED' | 'FAILED'; remarks?: string; reviewerId: string }) {
-    let item = await prisma.verificationChecklist.findFirst({
+    let item = await this.prisma.verificationChecklist.findFirst({
       where: {
         OR: [
           { id: itemId },
@@ -154,7 +155,7 @@ export class VerificationCaseService {
     });
 
     if (!item) {
-      item = await prisma.verificationChecklist.create({
+      item = await this.prisma.verificationChecklist.create({
         data: {
           verificationCaseId: caseId,
           itemName: itemId,
@@ -167,7 +168,7 @@ export class VerificationCaseService {
       return item;
     }
 
-    return prisma.verificationChecklist.update({
+    return this.prisma.verificationChecklist.update({
       where: { id: item.id },
       data: {
         status: data.status,
@@ -188,7 +189,7 @@ export class VerificationCaseService {
     const now = new Date();
     const slaDueDate = new Date(now.valueOf() + 3 * 24 * 60 * 60 * 1000);
 
-    return prisma.verificationCase.create({
+    return this.prisma.verificationCase.create({
       data: {
         attorneyId,
         status: 'SUBMITTED',
@@ -208,7 +209,7 @@ export class VerificationCaseService {
 
   // Bulk Claim
   async bulkClaim(caseIds: string[], reviewerId: string) {
-    await prisma.verificationCase.updateMany({
+    await this.prisma.verificationCase.updateMany({
       where: { id: { in: caseIds } },
       data: { assignedReviewerId: reviewerId, status: 'PENDING_REVIEW' }
     });
@@ -217,7 +218,7 @@ export class VerificationCaseService {
 
   // Document view audit log
   async logDocumentView(reviewerId: string, verificationCaseId: string, documentId: string, ipAddress?: string) {
-    return prisma.verificationDocumentAccessLog.create({
+    return this.prisma.verificationDocumentAccessLog.create({
       data: {
         reviewerId,
         verificationCaseId,
@@ -233,25 +234,25 @@ export class VerificationCaseService {
     if (!attorneyIdentifier || attorneyIdentifier === 'undefined') {
       throw new BadRequestException('Attorney identifier or user authorization token is required');
     }
-    let profile = await prisma.attorneyProfile.findUnique({ where: { id: attorneyIdentifier } });
+    let profile = await this.prisma.attorneyProfile.findUnique({ where: { id: attorneyIdentifier } });
     if (!profile) {
-      profile = await prisma.attorneyProfile.findUnique({ where: { userId: attorneyIdentifier } });
+      profile = await this.prisma.attorneyProfile.findUnique({ where: { userId: attorneyIdentifier } });
     }
     if (!profile) {
-      const vCaseById = await prisma.verificationCase.findUnique({ where: { id: attorneyIdentifier } });
+      const vCaseById = await this.prisma.verificationCase.findUnique({ where: { id: attorneyIdentifier } });
       if (vCaseById) {
-        profile = await prisma.attorneyProfile.findUnique({ where: { id: vCaseById.attorneyId } });
+        profile = await this.prisma.attorneyProfile.findUnique({ where: { id: vCaseById.attorneyId } });
       }
     }
     const targetAttorneyId = profile ? profile.id : attorneyIdentifier;
 
     const [vCase, credentials] = await Promise.all([
-      prisma.verificationCase.findFirst({
+      this.prisma.verificationCase.findFirst({
         where: { attorneyId: targetAttorneyId },
         orderBy: { submittedAt: 'desc' },
         include: { checklists: true }
       }),
-      prisma.credential.findMany({
+      this.prisma.credential.findMany({
         where: { attorneyId: targetAttorneyId },
         include: { documents: true }
       })

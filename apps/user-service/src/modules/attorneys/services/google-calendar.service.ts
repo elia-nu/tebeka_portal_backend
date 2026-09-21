@@ -1,12 +1,12 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { google } from 'googleapis';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '@workspace/database';
 
 @Injectable()
 export class AttorneyGoogleCalendarService {
   private readonly logger = new Logger(AttorneyGoogleCalendarService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   private getOAuth2Client() {
     const clientId = process.env.GOOGLE_CLIENT_ID || 'mock-client-id.apps.googleusercontent.com';
@@ -51,7 +51,7 @@ export class AttorneyGoogleCalendarService {
         email = userInfo.data.email || email;
       }
 
-      const attorney = await prisma.attorneyProfile.findUnique({
+      const attorney = await this.prisma.attorneyProfile.findUnique({
         where: { id: attorneyId },
       });
 
@@ -59,7 +59,7 @@ export class AttorneyGoogleCalendarService {
         throw new NotFoundException(`Attorney profile ${attorneyId} not found`);
       }
 
-      const updated = await (prisma.attorneyProfile as any).update({
+      const updated = await (this.prisma.attorneyProfile as any).update({
         where: { id: attorneyId },
         data: {
           googleRefreshToken: refreshToken,
@@ -85,7 +85,7 @@ export class AttorneyGoogleCalendarService {
   }
 
   async getSyncStatus(attorneyId: string) {
-    const attorney = await (prisma.attorneyProfile as any).findUnique({
+    const attorney = await (this.prisma.attorneyProfile as any).findUnique({
       where: { id: attorneyId },
       select: {
         id: true,
@@ -110,7 +110,7 @@ export class AttorneyGoogleCalendarService {
   }
 
   async disconnect(attorneyId: string) {
-    const attorney = await prisma.attorneyProfile.findUnique({
+    const attorney = await this.prisma.attorneyProfile.findUnique({
       where: { id: attorneyId },
     });
 
@@ -118,7 +118,7 @@ export class AttorneyGoogleCalendarService {
       throw new NotFoundException(`Attorney profile ${attorneyId} not found`);
     }
 
-    await (prisma.attorneyProfile as any).update({
+    await (this.prisma.attorneyProfile as any).update({
       where: { id: attorneyId },
       data: {
         googleRefreshToken: null,

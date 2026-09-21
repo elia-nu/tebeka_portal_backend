@@ -1,16 +1,15 @@
 import { Injectable, NotFoundException, Logger, Optional } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client/marketplace';
+import { PrismaService } from '../../database/prisma.service';
 import { UserServiceClient } from '../../integrations/user-service.client';
 import { RankingService } from '../ranking/ranking.service';
 import { QueryDiscoveryDto, QuestionnaireDiscoveryDto } from './dto/query-discovery.dto';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class DiscoveryService {
   private readonly logger = new Logger(DiscoveryService.name);
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly userServiceClient: UserServiceClient,
     @Optional() private readonly rankingService?: RankingService
   ) {}
@@ -81,18 +80,18 @@ export class DiscoveryService {
     const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const [items, total] = await Promise.all([
-      prisma.discoveryIndex.findMany({
+      this.prisma.discoveryIndex.findMany({
         where,
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
       }),
-      prisma.discoveryIndex.count({ where }),
+      this.prisma.discoveryIndex.count({ where }),
     ]);
 
     // Fetch availability & build Credential Vault result cards
     const attorneyIds = items.map((i) => i.attorneyId);
-    const availabilities = await prisma.availabilityWindow.findMany({
+    const availabilities = await this.prisma.availabilityWindow.findMany({
       where: {
         attorneyId: { in: attorneyIds },
         isAvailable: true,
@@ -176,12 +175,12 @@ export class DiscoveryService {
     const limit = isAnonymous ? 3 : 15;
 
     const [items, total] = await Promise.all([
-      prisma.discoveryIndex.findMany({
+      this.prisma.discoveryIndex.findMany({
         where,
         take: limit,
         orderBy: { [sortBy]: 'desc' },
       }),
-      prisma.discoveryIndex.count({ where }),
+      this.prisma.discoveryIndex.count({ where }),
     ]);
 
     const formattedCards = items.map((item) => {
@@ -233,7 +232,7 @@ export class DiscoveryService {
    * 3. Attorney Detail View (with Live User Profile & Credential Vault projection)
    */
   async getAttorneyDetails(attorneyId: string) {
-    const discovery = await prisma.discoveryIndex.findUnique({
+    const discovery = await this.prisma.discoveryIndex.findUnique({
       where: { attorneyId },
     });
 
@@ -243,7 +242,7 @@ export class DiscoveryService {
 
     const userServiceProfile = await this.userServiceClient.getAttorneyProfile(attorneyId);
 
-    const availability = await prisma.availabilityWindow.findMany({
+    const availability = await this.prisma.availabilityWindow.findMany({
       where: { attorneyId, isAvailable: true },
     });
 

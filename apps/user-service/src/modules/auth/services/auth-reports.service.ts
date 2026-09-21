@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { CacheService } from '@workspace/cache';
-import { prisma } from '../auth-shared/prisma';
+import { PrismaService } from '@workspace/database';
 
 @Injectable()
 export class AuthReportsService {
-  private prisma = prisma;
-
-  constructor(private readonly cacheService: CacheService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   async getRegistrationFunnelReport() {
     const [otpRequested, otpVerified, clientRegistered, attorneyDraft, attorneyVerified] = await Promise.all([

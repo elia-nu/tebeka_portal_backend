@@ -1,19 +1,22 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { sanitizeUser } from '../../users/users.service';
-import { prisma } from '../attorneys-shared/prisma';
+import { PrismaService } from '@workspace/database';
 
 import { AttorneyVaultService } from './attorney-vault.service';
 
 @Injectable()
 export class AttorneyProfileService {
-  constructor(private readonly vaultService?: AttorneyVaultService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly vaultService?: AttorneyVaultService,
+  ) {}
 
   async createAttorney(data: any) {
-    return prisma.attorneyProfile.create({ data });
+    return this.prisma.attorneyProfile.create({ data });
   }
 
   async findProfileByUserId(userId: string) {
-    const profile = await prisma.attorneyProfile.findUnique({ where: { userId } });
+    const profile = await this.prisma.attorneyProfile.findUnique({ where: { userId } });
     if (!profile) {
       throw new NotFoundException(`No attorney profile found for authenticated user.`);
     }
@@ -26,20 +29,20 @@ export class AttorneyProfileService {
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-      prisma.attorneyProfile.findMany({
+      this.prisma.attorneyProfile.findMany({
         skip,
         take: limit,
         include: { user: true, educations: true, credentials: { include: { documents: true } } },
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.attorneyProfile.count(),
+      this.prisma.attorneyProfile.count(),
     ]);
 
     return { items: sanitizeUser(items), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string) {
-    const attorney = await prisma.attorneyProfile.findUnique({
+    const attorney = await this.prisma.attorneyProfile.findUnique({
       where: { id },
       include: {
         user: true,
@@ -58,7 +61,7 @@ export class AttorneyProfileService {
     if (this.vaultService) {
       return this.vaultService.getPublicCredentials(attorneyId);
     }
-    const credentials = await prisma.credential.findMany({
+    const credentials = await this.prisma.credential.findMany({
       where: { attorneyId },
       select: {
         id: true,
@@ -82,7 +85,7 @@ export class AttorneyProfileService {
     if (this.vaultService) {
       return this.vaultService.getMyCredentials(attorneyId);
     }
-    const credentials = await prisma.credential.findMany({
+    const credentials = await this.prisma.credential.findMany({
       where: { attorneyId },
       include: {
         documents: {
@@ -133,7 +136,7 @@ export class AttorneyProfileService {
     if (newBarNumber !== undefined && newBarNumber !== null && String(newBarNumber).trim() !== '') {
       const oldBarNumber = attorney.barRegistrationNumber || attorney.licenseNumber || '';
       if (String(newBarNumber) !== String(oldBarNumber)) {
-        const gc = await prisma.guardedChange.create({
+        const gc = await this.prisma.guardedChange.create({
           data: {
             attorneyId: id,
             field: 'barRegistrationNumber',
@@ -156,7 +159,7 @@ export class AttorneyProfileService {
         : [String(rawPracticeAreas).trim()];
       const oldAreas: string[] = attorney.practiceAreas || [];
       if (JSON.stringify(parsedNewAreas) !== JSON.stringify(oldAreas)) {
-        const gc = await prisma.guardedChange.create({
+        const gc = await this.prisma.guardedChange.create({
           data: {
             attorneyId: id,
             field: 'practiceAreas',
@@ -176,7 +179,7 @@ export class AttorneyProfileService {
     if (newFeeBand !== undefined && newFeeBand !== null && String(newFeeBand).trim() !== '') {
       const oldFeeBand = attorney.feeBand || '';
       if (String(newFeeBand) !== String(oldFeeBand)) {
-        const gc = await prisma.guardedChange.create({
+        const gc = await this.prisma.guardedChange.create({
           data: {
             attorneyId: id,
             field: 'feeBand',
@@ -194,7 +197,7 @@ export class AttorneyProfileService {
     if (natIdNum !== undefined && natIdNum !== null && String(natIdNum).trim() !== '') {
       const oldNatId = attorney.nationalIdNumber || '';
       if (String(natIdNum) !== String(oldNatId)) {
-        const gc = await prisma.guardedChange.create({
+        const gc = await this.prisma.guardedChange.create({
           data: {
             attorneyId: id,
             field: 'nationalIdNumber',
@@ -211,7 +214,7 @@ export class AttorneyProfileService {
     if (licenseBookUrl !== undefined && licenseBookUrl !== null && String(licenseBookUrl).trim() !== '') {
       const oldLicenseBook = attorney.licenseBookUrl || '';
       if (String(licenseBookUrl) !== String(oldLicenseBook)) {
-        const gc = await prisma.guardedChange.create({
+        const gc = await this.prisma.guardedChange.create({
           data: {
             attorneyId: id,
             field: 'licenseBookUrl',
@@ -222,11 +225,11 @@ export class AttorneyProfileService {
         });
         guardedChanges.push(gc);
 
-        let cred = await prisma.credential.findFirst({
+        let cred = await this.prisma.credential.findFirst({
           where: { attorneyId: id, credentialType: 'BAR_LICENSE' }
         });
         if (!cred) {
-          cred = await prisma.credential.create({
+          cred = await this.prisma.credential.create({
             data: {
               attorneyId: id,
               credentialType: 'BAR_LICENSE',
@@ -236,7 +239,7 @@ export class AttorneyProfileService {
             }
           });
         }
-        await prisma.credentialDocument.create({
+        await this.prisma.credentialDocument.create({
           data: {
             credentialId: cred.id,
             fileKey: licenseBookUrl,
@@ -251,7 +254,7 @@ export class AttorneyProfileService {
     if (barRegistrationUrl !== undefined && barRegistrationUrl !== null && String(barRegistrationUrl).trim() !== '') {
       const oldBarReg = attorney.barRegistrationUrl || '';
       if (String(barRegistrationUrl) !== String(oldBarReg)) {
-        const gc = await prisma.guardedChange.create({
+        const gc = await this.prisma.guardedChange.create({
           data: {
             attorneyId: id,
             field: 'barRegistrationUrl',
@@ -262,11 +265,11 @@ export class AttorneyProfileService {
         });
         guardedChanges.push(gc);
 
-        let cred = await prisma.credential.findFirst({
+        let cred = await this.prisma.credential.findFirst({
           where: { attorneyId: id, credentialType: 'BAR_CERTIFICATE' }
         });
         if (!cred) {
-          cred = await prisma.credential.create({
+          cred = await this.prisma.credential.create({
             data: {
               attorneyId: id,
               credentialType: 'BAR_CERTIFICATE',
@@ -276,7 +279,7 @@ export class AttorneyProfileService {
             }
           });
         }
-        await prisma.credentialDocument.create({
+        await this.prisma.credentialDocument.create({
           data: {
             credentialId: cred.id,
             fileKey: barRegistrationUrl,
@@ -291,7 +294,7 @@ export class AttorneyProfileService {
     if (nationalIdDocumentUrl !== undefined && nationalIdDocumentUrl !== null && String(nationalIdDocumentUrl).trim() !== '') {
       const oldNatDoc = attorney.nationalIdDocumentUrl || '';
       if (String(nationalIdDocumentUrl) !== String(oldNatDoc)) {
-        const gc = await prisma.guardedChange.create({
+        const gc = await this.prisma.guardedChange.create({
           data: {
             attorneyId: id,
             field: 'nationalIdDocumentUrl',
@@ -302,11 +305,11 @@ export class AttorneyProfileService {
         });
         guardedChanges.push(gc);
 
-        let cred = await prisma.credential.findFirst({
+        let cred = await this.prisma.credential.findFirst({
           where: { attorneyId: id, credentialType: 'NATIONAL_ID' }
         });
         if (!cred) {
-          cred = await prisma.credential.create({
+          cred = await this.prisma.credential.create({
             data: {
               attorneyId: id,
               credentialType: 'NATIONAL_ID',
@@ -316,7 +319,7 @@ export class AttorneyProfileService {
             }
           });
         }
-        await prisma.credentialDocument.create({
+        await this.prisma.credentialDocument.create({
           data: {
             credentialId: cred.id,
             fileKey: nationalIdDocumentUrl,
@@ -332,7 +335,7 @@ export class AttorneyProfileService {
       const parsedDocs = Array.isArray(otherDocs) ? otherDocs : [otherDocs];
       const oldDocs = attorney.otherSupportingDocuments || [];
       if (JSON.stringify(parsedDocs) !== JSON.stringify(oldDocs)) {
-        const gc = await prisma.guardedChange.create({
+        const gc = await this.prisma.guardedChange.create({
           data: {
             attorneyId: id,
             field: 'otherSupportingDocuments',
@@ -353,7 +356,7 @@ export class AttorneyProfileService {
       updateData.professionalPhotoUrl = photoUrl;
       updateData.photoKey = photoUrl;
       if (attorney.userId) {
-        await prisma.user.update({
+        await this.prisma.user.update({
           where: { id: attorney.userId },
           data: { image: photoUrl }
         }).catch(() => {});
@@ -426,7 +429,7 @@ export class AttorneyProfileService {
 
     if (data.fullName && attorney.userId) {
       updateData.fullName = data.fullName;
-      await prisma.user.update({
+      await this.prisma.user.update({
         where: { id: attorney.userId },
         data: { name: data.fullName }
       }).catch(() => {});
@@ -436,13 +439,13 @@ export class AttorneyProfileService {
     if (attorney.verificationStatus === 'ADDITIONAL_INFO_REQUIRED' || amendmentReply) {
       updateData.verificationStatus = 'PENDING_REVIEW';
 
-      const activeCase = await prisma.verificationCase.findFirst({
+      const activeCase = await this.prisma.verificationCase.findFirst({
         where: { attorneyId: id },
         orderBy: { submittedAt: 'desc' }
       });
 
       if (activeCase) {
-        await prisma.verificationCase.update({
+        await this.prisma.verificationCase.update({
           where: { id: activeCase.id },
           data: {
             status: 'PENDING_REVIEW',
@@ -486,7 +489,7 @@ export class AttorneyProfileService {
         checklistsToCreate.push({ itemName: 'fee_band_tier_compliance', status: 'PENDING' });
       }
 
-      guardedCase = await prisma.verificationCase.create({
+      guardedCase = await this.prisma.verificationCase.create({
         data: {
           attorneyId: id,
           caseType: 'GUARDED_CHANGE',
@@ -499,7 +502,7 @@ export class AttorneyProfileService {
       });
 
       for (const gc of guardedChanges) {
-        await prisma.guardedChange.update({
+        await this.prisma.guardedChange.update({
           where: { id: gc.id },
           data: { verificationCaseId: guardedCase.id }
         }).catch(() => {});
@@ -508,7 +511,7 @@ export class AttorneyProfileService {
     }
 
     if (Object.keys(updateData).length > 0) {
-      await prisma.attorneyProfile.update({
+      await this.prisma.attorneyProfile.update({
         where: { id },
         data: updateData
       });
@@ -527,9 +530,9 @@ export class AttorneyProfileService {
   }
 
   async submitAmendmentResponse(attorneyId: string, data: any) {
-    let profile = await prisma.attorneyProfile.findUnique({ where: { id: attorneyId } });
+    let profile = await this.prisma.attorneyProfile.findUnique({ where: { id: attorneyId } });
     if (!profile) {
-      profile = await prisma.attorneyProfile.findUnique({ where: { userId: attorneyId } });
+      profile = await this.prisma.attorneyProfile.findUnique({ where: { userId: attorneyId } });
     }
     if (!profile) {
       throw new NotFoundException(`Attorney profile not found for ID "${attorneyId}".`);
@@ -539,19 +542,19 @@ export class AttorneyProfileService {
     const result = await this.updateAttorney(profile.id, updatePayload);
 
     // Ensure status is transitioned to PENDING_REVIEW even if no profile fields were changed
-    await prisma.attorneyProfile.update({
+    await this.prisma.attorneyProfile.update({
       where: { id: profile.id },
       data: { verificationStatus: 'PENDING_REVIEW' }
     });
 
-    const activeCase = await prisma.verificationCase.findFirst({
+    const activeCase = await this.prisma.verificationCase.findFirst({
       where: { attorneyId: profile.id },
       orderBy: { submittedAt: 'desc' }
     });
 
     let updatedCase = null;
     if (activeCase) {
-      updatedCase = await prisma.verificationCase.update({
+      updatedCase = await this.prisma.verificationCase.update({
         where: { id: activeCase.id },
         data: {
           status: 'PENDING_REVIEW',
@@ -574,11 +577,11 @@ export class AttorneyProfileService {
   }
 
   async deleteAttorney(id: string) {
-    return prisma.attorneyProfile.delete({ where: { id } });
+    return this.prisma.attorneyProfile.delete({ where: { id } });
   }
 
   async publishProfile(id: string) {
-    const attorney = await prisma.attorneyProfile.findUnique({ where: { id } });
+    const attorney = await this.prisma.attorneyProfile.findUnique({ where: { id } });
     if (!attorney) throw new NotFoundException('Attorney profile not found');
 
     // 3-Part Publication Gate
@@ -595,14 +598,14 @@ export class AttorneyProfileService {
       throw new BadRequestException('Cannot publish profile: Credential claims must match verified credentials');
     }
 
-    return prisma.attorneyProfile.update({
+    return this.prisma.attorneyProfile.update({
       where: { id },
       data: { status: 'ACTIVE' }
     });
   }
 
   async hideProfile(id: string) {
-    return prisma.attorneyProfile.update({ where: { id }, data: { status: 'INACTIVE' } });
+    return this.prisma.attorneyProfile.update({ where: { id }, data: { status: 'INACTIVE' } });
   }
 
   // Profile Moderation: WARN, SUSPEND, RESTORE
@@ -616,7 +619,7 @@ export class AttorneyProfileService {
       newStatus = 'ACTIVE';
     }
 
-    await prisma.attorneyProfile.update({
+    await this.prisma.attorneyProfile.update({
       where: { id },
       data: { status: newStatus }
     });

@@ -1,15 +1,14 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client/marketplace';
+import { PrismaService } from '../../database/prisma.service';
 import { EventBusService } from '@workspace/event-bus';
 import { GoogleMeetService } from '../integrations/google-meet.service';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class MarketplaceEventsConsumer implements OnModuleInit {
   private readonly logger = new Logger(MarketplaceEventsConsumer.name);
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
     private readonly googleMeetService: GoogleMeetService
   ) {}
@@ -24,7 +23,7 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
       const attorneyId = data.attorneyId || data.aggregateId;
       if (!attorneyId) return;
 
-      await prisma.discoveryIndex.upsert({
+      await this.prisma.discoveryIndex.upsert({
         where: { attorneyId },
         update: {
           verifiedAt: new Date(),
@@ -44,7 +43,7 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
       const attorneyId = data.attorneyId || data.aggregateId;
       if (!attorneyId) return;
 
-      await prisma.discoveryIndex.upsert({
+      await this.prisma.discoveryIndex.upsert({
         where: { attorneyId },
         update: {
           ...(data.city && { city: data.city }),
@@ -66,7 +65,7 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
     this.eventBus.subscribeIdempotent(
       'PAYMENT_COMPLETED',
       'marketplace-service',
-      prisma,
+      this.prisma,
       async (data: any) => {
         this.logger.log(
           `Handling PAYMENT_COMPLETED event for payment: ${data.paymentId || data.aggregateId}, booking: ${data.bookingId}`
@@ -75,7 +74,7 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
         if (!bookingId) return;
 
         // Fetch existing booking
-        const existingBooking = await prisma.booking.findUnique({ where: { id: bookingId } });
+        const existingBooking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
         if (!existingBooking) {
           this.logger.warn(`Booking ${bookingId} not found for PAYMENT_COMPLETED event`);
           return;
@@ -97,7 +96,7 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
           attorneyEmail: data.payeeEmail || `attorney-${existingBooking.attorneyId}@tebeka.et`,
         });
 
-        await prisma.$transaction(async (tx) => {
+        await this.prisma.$transaction(async (tx) => {
           const updated = await tx.booking.update({
             where: { id: bookingId },
             data: {

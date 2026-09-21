@@ -1,12 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client/marketplace';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class RankingService {
+  constructor(private readonly prisma: PrismaService) {}
   async getActiveWeights() {
-    const latestWeight = await prisma.rankingWeight.findFirst({
+    const latestWeight = await this.prisma.rankingWeight.findFirst({
       orderBy: { effectiveAt: 'desc' },
     });
 
@@ -34,7 +33,7 @@ export class RankingService {
     }
 
     // Interactive Transaction: Weight creation and index score recalculation inside tx
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const createdWeights = await tx.rankingWeight.create({
         data: {
           verificationWeight: data.verificationWeight,

@@ -1,18 +1,17 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '@workspace/database';
 
 @Injectable()
 export class AdministrationService {
+  constructor(private readonly prisma: PrismaService) {}
   async getAdminUsers(query: any) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 20;
     const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
-      prisma.user.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      prisma.user.count(),
+      this.prisma.user.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      this.prisma.user.count(),
     ]);
 
     return { items: users, total, page, limit };
@@ -20,11 +19,11 @@ export class AdministrationService {
 
   async getUserStatistics() {
     const [totalUsers, activeUsers, attorneys, clients, admins] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({ where: { status: 'ACTIVE' } }),
-      prisma.attorneyProfile.count(),
-      prisma.user.count({ where: { role: 'CLIENT' } }),
-      prisma.user.count({ where: { role: 'ADMIN' } }),
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.attorneyProfile.count(),
+      this.prisma.user.count({ where: { role: 'CLIENT' } }),
+      this.prisma.user.count({ where: { role: 'ADMIN' } }),
     ]);
 
     return { totalUsers, activeUsers, attorneys, clients, admins };
@@ -40,25 +39,25 @@ export class AdministrationService {
     }
 
     // 1. Update user status
-    let user = await prisma.user.findUnique({ where: { id: userId } });
+    let user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      const demoClient = await prisma.user.findFirst({ where: { role: 'CLIENT' } });
+      const demoClient = await this.prisma.user.findFirst({ where: { role: 'CLIENT' } });
       if (!demoClient) throw new NotFoundException(`User ${userId} not found`);
       userId = demoClient.id;
     }
 
-    user = await prisma.user.update({
+    user = await this.prisma.user.update({
       where: { id: userId },
       data: { status: 'SUSPENDED', banned: true, banReason: `${actionData.reasonCode}: ${actionData.adminNote}` }
     });
 
     // 2. Immediate Session Revocation across all devices
-    await prisma.session.deleteMany({
+    await this.prisma.session.deleteMany({
       where: { userId }
     });
 
     // 3. Log AdminAction record
-    await prisma.adminAction.create({
+    await this.prisma.adminAction.create({
       data: {
         adminId: actionData.adminId,
         action: 'USER_SUSPENDED_REASONED',
@@ -69,7 +68,7 @@ export class AdministrationService {
     });
 
     // 4. Immutable Audit Log record
-    await prisma.auditLog.create({
+    await this.prisma.auditLog.create({
       data: {
         userId: actionData.adminId,
         action: 'USER_SUSPENDED',
@@ -138,8 +137,8 @@ export class AdministrationService {
     const skip = (page - 1) * limit;
 
     const [attorneys, total] = await Promise.all([
-      prisma.attorneyProfile.findMany({ skip, take: limit, include: { user: true } }),
-      prisma.attorneyProfile.count(),
+      this.prisma.attorneyProfile.findMany({ skip, take: limit, include: { user: true } }),
+      this.prisma.attorneyProfile.count(),
     ]);
 
     return { items: attorneys, total, page, limit };
@@ -147,30 +146,30 @@ export class AdministrationService {
 
   async getAttorneyStatistics() {
     const [totalAttorneys, verifiedAttorneys, pendingVerification] = await Promise.all([
-      prisma.attorneyProfile.count(),
-      prisma.attorneyProfile.count({ where: { verificationStatus: 'APPROVED' } }),
-      prisma.attorneyProfile.count({ where: { verificationStatus: 'PENDING_REVIEW' } }),
+      this.prisma.attorneyProfile.count(),
+      this.prisma.attorneyProfile.count({ where: { verificationStatus: 'APPROVED' } }),
+      this.prisma.attorneyProfile.count({ where: { verificationStatus: 'PENDING_REVIEW' } }),
     ]);
 
     return { totalAttorneys, verifiedAttorneys, pendingVerification };
   }
 
   async adminVerifyAttorney(id: string) {
-    return prisma.attorneyProfile.update({
+    return this.prisma.attorneyProfile.update({
       where: { id },
       data: { verificationStatus: 'APPROVED', status: 'ACTIVE', hasVerifiedBadge: true },
     });
   }
 
   async adminRejectAttorney(id: string, reason: string) {
-    return prisma.attorneyProfile.update({
+    return this.prisma.attorneyProfile.update({
       where: { id },
       data: { verificationStatus: 'REJECTED' },
     });
   }
 
   async adminSuspendAttorney(id: string) {
-    return prisma.attorneyProfile.update({
+    return this.prisma.attorneyProfile.update({
       where: { id },
       data: { status: 'SUSPENDED', verificationStatus: 'SUSPENDED' },
     });

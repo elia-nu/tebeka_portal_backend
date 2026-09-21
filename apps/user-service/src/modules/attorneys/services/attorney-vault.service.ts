@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { prisma } from '../attorneys-shared/prisma';
+import { PrismaService } from '@workspace/database';
 
 @Injectable()
 export class AttorneyVaultService {
+  constructor(private readonly prisma: PrismaService) {}
   // Public Credential Vault Projection (Raw files NEVER exposed publicly)
   async getPublicCredentials(attorneyId: string) {
-    const credentials = await prisma.credential.findMany({
+    const credentials = await this.prisma.credential.findMany({
       where: { attorneyId },
       select: {
         id: true,
@@ -26,7 +27,7 @@ export class AttorneyVaultService {
 
   // Authenticated Attorney's Own Credential Vault Projection (Includes document metadata)
   async getMyCredentials(attorneyId: string) {
-    const credentials = await prisma.credential.findMany({
+    const credentials = await this.prisma.credential.findMany({
       where: { attorneyId },
       include: {
         documents: {
