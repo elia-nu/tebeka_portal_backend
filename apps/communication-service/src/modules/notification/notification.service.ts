@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaClient, NotificationStatus } from '@prisma/client/communication';
-
-const prisma = new PrismaClient();
+import { NotificationStatus } from '@prisma/client/communication';
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class NotificationService {
+  constructor(private readonly prisma: PrismaService) {}
   async getUserNotifications(userId: string, query: any = {}) {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.max(1, Number(query.limit) || 20);
@@ -23,14 +23,14 @@ export class NotificationService {
     }
 
     const [items, total, unreadCount] = await Promise.all([
-      prisma.notification.findMany({
+      this.prisma.notification.findMany({
         where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.notification.count({ where }),
-      prisma.notification.count({ where: { recipientId: userId, readAt: null } }),
+      this.prisma.notification.count({ where }),
+      this.prisma.notification.count({ where: { recipientId: userId, readAt: null } }),
     ]);
 
     return {
@@ -44,7 +44,7 @@ export class NotificationService {
   }
 
   async markAsRead(notificationId: string, userId: string) {
-    const notification = await prisma.notification.findUnique({
+    const notification = await this.prisma.notification.findUnique({
       where: { id: notificationId },
     });
 
@@ -52,7 +52,7 @@ export class NotificationService {
       throw new NotFoundException(`Notification ${notificationId} not found`);
     }
 
-    return prisma.notification.update({
+    return this.prisma.notification.update({
       where: { id: notificationId },
       data: {
         readAt: new Date(),
@@ -62,7 +62,7 @@ export class NotificationService {
   }
 
   async markAllAsRead(userId: string) {
-    return prisma.notification.updateMany({
+    return this.prisma.notification.updateMany({
       where: { recipientId: userId, readAt: null },
       data: {
         readAt: new Date(),
@@ -72,7 +72,7 @@ export class NotificationService {
   }
 
   async deleteNotification(notificationId: string, userId: string) {
-    const notification = await prisma.notification.findUnique({
+    const notification = await this.prisma.notification.findUnique({
       where: { id: notificationId },
     });
 
@@ -80,13 +80,13 @@ export class NotificationService {
       throw new NotFoundException(`Notification ${notificationId} not found`);
     }
 
-    return prisma.notification.delete({
+    return this.prisma.notification.delete({
       where: { id: notificationId },
     });
   }
 
   async registerDeviceToken(userId: string, data: { token: string; platform?: string }) {
-    return prisma.deviceToken.upsert({
+    return this.prisma.deviceToken.upsert({
       where: { token: data.token },
       update: {
         userId,
@@ -103,26 +103,26 @@ export class NotificationService {
   }
 
   async removeDeviceToken(userId: string, token: string) {
-    return prisma.deviceToken.updateMany({
+    return this.prisma.deviceToken.updateMany({
       where: { userId, token },
       data: { isActive: false },
     });
   }
 
   async getUserDeviceTokens(userId: string) {
-    return prisma.deviceToken.findMany({
+    return this.prisma.deviceToken.findMany({
       where: { userId, isActive: true },
       orderBy: { updatedAt: 'desc' },
     });
   }
 
   async getUserPreferences(userId: string) {
-    let pref = await prisma.userNotificationPreference.findUnique({
+    let pref = await this.prisma.userNotificationPreference.findUnique({
       where: { userId },
     });
 
     if (!pref) {
-      pref = await prisma.userNotificationPreference.create({
+      pref = await this.prisma.userNotificationPreference.create({
         data: {
           userId,
           emailEnabled: true,
@@ -159,7 +159,7 @@ export class NotificationService {
   }
 
   async updateUserPreferences(userId: string, data: any) {
-    const pref = await prisma.userNotificationPreference.upsert({
+    const pref = await this.prisma.userNotificationPreference.upsert({
       where: { userId },
       update: {
         ...data,

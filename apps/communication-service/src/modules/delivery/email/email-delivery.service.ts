@@ -1,15 +1,15 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
-import { PrismaClient, QueueJobStatus, NotificationChannel } from '@prisma/client/communication';
+import { QueueJobStatus, NotificationChannel } from '@prisma/client/communication';
+import { PrismaService } from '../../../database/prisma.service';
 import { AppLoggerService } from '@workspace/logger';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class EmailDeliveryService {
   private readonly logger: AppLoggerService;
 
   constructor(
+    private readonly prisma: PrismaService,
     @Optional() private readonly mailerService?: MailerService,
     @Optional() logger?: AppLoggerService
   ) {
@@ -17,7 +17,7 @@ export class EmailDeliveryService {
   }
 
   async sendEmailJob(jobId: string) {
-    const job = await prisma.emailQueue.findUnique({
+    const job = await this.prisma.emailQueue.findUnique({
       where: { id: jobId },
       include: { notification: true },
     });
@@ -35,7 +35,7 @@ export class EmailDeliveryService {
         this.logger.log(`[MOCK-EMAIL] Dispatched email to ${job.recipientEmail}: "${job.subject}"`, 'EmailDeliveryService');
       }
 
-      await prisma.emailQueue.update({
+      await this.prisma.emailQueue.update({
         where: { id: jobId },
         data: {
           status: QueueJobStatus.COMPLETED,
@@ -43,7 +43,7 @@ export class EmailDeliveryService {
         },
       });
 
-      await prisma.notificationLog.create({
+      await this.prisma.notificationLog.create({
         data: {
           notificationId: job.notificationId,
           channel: NotificationChannel.EMAIL,
@@ -61,7 +61,7 @@ export class EmailDeliveryService {
       const backoffMinutes = Math.pow(2, nextAttempts); // 2, 4, 8, 16 mins
       const nextAttemptAt = new Date(Date.now() + backoffMinutes * 60 * 1000);
 
-      await prisma.emailQueue.update({
+      await this.prisma.emailQueue.update({
         where: { id: jobId },
         data: {
           status: isDeadLetter ? QueueJobStatus.DEAD_LETTER : QueueJobStatus.FAILED,
@@ -71,7 +71,7 @@ export class EmailDeliveryService {
         },
       });
 
-      await prisma.notificationLog.create({
+      await this.prisma.notificationLog.create({
         data: {
           notificationId: job.notificationId,
           channel: NotificationChannel.EMAIL,
@@ -87,7 +87,7 @@ export class EmailDeliveryService {
   }
 
   async processPendingEmailJobs() {
-    const pendingJobs = await prisma.emailQueue.findMany({
+    const pendingJobs = await this.prisma.emailQueue.findMany({
       where: {
         status: { in: [QueueJobStatus.PENDING, QueueJobStatus.FAILED] },
         nextAttemptAt: { lte: new Date() },

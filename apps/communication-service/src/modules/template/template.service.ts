@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, ConflictException, OnModuleInit } from '@nestjs/common';
-import { PrismaClient, NotificationChannel } from '@prisma/client/communication';
-
-const prisma = new PrismaClient();
+import { NotificationChannel } from '@prisma/client/communication';
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class TemplateService implements OnModuleInit {
+  constructor(private readonly prisma: PrismaService) {}
   async onModuleInit() {
     await this.seedDefaultTemplates();
   }
@@ -140,7 +140,7 @@ export class TemplateService implements OnModuleInit {
     ];
 
     for (const t of defaults) {
-      await prisma.notificationTemplate.upsert({
+      await this.prisma.notificationTemplate.upsert({
         where: { key: t.key },
         update: {
           channels: t.channels,
@@ -156,17 +156,17 @@ export class TemplateService implements OnModuleInit {
   }
 
   async createTemplate(data: any) {
-    const existing = await prisma.notificationTemplate.findUnique({ where: { key: data.key } });
+    const existing = await this.prisma.notificationTemplate.findUnique({ where: { key: data.key } });
     if (existing) throw new ConflictException(`Template with key '${data.key}' already exists`);
 
-    return prisma.notificationTemplate.create({ data });
+    return this.prisma.notificationTemplate.create({ data });
   }
 
   async updateTemplate(key: string, data: any) {
-    const template = await prisma.notificationTemplate.findUnique({ where: { key } });
+    const template = await this.prisma.notificationTemplate.findUnique({ where: { key } });
     if (!template) throw new NotFoundException(`Template '${key}' not found`);
 
-    return prisma.notificationTemplate.update({
+    return this.prisma.notificationTemplate.update({
       where: { key },
       data: {
         ...data,
@@ -176,13 +176,13 @@ export class TemplateService implements OnModuleInit {
   }
 
   async getTemplate(key: string) {
-    const template = await prisma.notificationTemplate.findUnique({ where: { key } });
+    const template = await this.prisma.notificationTemplate.findUnique({ where: { key } });
     if (!template) throw new NotFoundException(`Template '${key}' not found`);
     return template;
   }
 
   async getAllTemplates() {
-    return prisma.notificationTemplate.findMany({
+    return this.prisma.notificationTemplate.findMany({
       orderBy: { createdAt: 'desc' },
     });
   }
