@@ -25,7 +25,6 @@ import {
 } from './dto/attorney.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
-@AllowAnonymous()
 @Controller()
 export class AttorneysController {
   constructor(
@@ -370,13 +369,13 @@ export class AttorneysController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   async approveProfileChange(@Param('changeId') changeId: string, @Req() req: any) {
-    return this.attorneyProfileChangeService.approveProfileChange(changeId, req.user?.id || 'admin-reviewer');
+    return this.attorneyProfileChangeService.approveProfileChange(changeId, req.user.id);
   }
 
   @Patch('attorneys/profile-changes/:changeId/reject')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
   async rejectProfileChange(@Param('changeId') changeId: string, @Body() body: { reason: string }, @Req() req: any) {
-    return this.attorneyProfileChangeService.rejectProfileChange(changeId, body.reason, req.user?.id || 'admin-reviewer');
+    return this.attorneyProfileChangeService.rejectProfileChange(changeId, body.reason, req.user.id);
   }
 }

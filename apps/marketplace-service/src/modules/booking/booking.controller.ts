@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard, Public } from '@workspace/auth';
 import { BookingService } from './booking.service';
 import {
   CreateBookingDto,
@@ -12,6 +13,7 @@ import {
 } from './dto/booking.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('bookings')
 export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
@@ -26,8 +28,8 @@ export class BookingController {
   @Get()
   @UsePipes(new JoiValidationPipe(QueryBookingSchema))
   async findUserBookings(@Query() query: QueryBookingDto, @Req() req: any) {
-    const userId = req.user?.id || query.userId;
-    const role = req.user?.role || query.role || 'CLIENT';
+    const userId = req.user.id;
+    const role = req.user.role || query.role || 'CLIENT';
     return this.bookingService.findUserBookings(userId, role, query);
   }
 
@@ -38,33 +40,33 @@ export class BookingController {
 
   @Patch(':id/accept')
   async acceptBooking(@Param('id') id: string, @Req() req: any) {
-    const attorneyId = req.user?.id || req.body?.attorneyId || 'attorney-1';
+    const attorneyId = req.user.id;
     return this.bookingService.acceptBooking(id, attorneyId);
   }
 
   @Patch(':id/decline')
   async declineBooking(@Param('id') id: string, @Body() body: { reason?: string }, @Req() req: any) {
-    const attorneyId = req.user?.id || req.body?.attorneyId || 'attorney-1';
+    const attorneyId = req.user.id;
     return this.bookingService.declineBooking(id, attorneyId, body?.reason);
   }
 
   @Patch(':id/status')
   @UsePipes(new JoiValidationPipe(UpdateBookingStatusSchema))
   async updateStatus(@Param('id') id: string, @Body() body: UpdateBookingStatusDto, @Req() req: any) {
-    const userId = req.user?.id || 'system';
+    const userId = req.user.id;
     return this.bookingService.updateBookingStatus(id, body.status, userId, body.reason);
   }
 
   @Post(':id/cancel')
   async cancelBooking(@Param('id') id: string, @Body() body: { reason?: string }, @Req() req: any) {
-    const userId = req.user?.id || 'system';
+    const userId = req.user.id;
     return this.bookingService.cancelBooking(id, userId, body.reason);
   }
 
   @Post(':id/reschedule')
   @UsePipes(new JoiValidationPipe(RescheduleBookingSchema))
   async rescheduleBooking(@Param('id') id: string, @Body() body: RescheduleBookingDto, @Req() req: any) {
-    const userId = req.user?.id || 'system';
+    const userId = req.user.id;
     return this.bookingService.rescheduleBooking(id, body, userId);
   }
 
@@ -74,7 +76,7 @@ export class BookingController {
     @Body() body: { proposedBookingDate: string; proposedStartTime: string; proposedEndTime: string; reason?: string },
     @Req() req: any
   ) {
-    const userId = req.user?.id || 'client-1';
+    const userId = req.user.id;
     return this.bookingService.proposeReschedule(id, body, userId);
   }
 
@@ -84,7 +86,7 @@ export class BookingController {
     @Body() body: { action: 'ACCEPT' | 'REJECT'; reason?: string },
     @Req() req: any
   ) {
-    const userId = req.user?.id || 'attorney-1';
+    const userId = req.user.id;
     return this.bookingService.respondToReschedule(id, body, userId);
   }
 
@@ -94,7 +96,7 @@ export class BookingController {
     @Body() body: { reason?: string },
     @Req() req: any
   ) {
-    const userId = req.user?.id || 'attorney-1';
+    const userId = req.user.id;
     return this.bookingService.reportNoShow(id, userId, body?.reason);
   }
 
@@ -103,28 +105,29 @@ export class BookingController {
     @Body() body: { attorneyId?: string; startDate: string; endDate: string; reason?: string },
     @Req() req: any
   ) {
-    const attorneyId = body.attorneyId || req.user?.attorneyProfile?.id || req.user?.id || 'attorney-123';
+    const attorneyId = req.user?.role === 'ADMIN' && body.attorneyId ? body.attorneyId : (req.user?.attorneyProfile?.id || req.user.id);
     return this.bookingService.createBlackout(attorneyId, body);
   }
 
   @Get('blackouts')
   async getBlackouts(@Query('attorneyId') attorneyId: string, @Req() req: any) {
-    const targetAttorneyId = attorneyId || req.user?.attorneyProfile?.id || req.user?.id || 'attorney-123';
+    const targetAttorneyId = req.user?.role === 'ADMIN' && attorneyId ? attorneyId : (req.user?.attorneyProfile?.id || req.user.id);
     return this.bookingService.getBlackouts(targetAttorneyId);
   }
 
   @Post(':id/chat')
   async createBookingChat(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user?.id || 'client-1';
+    const userId = req.user.id;
     return this.bookingService.getOrCreateBookingChat(id, userId);
   }
 
   @Get(':id/chat')
   async getBookingChat(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user?.id || 'client-1';
+    const userId = req.user.id;
     return this.bookingService.getOrCreateBookingChat(id, userId);
   }
 
+  @Public()
   @Get('attorneys/:attorneyId/available-slots')
   async getAttorneyAvailableSlots(
     @Param('attorneyId') attorneyId: string,

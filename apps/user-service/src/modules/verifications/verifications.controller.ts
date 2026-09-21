@@ -21,9 +21,8 @@ import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
 import { UsersService } from '../users/users.service';
 import { AttorneyProfileChangeService } from '../attorneys/services/attorney-profile-change.service';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
-@AllowAnonymous()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('verifications')
 export class VerificationsController {
   constructor(
@@ -40,30 +39,33 @@ export class VerificationsController {
   }
 
   @Get()
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @UsePipes(new JoiValidationPipe(QueryVerificationSchema))
   async getVerifications(@Query() query: QueryVerificationDto) {
     return this.verificationCaseService.findAll(query);
   }
 
-  @AllowAnonymous()
   @Get('my-case')
   async getAttorneyCaseView(@Query('attorneyId') attorneyId: string, @Req() req: any) {
-    const targetId = attorneyId || (await this.usersService.resolveUserId(req));
+    const targetId = (req.user?.role === 'ADMIN' && attorneyId) ? attorneyId : (await this.usersService.resolveUserId(req));
     return this.verificationCaseService.getAttorneyCaseView(targetId);
   }
 
   @Get('fraud-workspace/:id')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async getFraudWorkspace(@Param('id') id: string) {
     return this.verificationFraudService.getFraudWorkspace(id);
   }
 
   @Get('cases')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @UsePipes(new JoiValidationPipe(QueryVerificationSchema))
   async getVerificationsCases(@Query() query: QueryVerificationDto) {
     return this.verificationCaseService.findAll(query);
   }
 
   @Get('sla-report')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async getSlaReport() {
     return this.verificationCaseService.getSlaReport();
   }
@@ -77,6 +79,7 @@ export class VerificationsController {
   }
 
   @Patch(':id/checklist/:itemId')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @UsePipes(new JoiValidationPipe(UpdateChecklistSchema))
   async updateChecklist(
     @Param('id') id: string,
@@ -87,11 +90,12 @@ export class VerificationsController {
     return this.verificationCaseService.updateChecklist(id, itemId, {
       status: body.status,
       remarks: body.remarks,
-      reviewerId: req.user?.id || 'admin-reviewer-1',
+      reviewerId: req.user.id,
     });
   }
 
   @Patch('standing-check/:attorneyId')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @UsePipes(new JoiValidationPipe(UpdateBarStandingSchema))
   async updateBarStandingCheck(
     @Param('attorneyId') attorneyId: string,
@@ -100,29 +104,33 @@ export class VerificationsController {
   ) {
     return this.verificationFraudService.updateBarStandingCheck(attorneyId, {
       status: body.status,
-      checkedBy: req.user?.id || 'admin-reviewer-1',
+      checkedBy: req.user.id,
       notes: body.notes,
     });
   }
 
   @Patch(':id/approve')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async approveVerification(@Param('id') id: string, @Req() req: any) {
-    return this.verificationDecisionService.approveVerification(id, req.user?.id || 'admin-reviewer-1');
+    return this.verificationDecisionService.approveVerification(id, req.user.id);
   }
 
   @Patch(':id/reject')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @UsePipes(new JoiValidationPipe(RejectVerificationSchema))
   async rejectVerification(@Param('id') id: string, @Body() body: RejectVerificationDto, @Req() req: any) {
-    return this.verificationDecisionService.rejectVerification(id, body.reason, req.user?.id || 'admin-reviewer-1');
+    return this.verificationDecisionService.rejectVerification(id, body.reason, req.user.id);
   }
 
   @Post(':id/request-amendment')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @UsePipes(new JoiValidationPipe(RequestAmendmentSchema))
   async requestAmendment(@Param('id') id: string, @Body() body: RequestAmendmentDto, @Req() req: any) {
-    return this.verificationDecisionService.requestAmendment(id, body, req.user?.id || 'admin-reviewer-1');
+    return this.verificationDecisionService.requestAmendment(id, body, req.user.id);
   }
 
   @Patch(':id/request-docs')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async requestDocuments(@Param('id') id: string, @Body() body: { notes: string; requestedFields?: string[] }) {
     return this.verificationDecisionService.requestDocuments(id, body.notes, body.requestedFields);
   }
@@ -133,16 +141,18 @@ export class VerificationsController {
   }
 
   @Post(':id/flag-fraud')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @UsePipes(new JoiValidationPipe(FlagFraudSchema))
   async flagFraud(@Param('id') id: string, @Body() body: FlagFraudDto, @Req() req: any) {
     return this.verificationFraudService.flagFraud(id, {
-      flaggedByUserId: req.user?.id || 'admin-reviewer-1',
+      flaggedByUserId: req.user.id,
       signalTypes: body.signalTypes,
       notes: body.notes,
     });
   }
 
   @Post('bulk-claim')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async bulkClaim(@Body() body: any) {
     return { status: 'success', claimedCount: body?.caseIds?.length || 1 };
   }
@@ -158,44 +168,50 @@ export class VerificationsController {
   }
 
   @Post(':id/approve')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async approveVerificationPost(@Param('id') id: string, @Req() req: any) {
-    return this.verificationDecisionService.approveVerification(id, req.user?.id || 'admin-reviewer-1');
+    return this.verificationDecisionService.approveVerification(id, req.user.id);
   }
 
   @Post(':id/reject')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @UsePipes(new JoiValidationPipe(RejectVerificationSchema))
   async rejectVerificationPost(@Param('id') id: string, @Body() body: RejectVerificationDto, @Req() req: any) {
-    return this.verificationDecisionService.rejectVerification(id, body.reason, req.user?.id || 'admin-reviewer-1');
+    return this.verificationDecisionService.rejectVerification(id, body.reason, req.user.id);
   }
 
   @Post(':id/request-info')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async requestInfoPost(@Param('id') id: string, @Body() body: { notes?: string; requestedFields?: string[] }) {
     return this.verificationDecisionService.requestDocuments(id, body?.notes || 'Additional info requested', body?.requestedFields);
   }
 
   @Post(':id/guarded-changes/:changeId/approve')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async approveGuardedChange(
     @Param('id') id: string,
     @Param('changeId') changeId: string,
     @Req() req: any
   ) {
-    const reviewerId = req?.user?.id || 'admin-reviewer';
+    const reviewerId = req.user.id;
     return this.attorneyProfileChangeService.approveProfileChange(changeId || id, reviewerId);
   }
 
   @Post(':id/guarded-changes/:changeId/reject')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async rejectGuardedChange(
     @Param('id') id: string,
     @Param('changeId') changeId: string,
     @Body() body: any,
     @Req() req: any
   ) {
-    const reviewerId = req?.user?.id || 'admin-reviewer';
+    const reviewerId = req.user.id;
     const reason = body?.reason || body?.rejectionReason || 'Guarded change rejected by admin';
     return this.attorneyProfileChangeService.rejectProfileChange(changeId || id, reason, reviewerId);
   }
 
   @Patch(':id/request-documents')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async requestDocumentsAlias(@Param('id') id: string, @Body() body: { notes: string; requestedFields?: string[] }) {
     return this.verificationDecisionService.requestDocuments(id, body?.notes || 'Additional documents requested', body?.requestedFields);
   }

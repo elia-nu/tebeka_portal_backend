@@ -1,8 +1,10 @@
 import { Controller, Post, Body, Headers, HttpCode, HttpStatus, Logger, Req } from '@nestjs/common';
+import { Public } from '@workspace/auth';
 import { PaymentService } from './payment.service';
 import { ChapaStrategy } from './strategies/chapa.strategy';
 import { StripeStrategy } from './strategies/stripe.strategy';
 
+@Public()
 @Controller('payments/webhooks')
 export class PaymentWebhookController {
   private readonly logger = new Logger(PaymentWebhookController.name);

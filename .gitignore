@@ -37,3 +37,4 @@ Thumbs.db
 
 # Storage Uploads (Local Multer uploads)
 uploads/
+scratch/

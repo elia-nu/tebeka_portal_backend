@@ -53,6 +53,10 @@ export class AppConfigService {
     return this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '30d');
   }
 
+  get internalServiceSecret(): string {
+    return this.configService.get<string>('INTERNAL_SERVICE_SECRET', 'tebeka-internal-secret-change-in-production');
+  }
+
   get rabbitmqUri(): string {
     return this.configService.get<string>('RABBITMQ_URI', 'amqp://guest:guest@localhost:5672');
   }

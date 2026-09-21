@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Param, Query, Req, UsePipes } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Req, UsePipes, UseGuards } from '@nestjs/common';
 import { DiscoveryService } from './discovery.service';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { JwtAuthGuard, RolesGuard, Public } from '@workspace/auth';
 import {
   QueryDiscoveryDto,
   QueryDiscoverySchema,
@@ -9,11 +9,12 @@ import {
 } from './dto/query-discovery.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('discovery')
 export class DiscoveryController {
   constructor(private readonly discoveryService: DiscoveryService) {}
 
-  @AllowAnonymous()
+  @Public()
   @Get('attorneys')
   async getPublicAttorneys(
     @Query(new JoiValidationPipe(QueryDiscoverySchema)) query: QueryDiscoveryDto,
@@ -23,7 +24,7 @@ export class DiscoveryController {
     return this.discoveryService.getPublicAttorneys(query, isAnonymous);
   }
 
-  @AllowAnonymous()
+  @Public()
   @Post('questionnaire')
   async processQuestionnaire(
     @Body(new JoiValidationPipe(QuestionnaireDiscoverySchema)) body: QuestionnaireDiscoveryDto,
@@ -33,7 +34,7 @@ export class DiscoveryController {
     return this.discoveryService.processQuestionnaire(body, isAnonymous);
   }
 
-  @AllowAnonymous()
+  @Public()
   @Get('attorneys/:id')
   async getAttorneyDetails(@Param('id') id: string) {
     return this.discoveryService.getAttorneyDetails(id);

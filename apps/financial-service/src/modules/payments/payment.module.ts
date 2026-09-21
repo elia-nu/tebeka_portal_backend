@@ -12,8 +12,10 @@ import { GeoPaymentService } from './services/geo-payment.service';
 import { TransactionService } from './services/transaction.service';
 import { FinancialAnalyticsService } from './services/financial-analytics.service';
 
+import { AuthModule } from '@workspace/auth';
+
 @Module({
-  imports: [AppConfigModule],
+  imports: [AppConfigModule, AuthModule],
   controllers: [PaymentController, PaymentWebhookController],
   providers: [
     PaymentService,

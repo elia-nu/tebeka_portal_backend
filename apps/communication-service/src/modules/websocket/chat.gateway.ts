@@ -6,6 +6,7 @@ import {
   OnGatewayDisconnect,
   MessageBody,
   ConnectedSocket,
+  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MessageService } from '../message/message.service';
@@ -13,7 +14,10 @@ import { PresenceService } from './presence.service';
 import { AppLoggerService } from '@workspace/logger';
 
 @WebSocketGateway({
-  cors: { origin: '*' },
+  cors: {
+    origin: (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:3001').split(',').map((s) => s.trim()),
+    credentials: true,
+  },
   namespace: '/chat',
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -66,7 +70,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string; content: string; messageType?: any; replyToId?: string; attachments?: any[] }
   ) {
-    const userId = (client.handshake.query.userId as string) || (client.handshake.auth?.userId as string) || 'client-user-1';
+    const userId = (client.handshake.query.userId as string) || (client.handshake.auth?.userId as string);
+    if (!userId) {
+      throw new WsException('Unauthorized: userId is required');
+    }
     const message = await this.messageService.sendMessage(data.conversationId, data, userId);
 
     // Broadcast to conversation room

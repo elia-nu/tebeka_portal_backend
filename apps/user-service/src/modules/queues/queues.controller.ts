@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Delete, Param } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
 import { QueuesService } from './queues.service';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
-@AllowAnonymous()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'SUPER_ADMIN')
 @Controller('queues')
 export class QueuesController {
   constructor(private readonly queuesService: QueuesService) {}

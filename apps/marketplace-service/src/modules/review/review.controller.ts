@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard, Roles, Public } from '@workspace/auth';
 import { ReviewService } from './review.service';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { CreateReviewDto, CreateReviewSchema, QueryReviewDto, QueryReviewSchema } from './dto/review.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller()
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
@@ -15,7 +16,7 @@ export class ReviewController {
     return this.reviewService.createReview(bookingId, body, clientId);
   }
 
-  @AllowAnonymous()
+  @Public()
   @Get('attorneys/:attorneyId/reviews')
   @UsePipes(new JoiValidationPipe(QueryReviewSchema))
   async getAttorneyReviews(@Param('attorneyId') attorneyId: string, @Query() query: QueryReviewDto) {
@@ -28,17 +29,18 @@ export class ReviewController {
     @Body() body: { rebuttal: string },
     @Req() req: any
   ) {
-    const attorneyId = req.user?.attorneyProfile?.id || req.user?.id || 'attorney-1';
+    const attorneyId = req.user?.attorneyProfile?.id || req.user.id;
     return this.reviewService.submitRebuttal(id, body.rebuttal, attorneyId);
   }
 
   @Patch('reviews/:id/moderation-status')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async updateModerationStatus(
     @Param('id') id: string,
     @Body() body: { status: any },
     @Req() req: any
   ) {
-    const adminId = req.user?.id || 'admin-1';
+    const adminId = req.user.id;
     return this.reviewService.updateModerationStatus(id, body.status, adminId);
   }
 
@@ -48,7 +50,7 @@ export class ReviewController {
     @Body() body: { reason: string },
     @Req() req: any
   ) {
-    const reportedBy = req.user?.id || 'user-1';
+    const reportedBy = req.user.id;
     return this.reviewService.reportReview(id, body, reportedBy);
   }
 }
