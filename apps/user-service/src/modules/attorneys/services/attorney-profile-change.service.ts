@@ -214,7 +214,7 @@ export class AttorneyProfileChangeService {
     } else if (actualField === 'licenseNumber') {
       profileUpdate.licenseNumber = convertedValue;
       profileUpdate.barRegistrationNumber = convertedValue;
-    } else if (actualField === 'practiceAreaIds') {
+    } else if (actualField === 'practiceAreaIds' || actualField === 'practiceAreas' || actualField === 'practice_areas') {
       profileUpdate.practiceAreas = convertedValue;
     } else if (actualField === 'fee_band' || actualField === 'consultationFeeBand') {
       profileUpdate.feeBand = convertedValue;

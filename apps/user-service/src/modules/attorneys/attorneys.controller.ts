@@ -233,19 +233,40 @@ export class AttorneysController {
     return this.attorneyGoogleCalendarService.disconnect(profileId);
   }
 
-  // --- My Practice Areas ---
+  // --- My Practice Areas (Guarded Fields - FR-PROF-02 / BR-PROF-01) ---
   @AllowAnonymous()
   @Post('attorneys/me/practice-areas')
   async assignMyPracticeArea(@Body() body: any, @Req() req: any) {
     const profileId = await this.resolveProfileId(req);
-    return this.attorneyScheduleService.assignPracticeAreaToAttorney(profileId, body);
+    const currentProfile = await this.attorneyProfileService.findOne(profileId);
+    const paNameOrId = body?.practiceAreaName || body?.name || body?.practiceAreaId || body?.id || body?.practiceArea;
+    const currentAreas: string[] = currentProfile?.practiceAreas || [];
+    if (paNameOrId && !currentAreas.includes(paNameOrId)) {
+      const newAreas = [...currentAreas, String(paNameOrId)];
+      return this.attorneyProfileChangeService.requestProfileChange(profileId, {
+        field: 'practiceAreas',
+        newValue: newAreas,
+      });
+    }
+    return {
+      status: 'success',
+      message: 'Practice area change submitted for verification review',
+      attorneyId: profileId,
+      practiceAreas: currentAreas,
+    };
   }
 
   @AllowAnonymous()
   @Delete('attorneys/me/practice-areas/:paId')
   async removeMyPracticeArea(@Param('paId') paId: string, @Req() req: any) {
     const profileId = await this.resolveProfileId(req);
-    return this.attorneyScheduleService.removePracticeAreaFromAttorney(profileId, paId);
+    const currentProfile = await this.attorneyProfileService.findOne(profileId);
+    const currentAreas: string[] = currentProfile?.practiceAreas || [];
+    const newAreas = currentAreas.filter((a: string) => a !== paId);
+    return this.attorneyProfileChangeService.requestProfileChange(profileId, {
+      field: 'practiceAreas',
+      newValue: newAreas,
+    });
   }
 
   // --- My Profile Changes ---
