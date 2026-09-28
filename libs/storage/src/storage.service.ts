@@ -63,10 +63,28 @@ export class StorageService {
     };
   }
 
+  computeFileSha256(filePathOrKeyOrBuffer: string | Buffer): string {
+    const crypto = require('crypto');
+    if (Buffer.isBuffer(filePathOrKeyOrBuffer)) {
+      return crypto.createHash('sha256').update(filePathOrKeyOrBuffer).digest('hex');
+    }
+    const fullPath = this.getFilePath(String(filePathOrKeyOrBuffer));
+    if (fs.existsSync(fullPath)) {
+      try {
+        const fileBuffer = fs.readFileSync(fullPath);
+        return crypto.createHash('sha256').update(fileBuffer).digest('hex');
+      } catch {
+        // fallback
+      }
+    }
+    return crypto.createHash('sha256').update(String(filePathOrKeyOrBuffer)).digest('hex');
+  }
+
   processUploadedFile(file: any, subDir: string = 'general') {
     if (!file) return null;
     
     const relativeKey = path.relative(this.uploadDir, file.path).replace(/\\/g, '/');
+    const sha256 = this.computeFileSha256(file.path);
 
     return {
       id: `file-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -74,6 +92,7 @@ export class StorageService {
       fileKey: relativeKey || `${subDir}/${file.filename}`,
       mimeType: file.mimetype,
       size: file.size,
+      sha256,
       absolutePath: file.path,
       uploadedAt: new Date(),
     };

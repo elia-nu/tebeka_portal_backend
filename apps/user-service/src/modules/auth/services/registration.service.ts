@@ -597,6 +597,70 @@ export class RegistrationService {
         include: { checklists: true }
       });
 
+      // FR-VERIF-05 Step 2: Automated pre-checks (document dedupe)
+      const allIntakeDocs = [licenseBookUrl, barRegistrationUrl, nationalIdDocumentUrl, ...otherSupportingDocs].filter(Boolean) as string[];
+      if (allIntakeDocs.length > 0) {
+        for (const docKey of allIntakeDocs) {
+          const duplicateDoc = await tx.credentialDocument.findFirst({
+            where: {
+              fileKey: docKey,
+              credential: { attorneyId: { not: profileId } }
+            },
+            include: { credential: true }
+          });
+
+          if (duplicateDoc) {
+            const matchedAttorneyId = duplicateDoc.credential.attorneyId;
+            const matchedCase = await tx.verificationCase.findFirst({
+              where: { attorneyId: matchedAttorneyId },
+              orderBy: { submittedAt: 'desc' }
+            });
+
+            const crypto = require('crypto');
+            const sha256 = crypto.createHash('sha256').update(docKey).digest('hex');
+            const fraudMeta = JSON.stringify({
+              matchedAttorneyId,
+              documentKey: docKey,
+              sha256,
+              flaggedAt: new Date().toISOString()
+            });
+
+            // Flag both cases as FRAUD_REVIEW
+            await tx.verificationCase.update({
+              where: { id: createdCase.id },
+              data: { fraudStatus: 'FRAUD_REVIEW' }
+            });
+
+            await tx.fraudReviewCase.create({
+              data: {
+                verificationCaseId: createdCase.id,
+                flaggedByUserId: 'system-fraud-engine',
+                fraudSignalTypes: ['DUPLICATE_DOCUMENT_HASH'],
+                status: 'FRAUD_REVIEW',
+                notes: `Duplicate document detected during intake with account ${matchedAttorneyId}. Metadata: ${fraudMeta}`
+              }
+            });
+
+            if (matchedCase) {
+              await tx.verificationCase.update({
+                where: { id: matchedCase.id },
+                data: { fraudStatus: 'FRAUD_REVIEW' }
+              });
+              await tx.fraudReviewCase.create({
+                data: {
+                  verificationCaseId: matchedCase.id,
+                  flaggedByUserId: 'system-fraud-engine',
+                  fraudSignalTypes: ['DUPLICATE_DOCUMENT_HASH'],
+                  status: 'FRAUD_REVIEW',
+                  notes: `Duplicate document detected from new applicant ${profileId}. Metadata: ${fraudMeta}`
+                }
+              });
+            }
+            break;
+          }
+        }
+      }
+
       return { user: createdUser, vCase: createdCase, token, refreshToken };
     });
 
