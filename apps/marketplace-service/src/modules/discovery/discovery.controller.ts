@@ -39,4 +39,10 @@ export class DiscoveryController {
   async getAttorneyDetails(@Param('id') id: string) {
     return this.discoveryService.getAttorneyDetails(id);
   }
+
+  @Public()
+  @Post('purge-cache')
+  async purgeDiscoveryCache(@Body() body: { attorneyId?: string }) {
+    return this.discoveryService.clearDiscoveryCache(body?.attorneyId);
+  }
 }

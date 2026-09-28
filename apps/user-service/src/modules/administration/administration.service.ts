@@ -56,6 +56,12 @@ export class AdministrationService {
       where: { userId }
     });
 
+    // Cascade suspension to attorney profile if applicable
+    await this.prisma.attorneyProfile.updateMany({
+      where: { userId },
+      data: { status: 'SUSPENDED', verificationStatus: 'SUSPENDED' }
+    });
+
     // 3. Log AdminAction record
     await this.prisma.adminAction.create({
       data: {
@@ -168,7 +174,17 @@ export class AdministrationService {
     });
   }
 
-  async adminSuspendAttorney(id: string) {
+  async adminSuspendAttorney(id: string, actionData?: any) {
+    const profile = await this.prisma.attorneyProfile.findUnique({ where: { id } });
+    if (profile?.userId) {
+      await this.prisma.user.update({
+        where: { id: profile.userId },
+        data: { status: 'SUSPENDED', banned: true, banReason: actionData?.reasonCode || 'ADMIN_SUSPENDED' },
+      });
+      await this.prisma.session.deleteMany({
+        where: { userId: profile.userId },
+      });
+    }
     return this.prisma.attorneyProfile.update({
       where: { id },
       data: { status: 'SUSPENDED', verificationStatus: 'SUSPENDED' },
