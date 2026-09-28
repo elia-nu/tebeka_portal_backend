@@ -1,21 +1,21 @@
 import { Injectable, NotFoundException, Optional } from '@nestjs/common';
-import { PrismaClient, BlogStatus } from '@prisma/client';
+import { BlogStatus } from '@prisma/client';
+import { PrismaService } from '@workspace/database';
 import { CommunicationServiceClient } from '../../../integrations/communication-service.client';
 import { RejectBlogDto, QueryBlogDto } from '../dto/blog.dto';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class BlogModerationService {
   constructor(
+    private readonly prisma: PrismaService,
     @Optional() private readonly communicationClient?: CommunicationServiceClient,
   ) {}
 
   async publishBlog(id: string, adminId: string) {
-    const blog = await prisma.blogPost.findUnique({ where: { id } });
+    const blog = await this.prisma.blogPost.findUnique({ where: { id } });
     if (!blog) throw new NotFoundException(`Blog post ${id} not found`);
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.blogPost.update({
         where: { id },
         data: {
@@ -69,10 +69,10 @@ export class BlogModerationService {
   }
 
   async rejectBlog(id: string, adminId: string, dto: RejectBlogDto) {
-    const blog = await prisma.blogPost.findUnique({ where: { id } });
+    const blog = await this.prisma.blogPost.findUnique({ where: { id } });
     if (!blog) throw new NotFoundException(`Blog post ${id} not found`);
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.blogPost.update({
         where: { id },
         data: {
@@ -147,7 +147,7 @@ export class BlogModerationService {
     }
 
     const [items, total] = await Promise.all([
-      prisma.blogPost.findMany({
+      this.prisma.blogPost.findMany({
         where,
         skip,
         take: limit,
@@ -160,7 +160,7 @@ export class BlogModerationService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.blogPost.count({ where }),
+      this.prisma.blogPost.count({ where }),
     ]);
 
     return {

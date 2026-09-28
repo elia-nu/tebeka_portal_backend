@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Query, Req, UsePipes, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Req, UsePipes, UseInterceptors, UploadedFile, Res, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard } from '@workspace/auth';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { createMulterOptions } from '@workspace/storage';
 import { DocumentService } from './document.service';
@@ -6,6 +7,7 @@ import { UploadCaseDocumentDto, UploadCaseDocumentSchema, QueryCaseDocumentDto, 
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 import { Response } from 'express';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('cases/:caseId/documents')
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
@@ -19,14 +21,14 @@ export class DocumentController {
     @Body() body: UploadCaseDocumentDto,
     @Req() req: any
   ) {
-    const user = { id: req.user?.id || body.uploadedBy, role: req.user?.role };
+    const user = { id: req.user.id, role: req.user?.role };
     return this.documentService.uploadCaseDocument(caseId, body, user, file);
   }
 
   @Get()
   @UsePipes(new JoiValidationPipe(QueryCaseDocumentSchema))
   async getCaseDocuments(@Param('caseId') caseId: string, @Query() query: QueryCaseDocumentDto, @Req() req: any) {
-    const user = { id: req.user?.id || 'system', role: req.user?.role };
+    const user = { id: req.user.id, role: req.user?.role };
     return this.documentService.getCaseDocuments(caseId, user, query);
   }
 
@@ -37,7 +39,7 @@ export class DocumentController {
     @Req() req: any,
     @Res() res: Response
   ) {
-    const user = { id: req.user?.id || 'system', role: req.user?.role };
+    const user = { id: req.user.id, role: req.user?.role };
     const { doc, stream } = await this.documentService.getDocumentStream(caseId, docId, user);
     
     res.setHeader('Content-Type', doc.mimeType || 'application/pdf');

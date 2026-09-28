@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client/marketplace';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class SearchService {
+  constructor(private readonly prisma: PrismaService) {}
   async searchAttorneys(query: any, userId?: string) {
     const startTime = Date.now();
     const page = Math.max(1, Number(query.page) || 1);
@@ -37,19 +36,19 @@ export class SearchService {
     const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const [items, total] = await Promise.all([
-      prisma.discoveryIndex.findMany({
+      this.prisma.discoveryIndex.findMany({
         where,
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
       }),
-      prisma.discoveryIndex.count({ where }),
+      this.prisma.discoveryIndex.count({ where }),
     ]);
 
     const searchTimeMs = Date.now() - startTime;
 
     // Record SearchEvent
-    await prisma.searchEvent.create({
+    await this.prisma.searchEvent.create({
       data: {
         userId: userId || null,
         filtersJson: query || {},
@@ -74,20 +73,20 @@ export class SearchService {
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-      prisma.searchEvent.findMany({
+      this.prisma.searchEvent.findMany({
         where: { userId },
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.searchEvent.count({ where: { userId } }),
+      this.prisma.searchEvent.count({ where: { userId } }),
     ]);
 
     return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async clearSearchHistory(userId: string) {
-    await prisma.searchEvent.deleteMany({
+    await this.prisma.searchEvent.deleteMany({
       where: { userId },
     });
     return { status: 'success', message: 'Search history cleared successfully' };

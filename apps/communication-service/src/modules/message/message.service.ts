@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { PrismaClient, MessageStatus, MessageType, ConversationStatus } from '@prisma/client/communication';
-
-const prisma = new PrismaClient();
+import { MessageStatus, MessageType, ConversationStatus } from '@prisma/client/communication';
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class MessageService {
+  constructor(private readonly prisma: PrismaService) {}
   async sendMessage(conversationId: string, data: any, senderId: string) {
-    const conversation = await prisma.conversation.findUnique({
+    const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
       include: { participants: true },
     });
@@ -24,7 +24,7 @@ export class MessageService {
       throw new ForbiddenException('You are not a participant in this conversation.');
     }
 
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const message = await tx.message.create({
         data: {
           conversationId,
@@ -87,7 +87,7 @@ export class MessageService {
   }
 
   async getConversationMessages(conversationId: string, userId: string, query: any = {}) {
-    const isParticipant = await prisma.conversationParticipant.findUnique({
+    const isParticipant = await this.prisma.conversationParticipant.findUnique({
       where: { conversationId_userId: { conversationId, userId } },
     });
 
@@ -116,14 +116,14 @@ export class MessageService {
     }
 
     const [messages, total] = await Promise.all([
-      prisma.message.findMany({
+      this.prisma.message.findMany({
         where,
         skip,
         take: limit,
         orderBy: { sentAt: 'desc' },
         include: { attachments: true, reads: true },
       }),
-      prisma.message.count({ where }),
+      this.prisma.message.count({ where }),
     ]);
 
     return {
@@ -136,7 +136,7 @@ export class MessageService {
   }
 
   async editMessage(messageId: string, data: { content: string }, userId: string) {
-    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
     if (!message) throw new NotFoundException(`Message ${messageId} not found`);
 
     if (message.senderId !== userId) {
@@ -149,7 +149,7 @@ export class MessageService {
       throw new BadRequestException('Messages cannot be edited after 15 minutes of sending.');
     }
 
-    return prisma.message.update({
+    return this.prisma.message.update({
       where: { id: messageId },
       data: {
         content: data.content,
@@ -161,14 +161,14 @@ export class MessageService {
   }
 
   async deleteMessage(messageId: string, mode: 'DELETE_FOR_ME' | 'DELETE_FOR_EVERYONE', userId: string) {
-    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
     if (!message) throw new NotFoundException(`Message ${messageId} not found`);
 
     if (mode === 'DELETE_FOR_EVERYONE') {
       if (message.senderId !== userId) {
         throw new ForbiddenException('You can only delete your own messages for everyone.');
       }
-      return prisma.message.update({
+      return this.prisma.message.update({
         where: { id: messageId },
         data: {
           deletedAt: new Date(),
@@ -179,7 +179,7 @@ export class MessageService {
     } else {
       const existingIds = message.deletedForIds || [];
       if (!existingIds.includes(userId)) {
-        return prisma.message.update({
+        return this.prisma.message.update({
           where: { id: messageId },
           data: {
             deletedForIds: { push: userId },
@@ -191,10 +191,10 @@ export class MessageService {
   }
 
   async markMessageRead(messageId: string, userId: string) {
-    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
     if (!message) throw new NotFoundException(`Message ${messageId} not found`);
 
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const readRecord = await tx.messageRead.upsert({
         where: { messageId_userId: { messageId, userId } },
         update: { readAt: new Date() },
@@ -214,13 +214,13 @@ export class MessageService {
   }
 
   async markAllMessagesRead(conversationId: string, userId: string) {
-    const participant = await prisma.conversationParticipant.findUnique({
+    const participant = await this.prisma.conversationParticipant.findUnique({
       where: { conversationId_userId: { conversationId, userId } },
     });
 
     if (!participant) throw new NotFoundException(`Participant record not found`);
 
-    return prisma.conversationParticipant.update({
+    return this.prisma.conversationParticipant.update({
       where: { conversationId_userId: { conversationId, userId } },
       data: {
         lastReadAt: new Date(),

@@ -12,7 +12,7 @@ async function bootstrap() {
   app.useLogger(logger);
 
   app.enableCors({
-    origin: true,
+    origin: config.corsAllowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'x-custom-locale', 'ngrok-skip-browser-warning'],

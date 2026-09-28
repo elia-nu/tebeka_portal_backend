@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Patch, Param, Body, UsePipes } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, UsePipes, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
 import { TemplateService } from './template.service';
 import { CreateTemplateDto, CreateTemplateSchema, UpdateTemplateDto, UpdateTemplateSchema } from './dto/template.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'SUPER_ADMIN')
 @Controller('notification-templates')
 export class TemplateController {
   constructor(private readonly templateService: TemplateService) {}

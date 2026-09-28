@@ -1,9 +1,11 @@
-import { Controller, Post, Get, Patch, Body, Query, Param, Req } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, Query, Param, Req, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard, Roles, Public } from '@workspace/auth';
 import { PaymentService } from './payment.service';
 import { GeoPaymentService } from './services/geo-payment.service';
 import { TransactionService } from './services/transaction.service';
 import { FinancialAnalyticsService } from './services/financial-analytics.service';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('payments')
 export class PaymentController {
   constructor(
@@ -17,6 +19,7 @@ export class PaymentController {
   // 1. GEO GATEWAY DETECTION (CHAPA / STRIPE RESOLUTION)
   // =========================================================================
 
+  @Public()
   @Get('detect-gateway')
   async detectGateway(@Query('country') overrideCountry: string, @Req() req: any) {
     const clientIp = this.geoPaymentService.extractClientIp(req);
@@ -29,24 +32,34 @@ export class PaymentController {
 
   @Post()
   async createPayment(@Body() body: any, @Req() req: any) {
-    const userId = req.user?.id || body.payerId || 'system-user';
+    const userId = req.user?.id || body.payerId;
+    if (!userId) {
+      throw new UnauthorizedException('Authenticated user ID is required to create a payment');
+    }
     const clientIp = this.geoPaymentService.extractClientIp(req);
     return this.paymentService.createPayment(body, userId, clientIp);
   }
 
   @Post('request')
   async requestPayment(@Body() body: any, @Req() req: any) {
-    const attorneyId = req.user?.id || body.requestedBy || 'system-attorney';
+    const attorneyId = req.user?.id;
+    if (!attorneyId) {
+      throw new UnauthorizedException('Authenticated attorney ID is required to request payment');
+    }
     return this.paymentService.requestPayment(body, attorneyId);
   }
 
   @Post('approve')
   async approvePayment(@Body() body: any, @Req() req: any) {
-    const clientId = req.user?.id || body.approvedBy || 'system-client';
+    const clientId = req.user?.id;
+    if (!clientId) {
+      throw new UnauthorizedException('Authenticated client ID is required to approve payment');
+    }
     return this.paymentService.approvePayment(body.paymentId, clientId);
   }
 
   @Get()
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async getPayments(@Query() query: any) {
     return this.paymentService.getPayments(query);
   }
@@ -59,6 +72,7 @@ export class PaymentController {
    * Admin Overall Transactions & Financial Volume Summary
    */
   @Get('admin/transactions')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async getAdminTransactions(@Query() query: any) {
     return this.transactionService.getAdminTransactions(query);
   }
@@ -67,6 +81,7 @@ export class PaymentController {
    * Admin Financial Analytics (Revenue, Time Series Trends, Top Earners, Rails)
    */
   @Get('admin/analytics')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async getAdminAnalytics(@Query() query: any) {
     return this.analyticsService.getAdminAnalytics(query);
   }
@@ -76,7 +91,10 @@ export class PaymentController {
    */
   @Get('attorney/transactions')
   async getAttorneyTransactions(@Query() query: any, @Req() req: any) {
-    const attorneyId = req.user?.id || query.attorneyId || 'system-attorney';
+    const attorneyId =
+      req.user?.role === 'ADMIN' || req.user?.role === 'SUPER_ADMIN'
+        ? (query.attorneyId || req.user?.id)
+        : req.user?.id;
     return this.transactionService.getAttorneyTransactions(attorneyId, query);
   }
 
@@ -85,7 +103,10 @@ export class PaymentController {
    */
   @Get('attorney/analytics')
   async getAttorneyAnalytics(@Query() query: any, @Req() req: any) {
-    const attorneyId = req.user?.id || query.attorneyId || 'system-attorney';
+    const attorneyId =
+      req.user?.role === 'ADMIN' || req.user?.role === 'SUPER_ADMIN'
+        ? (query.attorneyId || req.user?.id)
+        : req.user?.id;
     return this.analyticsService.getAttorneyAnalytics(attorneyId, query);
   }
 
@@ -94,7 +115,10 @@ export class PaymentController {
    */
   @Get('client/transactions')
   async getClientTransactions(@Query() query: any, @Req() req: any) {
-    const clientId = req.user?.id || query.clientId || 'system-client';
+    const clientId =
+      req.user?.role === 'ADMIN' || req.user?.role === 'SUPER_ADMIN'
+        ? (query.clientId || req.user?.id)
+        : req.user?.id;
     return this.transactionService.getClientTransactions(clientId, query);
   }
 
@@ -103,7 +127,10 @@ export class PaymentController {
    */
   @Get('client/analytics')
   async getClientAnalytics(@Query() query: any, @Req() req: any) {
-    const clientId = req.user?.id || query.clientId || 'system-client';
+    const clientId =
+      req.user?.role === 'ADMIN' || req.user?.role === 'SUPER_ADMIN'
+        ? (query.clientId || req.user?.id)
+        : req.user?.id;
     return this.analyticsService.getClientAnalytics(clientId, query);
   }
 
@@ -131,16 +158,23 @@ export class PaymentController {
 
   @Post('payout-account')
   async setupPayoutAccount(@Body() body: any, @Req() req: any) {
-    const attorneyId = req.user?.id || body.attorneyId || 'system-attorney';
+    const attorneyId = req.user?.id;
+    if (!attorneyId) {
+      throw new UnauthorizedException('Authentication required');
+    }
     return this.paymentService.setupAttorneyPayoutAccount(attorneyId, body);
   }
 
   @Post('stripe/connect-account')
   async setupStripeConnectAccount(@Body() body: any, @Req() req: any) {
-    const attorneyId = req.user?.id || body.attorneyId || 'system-attorney';
+    const attorneyId = req.user?.id;
+    if (!attorneyId) {
+      throw new UnauthorizedException('Authentication required');
+    }
     return this.paymentService.setupAttorneyStripeAccount(attorneyId, body);
   }
 
+  @Public()
   @Get('banks')
   async getBanks() {
     return this.paymentService.getBanks();
@@ -148,7 +182,10 @@ export class PaymentController {
 
   @Get('wallet')
   async getWallet(@Query('userId') queryUserId: string, @Req() req: any) {
-    const userId = req.user?.id || queryUserId || 'system-attorney';
+    const userId =
+      req.user?.role === 'ADMIN' || req.user?.role === 'SUPER_ADMIN'
+        ? (queryUserId || req.user?.id)
+        : req.user?.id;
     return this.paymentService.getAttorneyWallet(userId);
   }
 
@@ -157,6 +194,7 @@ export class PaymentController {
   // =========================================================================
 
   @Get('admin/commission')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async getAdminCommission() {
     const defaultPercentage = await this.paymentService.getGlobalPlatformCommission();
     return {
@@ -166,21 +204,23 @@ export class PaymentController {
   }
 
   @Patch('admin/commission')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async updateGlobalCommission(
     @Body() body: { commissionPercentage: number },
     @Req() req: any
   ) {
-    const adminId = req.user?.id || 'admin-user';
+    const adminId = req.user?.id;
     return this.paymentService.updateGlobalPlatformCommission(adminId, Number(body.commissionPercentage));
   }
 
   @Patch('admin/attorney/:attorneyId/commission')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async updateAttorneyCommission(
     @Param('attorneyId') attorneyId: string,
     @Body() body: { commissionPercentage: number },
     @Req() req: any
   ) {
-    const adminId = req.user?.id || 'admin-user';
+    const adminId = req.user?.id;
     return this.paymentService.updateAttorneyCommission(attorneyId, Number(body.commissionPercentage), adminId);
   }
 
@@ -189,27 +229,31 @@ export class PaymentController {
   // =========================================================================
 
   @Get('refunds')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async getRefunds(@Query() query: any) {
     return this.paymentService.getRefunds(query);
   }
 
   @Patch('refunds/:id/process')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async processManualRefund(
     @Param('id') id: string,
     @Body() body: { notes?: string },
     @Req() req: any
   ) {
-    const adminId = req.user?.id || 'admin_user';
+    const adminId = req.user?.id;
     return this.paymentService.processManualRefund(id, adminId, body?.notes);
   }
 
   @Patch('refunds/:id/reject')
+  @Roles('ADMIN', 'SUPER_ADMIN')
   async rejectManualRefund(
     @Param('id') id: string,
     @Body() body: { reason: string },
     @Req() req: any
   ) {
-    const adminId = req.user?.id || 'admin_user';
+    const adminId = req.user?.id;
     return this.paymentService.rejectManualRefund(id, adminId, body.reason || 'Admin rejected refund');
   }
 }
+

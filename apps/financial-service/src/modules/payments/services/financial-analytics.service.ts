@@ -1,7 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaClient, PaymentStatus, PaymentType, PaymentProvider } from '@prisma/client/financial';
-
-const prisma = new PrismaClient();
+import { PaymentStatus, PaymentType, PaymentProvider } from '@prisma/client/financial';
+import { PrismaService } from '../../../database/prisma.service';
 
 export interface AnalyticsPeriodQuery {
   period?: '7d' | '30d' | '90d' | '12m' | 'all';
@@ -12,6 +11,8 @@ export interface AnalyticsPeriodQuery {
 @Injectable()
 export class FinancialAnalyticsService {
   private readonly logger = new Logger(FinancialAnalyticsService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   // =========================================================================
   // 1. ADMIN PLATFORM FINANCIAL ANALYTICS
@@ -31,7 +32,7 @@ export class FinancialAnalyticsService {
     }
 
     const [payments, refunds, walletsCount] = await Promise.all([
-      prisma.payment.findMany({
+      this.prisma.payment.findMany({
         where,
         select: {
           id: true,
@@ -47,7 +48,7 @@ export class FinancialAnalyticsService {
           paidAt: true,
         },
       }),
-      prisma.refund.findMany({
+      this.prisma.refund.findMany({
         where: {
           status: 'PROCESSED',
           ...(dateRange.startDate || dateRange.endDate
@@ -65,7 +66,7 @@ export class FinancialAnalyticsService {
           createdAt: true,
         },
       }),
-      prisma.wallet.count(),
+      this.prisma.wallet.count(),
     ]);
 
     // Financial KPIs
@@ -252,7 +253,7 @@ export class FinancialAnalyticsService {
     }
 
     const [payments, wallet] = await Promise.all([
-      prisma.payment.findMany({
+      this.prisma.payment.findMany({
         where,
         select: {
           id: true,
@@ -269,7 +270,7 @@ export class FinancialAnalyticsService {
           paidAt: true,
         },
       }),
-      prisma.wallet.findUnique({ where: { userId: attorneyId } }),
+      this.prisma.wallet.findUnique({ where: { userId: attorneyId } }),
     ]);
 
     let totalGrossETB = 0;
@@ -406,7 +407,7 @@ export class FinancialAnalyticsService {
       if (dateRange.endDate) where.createdAt.lte = dateRange.endDate;
     }
 
-    const payments = await prisma.payment.findMany({
+    const payments = await this.prisma.payment.findMany({
       where,
       include: {
         refunds: true,

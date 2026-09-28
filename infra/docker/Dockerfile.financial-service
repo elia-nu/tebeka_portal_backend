@@ -1,0 +1,40 @@
+# Stage 1: Build
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+RUN apk add --no-cache openssl python3 make g++
+
+COPY package*.json nx.json tsconfig*.json ./
+
+RUN npm ci
+
+COPY apps apps/
+COPY libs libs/
+
+RUN npx prisma generate --schema=apps/user-service/prisma/schema.prisma && \
+    npx prisma generate --schema=apps/marketplace-service/prisma/schema.prisma && \
+    npx prisma generate --schema=apps/financial-service/prisma/schema.prisma && \
+    npx prisma generate --schema=apps/communication-service/prisma/schema.prisma
+
+RUN npx nx build financial-service
+
+# Stage 2: Runtime
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+RUN apk add --no-cache openssl
+
+ENV NODE_ENV=production
+
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist/apps/financial-service ./dist/apps/financial-service
+COPY --from=builder /app/apps/financial-service/prisma ./prisma
+
+USER node
+
+EXPOSE 3003
+
+CMD ["node", "dist/apps/financial-service/src/main.js"]

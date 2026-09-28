@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '@workspace/database';
 
 export function sanitizeUser<T>(user: T): T {
   if (!user) return user;
@@ -64,6 +62,7 @@ export function sanitizeUser<T>(user: T): T {
 
 @Injectable()
 export class UsersService {
+  constructor(private readonly prisma: PrismaService) {}
   async resolveUserId(req: any): Promise<string> {
     if (req?.user?.id) return req.user.id;
     if (req?.user?.userId) return req.user.userId;
@@ -72,7 +71,7 @@ export class UsersService {
     const authHeader = req?.headers?.authorization || req?.headers?.Authorization;
     if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7).trim();
-      const session = await prisma.session.findUnique({
+      const session = await this.prisma.session.findUnique({
         where: { token }
       });
       if (session && session.expiresAt > new Date()) {
@@ -83,7 +82,7 @@ export class UsersService {
         if (parts.length === 3) {
           const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
           if (payload?.sub) {
-            const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+            const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
             if (user) return user.id;
           }
         }
@@ -99,7 +98,7 @@ export class UsersService {
     const role = data.role || 'CLIENT';
     const username = data.username || `usr_${timestamp}`;
 
-    const created = await prisma.user.create({
+    const created = await this.prisma.user.create({
       data: {
         email,
         name,
@@ -119,46 +118,46 @@ export class UsersService {
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-      prisma.user.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      prisma.user.count(),
+      this.prisma.user.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      this.prisma.user.count(),
     ]);
 
     return { items: sanitizeUser(items), total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string) {
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
     return sanitizeUser(user);
   }
 
   async updateUser(id: string, data: any) {
-    const updated = await prisma.user.update({ where: { id }, data });
+    const updated = await this.prisma.user.update({ where: { id }, data });
     return sanitizeUser(updated);
   }
 
   async deleteUser(id: string) {
-    const updated = await prisma.user.update({ where: { id }, data: { status: 'DELETED' } });
+    const updated = await this.prisma.user.update({ where: { id }, data: { status: 'DELETED' } });
     return sanitizeUser(updated);
   }
 
   async restoreUser(id: string) {
-    const updated = await prisma.user.update({ where: { id }, data: { status: 'ACTIVE' } });
+    const updated = await this.prisma.user.update({ where: { id }, data: { status: 'ACTIVE' } });
     return sanitizeUser(updated);
   }
 
   async updateStatus(id: string, status: string) {
-    const updated = await prisma.user.update({ where: { id }, data: { status: status as any } });
+    const updated = await this.prisma.user.update({ where: { id }, data: { status: status as any } });
     return sanitizeUser(updated);
   }
 
   async lockUser(id: string, lock: boolean) {
-    const updated = await prisma.user.update({ where: { id }, data: { banned: lock, banReason: lock ? 'Account locked by administrator' : null } });
+    const updated = await this.prisma.user.update({ where: { id }, data: { banned: lock, banReason: lock ? 'Account locked by administrator' : null } });
     return sanitizeUser(updated);
   }
 
   async getMyProfile(userId: string) {
-    const user = await prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { attorneyProfile: true, userPreference: true },
     });
@@ -196,27 +195,27 @@ export class UsersService {
       updateData.image = data.profilePicture;
     }
 
-    const updated = await prisma.user.update({ where: { id: userId }, data: updateData });
+    const updated = await this.prisma.user.update({ where: { id: userId }, data: updateData });
     return sanitizeUser(updated);
   }
 
   async updateMyAvatar(userId: string, fileKey: string) {
-    const updated = await prisma.user.update({ where: { id: userId }, data: { image: fileKey } });
+    const updated = await this.prisma.user.update({ where: { id: userId }, data: { image: fileKey } });
     return sanitizeUser(updated);
   }
 
   async deleteMyAvatar(userId: string) {
-    const updated = await prisma.user.update({ where: { id: userId }, data: { image: null } });
+    const updated = await this.prisma.user.update({ where: { id: userId }, data: { image: null } });
     return sanitizeUser(updated);
   }
 
   async updateMyEmail(userId: string, email: string) {
-    const updated = await prisma.user.update({ where: { id: userId }, data: { email, emailVerified: false } });
+    const updated = await this.prisma.user.update({ where: { id: userId }, data: { email, emailVerified: false } });
     return sanitizeUser(updated);
   }
 
   async updateMyPhone(userId: string, phone: string) {
-    const updated = await prisma.user.update({ where: { id: userId }, data: { phone, phoneVerified: false } });
+    const updated = await this.prisma.user.update({ where: { id: userId }, data: { phone, phoneVerified: false } });
     return sanitizeUser(updated);
   }
 
@@ -225,13 +224,13 @@ export class UsersService {
   }
 
   async getMyPreferences(userId: string) {
-    const pref = await prisma.userPreference.findUnique({ where: { userId } });
+    const pref = await this.prisma.userPreference.findUnique({ where: { userId } });
     if (!pref) return { userId, locale: 'en', timezone: 'Africa/Addis_Ababa', theme: 'light' };
     return pref;
   }
 
   async updateMyPreferences(userId: string, data: any) {
-    return prisma.userPreference.upsert({
+    return this.prisma.userPreference.upsert({
       where: { userId },
       create: { userId, ...data },
       update: data,

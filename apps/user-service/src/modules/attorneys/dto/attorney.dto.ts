@@ -201,6 +201,7 @@ export interface SubmitAmendmentDto {
   officeLocation?: string;
   subcity?: string;
   googleMapsPin?: string;
+  lawFirmName?: string;
   consultationFee?: number;
   consultationFees?: number;
   languages?: string[];
@@ -235,6 +236,7 @@ export const SubmitAmendmentSchema = Joi.object({
   officeLocation: Joi.string().trim().optional(),
   subcity: Joi.string().trim().optional(),
   googleMapsPin: Joi.string().trim().optional(),
+  lawFirmName: Joi.string().trim().optional(),
   consultationFee: Joi.number().min(0).optional(),
   consultationFees: Joi.number().min(0).optional(),
   languages: Joi.alternatives().try(Joi.array().items(Joi.string().trim()), Joi.string().trim()).optional(),

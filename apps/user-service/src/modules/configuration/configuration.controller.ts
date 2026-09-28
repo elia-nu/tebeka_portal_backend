@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Patch, Param, Body, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
 import { ConfigurationService } from './configuration.service';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
-@AllowAnonymous()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'SUPER_ADMIN')
 @Controller('settings')
 export class ConfigurationController {
   constructor(private readonly configurationService: ConfigurationService) {}
@@ -23,13 +24,13 @@ export class ConfigurationController {
     return this.configurationService.proposeConfigChange({
       key: body.key,
       proposedValue: body.proposedValue,
-      adminId: req.user?.id || 'admin-1'
+      adminId: req.user.id,
     });
   }
 
   @Post('approve-change/:proposalId')
   async approveConfigChange(@Param('proposalId') proposalId: string, @Req() req: any) {
-    return this.configurationService.approveConfigChange(proposalId, req.user?.id || 'admin-2');
+    return this.configurationService.approveConfigChange(proposalId, req.user.id);
   }
 
   @Get('pending-proposals')
@@ -43,7 +44,7 @@ export class ConfigurationController {
     @Body() body: { reason?: string },
     @Req() req: any
   ) {
-    return this.configurationService.rejectConfigChange(proposalId, req.user?.id || 'admin-2', body?.reason);
+    return this.configurationService.rejectConfigChange(proposalId, req.user.id, body?.reason);
   }
 
   @Get('history')

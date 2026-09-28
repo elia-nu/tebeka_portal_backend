@@ -1,11 +1,11 @@
-import { Controller, Post, Get, Delete, Body, Param, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseInterceptors, UploadedFile, Res, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard } from '@workspace/auth';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { createMulterOptions, StorageService as SharedStorageService } from '@workspace/storage';
 import { StorageService } from './storage.service';
 import { Response } from 'express';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
-@AllowAnonymous()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller()
 export class StorageController {
   constructor(
@@ -47,4 +47,3 @@ export class StorageController {
     return this.storageService.getSignedUrl(id);
   }
 }
-

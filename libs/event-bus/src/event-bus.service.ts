@@ -59,19 +59,22 @@ export class EventBusService implements OnModuleInit {
     }
   }
 
-  async publish(routingKey: string, payload: any): Promise<void> {
+  async publish<T = any>(routingKey: string, payload: T): Promise<void> {
     if (!this.channelWrapper) {
       this.logger.warn(`Event bus channel not initialized. Event ${routingKey} skipped.`);
       return;
     }
-    await this.channelWrapper.publish('tebeka.events', routingKey, {
-      ...payload,
-      publishedAt: new Date().toISOString(),
-    });
+    const envelope = typeof payload === 'object' && payload !== null && 'publishedAt' in (payload as any)
+      ? payload
+      : {
+          ...(payload as any),
+          publishedAt: new Date().toISOString(),
+        };
+    await this.channelWrapper.publish('tebeka.events', routingKey, envelope);
     this.logger.log(`Published event [${routingKey}]`);
   }
 
-  async subscribe(routingKey: string, handler: (data: any) => Promise<void>, queueName?: string): Promise<void> {
+  async subscribe<T = any>(routingKey: string, handler: (data: T) => Promise<void>, queueName?: string): Promise<void> {
     const qName = queueName || `tebeka.queue.${routingKey}`;
     const dlqName = `${qName}.dlq`;
     if (!this.channelWrapper) {
@@ -94,7 +97,7 @@ export class EventBusService implements OnModuleInit {
         if (msg) {
           try {
             const content = JSON.parse(msg.content.toString());
-            await handler(content);
+            await handler(content as T);
             channel.ack(msg);
           } catch (err) {
             this.logger.error(`Error processing event [${routingKey}] - routing to DLQ:`, err);
@@ -106,11 +109,11 @@ export class EventBusService implements OnModuleInit {
     this.logger.log(`Subscribed to event [${routingKey}] on queue [${qName}] with DLQ [${dlqName}]`);
   }
 
-  async subscribeIdempotent(
+  async subscribeIdempotent<T = any>(
     routingKey: string,
     consumerName: string,
     prisma: any,
-    handler: (data: any) => Promise<void>,
+    handler: (data: T) => Promise<void>,
     queueName?: string,
   ): Promise<void> {
     const qName = queueName || `tebeka.queue.${consumerName}.${routingKey}`;
@@ -163,7 +166,7 @@ export class EventBusService implements OnModuleInit {
               }
             }
 
-            await handler(content);
+            await handler(content as T);
             channel.ack(msg);
           } catch (err) {
             this.logger.error(`Error processing event [${routingKey}] - routing to DLQ:`, err);

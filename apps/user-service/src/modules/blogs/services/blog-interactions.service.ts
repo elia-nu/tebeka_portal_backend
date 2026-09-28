@@ -5,26 +5,25 @@ import {
   BadRequestException,
   Optional,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '@workspace/database';
 import { CommunicationServiceClient } from '../../../integrations/communication-service.client';
 import { CreateCommentDto, ShareBlogDto } from '../dto/blog.dto';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class BlogInteractionsService {
   constructor(
+    private readonly prisma: PrismaService,
     @Optional() private readonly communicationClient?: CommunicationServiceClient,
   ) {}
 
   async toggleLike(blogId: string, userId: string) {
-    const blog = await prisma.blogPost.findUnique({
+    const blog = await this.prisma.blogPost.findUnique({
       where: { id: blogId },
       include: { author: { select: { id: true, name: true } } },
     });
     if (!blog) throw new NotFoundException(`Blog post ${blogId} not found`);
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const existingLike = await tx.blogLike.findUnique({
         where: { blogId_userId: { blogId, userId } },
       });
@@ -68,7 +67,7 @@ export class BlogInteractionsService {
     if (result.liked && blog.authorId !== userId) {
       setImmediate(async () => {
         try {
-          const liker = await prisma.user.findUnique({
+          const liker = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { name: true },
           });
@@ -90,7 +89,7 @@ export class BlogInteractionsService {
   }
 
   async addComment(blogId: string, userId: string, dto: CreateCommentDto) {
-    const blog = await prisma.blogPost.findUnique({
+    const blog = await this.prisma.blogPost.findUnique({
       where: { id: blogId },
       include: { author: { select: { id: true, name: true } } },
     });
@@ -98,7 +97,7 @@ export class BlogInteractionsService {
 
     let parentComment: { id: string; userId: string; blogId: string } | null = null;
     if (dto.parentId) {
-      parentComment = await prisma.blogComment.findUnique({
+      parentComment = await this.prisma.blogComment.findUnique({
         where: { id: dto.parentId },
         select: { id: true, userId: true, blogId: true },
       });
@@ -107,7 +106,7 @@ export class BlogInteractionsService {
       }
     }
 
-    const comment = await prisma.$transaction(async (tx) => {
+    const comment = await this.prisma.$transaction(async (tx) => {
       const created = await tx.blogComment.create({
         data: {
           blogId,
@@ -167,7 +166,7 @@ export class BlogInteractionsService {
     const skip = (Math.max(1, page) - 1) * limit;
 
     const [items, total] = await Promise.all([
-      prisma.blogComment.findMany({
+      this.prisma.blogComment.findMany({
         where: { blogId, parentId: null, isApproved: true },
         skip,
         take: limit,
@@ -181,7 +180,7 @@ export class BlogInteractionsService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.blogComment.count({ where: { blogId, parentId: null, isApproved: true } }),
+      this.prisma.blogComment.count({ where: { blogId, parentId: null, isApproved: true } }),
     ]);
 
     return {
@@ -194,7 +193,7 @@ export class BlogInteractionsService {
   }
 
   async deleteComment(commentId: string, userId: string, role: string) {
-    const comment = await prisma.blogComment.findUnique({ where: { id: commentId } });
+    const comment = await this.prisma.blogComment.findUnique({ where: { id: commentId } });
     if (!comment) throw new NotFoundException(`Comment ${commentId} not found`);
 
     const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
@@ -202,7 +201,7 @@ export class BlogInteractionsService {
       throw new ForbiddenException('You do not have permission to delete this comment');
     }
 
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       await tx.blogComment.delete({ where: { id: commentId } });
 
       await tx.blogPost.update({
@@ -215,12 +214,12 @@ export class BlogInteractionsService {
   }
 
   async recordShare(blogId: string, userId?: string, dto?: ShareBlogDto) {
-    const blog = await prisma.blogPost.findUnique({ where: { id: blogId } });
+    const blog = await this.prisma.blogPost.findUnique({ where: { id: blogId } });
     if (!blog) throw new NotFoundException(`Blog post ${blogId} not found`);
 
     const platform = dto?.platform || 'DIRECT_LINK';
 
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const share = await tx.blogShare.create({
         data: {
           blogId,

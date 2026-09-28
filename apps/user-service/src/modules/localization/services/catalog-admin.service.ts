@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { validateCatalogKey, validateCatalogValue } from '@workspace/localization';
-import { prisma } from '../localization-shared/prisma';
+import { PrismaService } from '@workspace/database';
 import { I18nStatus, I18nReviewDecision } from '../localization-shared/enums';
 import { CreateUpdateStringDto } from '../dto/create-update-string.dto';
 import { RecordReviewDto, ReviewDecision } from '../dto/record-review.dto';
 
 @Injectable()
 export class CatalogAdminService {
+  constructor(private readonly prisma: PrismaService) {}
   /**
    * PUT /api/v1/admin/i18n/strings/:key
    * Admin endpoint to create or update a catalog string value.
@@ -33,13 +34,13 @@ export class CatalogAdminService {
     const nextStatus = isLegalSensitive ? I18nStatus.LEGAL_REVIEW : I18nStatus.PUBLISHED;
 
     // Check existing string
-    const existing = await prisma.i18nString.findFirst({
+    const existing = await this.prisma.i18nString.findFirst({
       where: { key, locale, version: 1 },
     });
 
     let record;
     if (existing) {
-      record = await prisma.i18nString.update({
+      record = await this.prisma.i18nString.update({
         where: { id: existing.id },
         data: {
           value: dto.value,
@@ -50,7 +51,7 @@ export class CatalogAdminService {
         },
       });
     } else {
-      record = await prisma.i18nString.create({
+      record = await this.prisma.i18nString.create({
         data: {
           key,
           namespace,
@@ -77,7 +78,7 @@ export class CatalogAdminService {
   async recordLegalReview(key: string, dto: RecordReviewDto) {
     const locale = (dto.locale || 'en').toLowerCase();
 
-    const targetString = await prisma.i18nString.findFirst({
+    const targetString = await this.prisma.i18nString.findFirst({
       where: { key, locale },
     });
 
@@ -86,7 +87,7 @@ export class CatalogAdminService {
     }
 
     // Record review audit log
-    const reviewRecord = await prisma.i18nReview.create({
+    const reviewRecord = await this.prisma.i18nReview.create({
       data: {
         stringKey: key,
         locale,
@@ -99,7 +100,7 @@ export class CatalogAdminService {
     // Update string status if approved
     let updatedString = targetString;
     if (dto.decision === ReviewDecision.APPROVED) {
-      updatedString = await prisma.i18nString.update({
+      updatedString = await this.prisma.i18nString.update({
         where: { id: targetString.id },
         data: {
           status: I18nStatus.PUBLISHED,
@@ -107,7 +108,7 @@ export class CatalogAdminService {
         },
       });
     } else if (dto.decision === ReviewDecision.REJECTED) {
-      updatedString = await prisma.i18nString.update({
+      updatedString = await this.prisma.i18nString.update({
         where: { id: targetString.id },
         data: {
           status: I18nStatus.DRAFT,

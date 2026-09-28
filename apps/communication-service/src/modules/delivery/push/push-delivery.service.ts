@@ -1,18 +1,20 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaClient, QueueJobStatus, NotificationChannel } from '@prisma/client/communication';
+import { QueueJobStatus, NotificationChannel } from '@prisma/client/communication';
+import { PrismaService } from '../../../database/prisma.service';
 import { AppLoggerService } from '@workspace/logger';
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 import * as path from 'path';
 import * as fs from 'fs';
 
-const prisma = new PrismaClient();
-
 @Injectable()
 export class PushDeliveryService implements OnModuleInit {
   private firebaseApp: App | null = null;
 
-  constructor(private readonly logger: AppLoggerService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly logger: AppLoggerService,
+  ) {}
 
   onModuleInit() {
     try {
@@ -54,7 +56,7 @@ export class PushDeliveryService implements OnModuleInit {
   }
 
   async sendPushJob(jobId: string) {
-    const job = await prisma.pushQueue.findUnique({
+    const job = await this.prisma.pushQueue.findUnique({
       where: { id: jobId },
       include: { notification: true },
     });
@@ -81,7 +83,7 @@ export class PushDeliveryService implements OnModuleInit {
           // If token invalid / unregistered, log and update
           this.logger.warn(`[FCM-PUSH] FCM Gateway response: ${fcmError?.message}`, 'PushDeliveryService');
           if (fcmError?.code === 'messaging/registration-token-not-registered' || fcmError?.code === 'messaging/invalid-registration-token') {
-            await prisma.deviceToken.updateMany({
+            await this.prisma.deviceToken.updateMany({
               where: { token: job.deviceToken },
               data: { isActive: false },
             });
@@ -91,7 +93,7 @@ export class PushDeliveryService implements OnModuleInit {
         this.logger.log(`[FCM-PUSH] Dispatched push to token ${job.deviceToken}: "${job.title}" - "${job.body}"`, 'PushDeliveryService');
       }
 
-      await prisma.pushQueue.update({
+      await this.prisma.pushQueue.update({
         where: { id: jobId },
         data: {
           status: QueueJobStatus.COMPLETED,
@@ -99,7 +101,7 @@ export class PushDeliveryService implements OnModuleInit {
         },
       });
 
-      await prisma.notificationLog.create({
+      await this.prisma.notificationLog.create({
         data: {
           notificationId: job.notificationId,
           channel: NotificationChannel.PUSH,
@@ -116,7 +118,7 @@ export class PushDeliveryService implements OnModuleInit {
       const backoffMinutes = Math.pow(2, nextAttempts);
       const nextAttemptAt = new Date(Date.now() + backoffMinutes * 60 * 1000);
 
-      await prisma.pushQueue.update({
+      await this.prisma.pushQueue.update({
         where: { id: jobId },
         data: {
           status: isDeadLetter ? QueueJobStatus.DEAD_LETTER : QueueJobStatus.FAILED,
@@ -126,7 +128,7 @@ export class PushDeliveryService implements OnModuleInit {
         },
       });
 
-      await prisma.notificationLog.create({
+      await this.prisma.notificationLog.create({
         data: {
           notificationId: job.notificationId,
           channel: NotificationChannel.PUSH,
@@ -140,7 +142,7 @@ export class PushDeliveryService implements OnModuleInit {
   }
 
   async processPendingPushJobs() {
-    const pendingJobs = await prisma.pushQueue.findMany({
+    const pendingJobs = await this.prisma.pushQueue.findMany({
       where: {
         status: { in: [QueueJobStatus.PENDING, QueueJobStatus.FAILED] },
         nextAttemptAt: { lte: new Date() },

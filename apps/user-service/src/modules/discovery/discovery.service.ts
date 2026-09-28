@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '@workspace/database';
 
 export interface QuestionnaireInput {
   matterType: string;
@@ -13,6 +11,7 @@ export interface QuestionnaireInput {
 
 @Injectable()
 export class DiscoveryService {
+  constructor(private readonly prisma: PrismaService) {}
   private calculateRankingScore(attorney: any, weights = { verification: 30, responsiveness: 25, rating: 25, experience: 20 }) {
     // Total weights invariant check
     const totalWeight = weights.verification + weights.responsiveness + weights.rating + weights.experience;
@@ -66,13 +65,13 @@ export class DiscoveryService {
     if (query.videoSupport) where.videoSupport = query.videoSupport === 'true';
 
     const [items, total] = await Promise.all([
-      prisma.attorneyProfile.findMany({
+      this.prisma.attorneyProfile.findMany({
         where,
         skip,
         take: limit,
         include: { user: true, educations: true },
       }),
-      prisma.attorneyProfile.count({ where }),
+      this.prisma.attorneyProfile.count({ where }),
     ]);
 
     // Apply ranking algorithm (NO paid boosting allowed)
@@ -149,7 +148,7 @@ export class DiscoveryService {
   }
 
   async getPublicAttorneyBySlug(slug: string) {
-    const attorney = await prisma.attorneyProfile.findFirst({
+    const attorney = await this.prisma.attorneyProfile.findFirst({
       where: {
         OR: [{ slug }, { id: slug }],
         status: 'ACTIVE',
@@ -163,7 +162,7 @@ export class DiscoveryService {
   }
 
   async getSearchIndexProjection() {
-    const activeAttorneys = await prisma.attorneyProfile.findMany({
+    const activeAttorneys = await this.prisma.attorneyProfile.findMany({
       where: { status: 'ACTIVE', verificationStatus: 'APPROVED' },
       include: { user: true },
     });

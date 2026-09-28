@@ -1,10 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaClient, BookingStatus, CaseStatus, Priority } from '@prisma/client/marketplace';
-
-const prisma = new PrismaClient();
+import { BookingStatus, CaseStatus, Priority } from '@prisma/client/marketplace';
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class DashboardService {
+  constructor(private readonly prisma: PrismaService) {}
   async getAttorneyDashboardSummary(attorneyId: string) {
     if (!attorneyId) {
       throw new BadRequestException('Attorney ID is required to fetch practice dashboard summary');
@@ -27,12 +27,12 @@ export class DashboardService {
       recentCases
     ] = await Promise.all([
       // 1. Pending consultations awaiting attorney response
-      prisma.booking.count({
+      this.prisma.booking.count({
         where: { attorneyId, status: { in: [BookingStatus.REQUESTED, BookingStatus.ACCEPTED_PENDING_PAYMENT] } }
       }),
 
       // 2. Confirmed upcoming consultations
-      prisma.booking.count({
+      this.prisma.booking.count({
         where: {
           attorneyId,
           status: BookingStatus.CONFIRMED,
@@ -41,7 +41,7 @@ export class DashboardService {
       }),
 
       // 3. Today's scheduled bookings
-      prisma.booking.findMany({
+      this.prisma.booking.findMany({
         where: {
           attorneyId,
           bookingDate: { gte: startOfToday, lte: endOfToday }
@@ -50,7 +50,7 @@ export class DashboardService {
       }),
 
       // 4. Active open cases
-      prisma.case.count({
+      this.prisma.case.count({
         where: {
           attorneyId,
           status: { in: [CaseStatus.OPEN, CaseStatus.IN_PROGRESS, CaseStatus.PENDING_REVIEW] }
@@ -58,7 +58,7 @@ export class DashboardService {
       }),
 
       // 5. Urgent cases / deadline-sensitive cases
-      prisma.case.count({
+      this.prisma.case.count({
         where: {
           attorneyId,
           status: { in: [CaseStatus.OPEN, CaseStatus.IN_PROGRESS] },
@@ -70,19 +70,19 @@ export class DashboardService {
       }),
 
       // 6. Total completed consultations
-      prisma.booking.count({
+      this.prisma.booking.count({
         where: { attorneyId, status: BookingStatus.COMPLETED }
       }),
 
       // 7. Client reviews rating summary
-      prisma.review.findMany({
+      this.prisma.review.findMany({
         where: { attorneyId, status: 'PUBLISHED' },
         take: 5,
         orderBy: { createdAt: 'desc' }
       }),
 
       // 8. Recent active cases list
-      prisma.case.findMany({
+      this.prisma.case.findMany({
         where: { attorneyId },
         take: 5,
         orderBy: { openedAt: 'desc' },

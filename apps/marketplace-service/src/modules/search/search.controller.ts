@@ -1,14 +1,15 @@
-import { Controller, Get, Delete, Query, Req, UsePipes } from '@nestjs/common';
+import { Controller, Get, Delete, Query, Req, UsePipes, UseGuards } from '@nestjs/common';
 import { SearchService } from './search.service';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { JwtAuthGuard, RolesGuard, Public } from '@workspace/auth';
 import { QuerySearchDto, QuerySearchSchema, QuerySearchHistoryDto, QuerySearchHistorySchema } from './dto/query-search.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('search')
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
-  @AllowAnonymous()
+  @Public()
   @Get('attorneys')
   @UsePipes(new JoiValidationPipe(QuerySearchSchema))
   async searchAttorneys(@Query() query: QuerySearchDto, @Req() req: any) {

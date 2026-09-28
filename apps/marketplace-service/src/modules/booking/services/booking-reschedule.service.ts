@@ -5,14 +5,14 @@ import {
   ConflictException,
   Optional,
 } from '@nestjs/common';
-import { PrismaClient, BookingStatus } from '@prisma/client/marketplace';
+import { BookingStatus } from '@prisma/client/marketplace';
+import { PrismaService } from '../../../database/prisma.service';
 import { GoogleMeetService } from '../../integrations/google-meet.service';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class BookingRescheduleService {
   constructor(
+    private readonly prisma: PrismaService,
     @Optional() private readonly googleMeetService?: GoogleMeetService,
   ) {}
 
@@ -23,7 +23,7 @@ export class BookingRescheduleService {
   ) {
     const bookingDate = new Date(data.bookingDate);
 
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({
         where: { id },
       });
@@ -83,7 +83,7 @@ export class BookingRescheduleService {
     data: { proposedBookingDate: string; proposedStartTime: string; proposedEndTime: string; reason?: string },
     userId: string,
   ) {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({ where: { id } });
       if (!booking) throw new NotFoundException(`Booking ${id} not found`);
 
@@ -147,7 +147,7 @@ export class BookingRescheduleService {
     data: { action: 'ACCEPT' | 'REJECT'; reason?: string },
     userId: string,
   ) {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({ where: { id } });
       if (!booking) throw new NotFoundException(`Booking ${id} not found`);
 

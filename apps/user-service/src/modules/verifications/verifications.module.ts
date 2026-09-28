@@ -16,6 +16,6 @@ import { AttorneyProfileChangeService } from '../attorneys/services/attorney-pro
     VerificationFraudService,
     AttorneyProfileChangeService,
   ],
-  exports: [VerificationCaseService, AttorneyProfileChangeService],
+  exports: [VerificationCaseService, AttorneyProfileChangeService, VerificationFraudService],
 })
 export class VerificationsModule {}

@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client/financial';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../../../database/prisma.service';
 
 @Injectable()
 export class PaymentRefundService {
+  constructor(private readonly prisma: PrismaService) {}
   async getRefunds(query?: {
     status?: any;
     payeeId?: string;
@@ -42,7 +41,7 @@ export class PaymentRefundService {
     }
 
     const [refunds, total] = await Promise.all([
-      prisma.refund.findMany({
+      this.prisma.refund.findMany({
         where,
         include: {
           payment: true,
@@ -51,7 +50,7 @@ export class PaymentRefundService {
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.refund.count({ where }),
+      this.prisma.refund.count({ where }),
     ]);
 
     return {
@@ -69,7 +68,7 @@ export class PaymentRefundService {
   }
 
   async processManualRefund(refundId: string, processedBy: string, notes?: string) {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const refund = await tx.refund.findUnique({
         where: { id: refundId },
         include: { payment: true },
@@ -146,10 +145,10 @@ export class PaymentRefundService {
   }
 
   async rejectManualRefund(refundId: string, rejectedBy: string, reason: string) {
-    const refund = await prisma.refund.findUnique({ where: { id: refundId } });
+    const refund = await this.prisma.refund.findUnique({ where: { id: refundId } });
     if (!refund) throw new NotFoundException(`Refund ${refundId} not found`);
 
-    return prisma.refund.update({
+    return this.prisma.refund.update({
       where: { id: refundId },
       data: {
         status: 'REJECTED',
