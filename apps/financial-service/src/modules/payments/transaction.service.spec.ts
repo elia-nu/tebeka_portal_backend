@@ -1,13 +1,29 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionService } from './services/transaction.service';
 import { PaymentStatus, PaymentProvider, PaymentType } from '@prisma/client/financial';
+import { PrismaService } from '../../database/prisma.service';
 
 describe('TransactionService', () => {
   let service: TransactionService;
+  const mockPrismaService = {
+    payment: {
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      count: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    },
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [TransactionService],
+      providers: [
+        TransactionService,
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService,
+        },
+      ],
     }).compile();
 
     service = module.get<TransactionService>(TransactionService);

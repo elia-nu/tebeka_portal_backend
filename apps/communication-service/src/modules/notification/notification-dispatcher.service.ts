@@ -1,22 +1,21 @@
 import { Injectable, Optional } from '@nestjs/common';
 import {
-  PrismaClient,
   NotificationChannel,
   NotificationPriority,
   NotificationStatus,
   QueueJobStatus,
 } from '@prisma/client/communication';
+import { PrismaService } from '../../database/prisma.service';
 import { TemplateService } from '../template/template.service';
 import { EmailDeliveryService } from '../delivery/email/email-delivery.service';
 import { SmsDeliveryService } from '../delivery/sms/sms-delivery.service';
 import { PushDeliveryService } from '../delivery/push/push-delivery.service';
 import { NotificationGateway } from '../websocket/notification.gateway';
 
-const prisma = new PrismaClient();
-
 @Injectable()
 export class NotificationDispatcherService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly templateService: TemplateService,
     private readonly emailDeliveryService: EmailDeliveryService,
     private readonly smsDeliveryService: SmsDeliveryService,
@@ -47,7 +46,7 @@ export class NotificationDispatcherService {
     const priority = data.priority || NotificationPriority.NORMAL;
 
     // 1. Fetch user's notification preferences to honor channel choices
-    let userPref = await prisma.userNotificationPreference.findUnique({
+    let userPref = await this.prisma.userNotificationPreference.findUnique({
       where: { userId: data.recipientId },
     });
 
@@ -103,7 +102,7 @@ export class NotificationDispatcherService {
     });
 
     // Look up registered active device tokens for mobile push
-    const userDeviceTokens = await prisma.deviceToken.findMany({
+    const userDeviceTokens = await this.prisma.deviceToken.findMany({
       where: { userId: data.recipientId, isActive: true },
     });
 
@@ -114,7 +113,7 @@ export class NotificationDispatcherService {
       ])
     );
 
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const notification = await tx.notification.create({
         data: {
           recipientId: data.recipientId,

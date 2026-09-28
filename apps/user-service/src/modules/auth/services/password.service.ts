@@ -3,7 +3,7 @@ import * as bcrypt from 'bcrypt';
 import { hashPassword as betterAuthHash } from 'better-auth/crypto';
 import { AppLoggerService } from '@workspace/logger';
 import { auth } from '../../../auth';
-import { prisma } from '../auth-shared/prisma';
+import { PrismaService } from '@workspace/database';
 import { getSmtpTransporter } from '../auth-shared/mailer.util';
 import { OTP_HASH_SALT_ROUNDS } from '../auth-shared/constants';
 import { generateNumericOtp } from '../auth-shared/otp-code.util';
@@ -11,9 +11,10 @@ import { ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto, ValidatePasswor
 
 @Injectable()
 export class PasswordService {
-  private prisma = prisma;
-
-  constructor(private readonly logger: AppLoggerService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly logger: AppLoggerService,
+  ) {}
 
   async forgotPassword(data: Partial<ForgotPasswordDto>) {
     const email = (data?.email || '').trim().toLowerCase();

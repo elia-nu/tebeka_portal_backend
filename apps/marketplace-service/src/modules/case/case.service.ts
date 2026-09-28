@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
-import { PrismaClient, CaseStatus, Priority, AgreementStatus, AgreementType } from '@prisma/client/marketplace';
+import { CaseStatus, Priority, AgreementStatus, AgreementType } from '@prisma/client/marketplace';
+import { PrismaService } from '../../database/prisma.service';
 import { CommunicationServiceClient } from '../../integrations/communication-service.client';
 import { SignAgreementDto, DeclineAgreementDto } from './dto/agreement.dto';
-
-const prisma = new PrismaClient();
 
 export const DEFAULT_AGREEMENT_TERMS = `
 # Tebeka Legal Portal — Tri-Party Engagement & Non-Circumvention Agreement
@@ -30,6 +29,7 @@ This Agreement is entered into between the Client, the Assigned Attorney, and th
 @Injectable()
 export class CaseService {
   constructor(
+    private readonly prisma: PrismaService,
     @Optional() private readonly communicationServiceClient?: CommunicationServiceClient
   ) {}
 
@@ -39,7 +39,7 @@ export class CaseService {
     if (!data.attorneyId) throw new BadRequestException('attorneyId is required');
 
     // Interactive Transaction: Validate booking, create case, milestones, agreement, link booking, persist OutboxEvent inside tx
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       if (data.bookingId) {
         const booking = await tx.booking.findUnique({
           where: { id: data.bookingId },
@@ -152,21 +152,21 @@ export class CaseService {
     const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const [items, total] = await Promise.all([
-      prisma.case.findMany({
+      this.prisma.case.findMany({
         where,
         skip,
         take: limit,
         include: { caseDocuments: true, caseMilestones: true },
         orderBy: { [sortBy]: sortOrder },
       }),
-      prisma.case.count({ where }),
+      this.prisma.case.count({ where }),
     ]);
 
     return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string) {
-    const caseItem = await prisma.case.findUnique({
+    const caseItem = await this.prisma.case.findUnique({
       where: { id },
       include: { caseDocuments: true, caseMilestones: true, booking: true },
     });
@@ -175,7 +175,7 @@ export class CaseService {
   }
 
   async updateCaseStatus(id: string, newStatus: CaseStatus, userId: string) {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const caseItem = await tx.case.findUnique({
         where: { id },
       });
@@ -206,10 +206,10 @@ export class CaseService {
   }
 
   async createMilestone(caseId: string, data: { title: string; dueDate?: string }, userId: string) {
-    const caseItem = await prisma.case.findUnique({ where: { id: caseId } });
+    const caseItem = await this.prisma.case.findUnique({ where: { id: caseId } });
     if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
 
-    return prisma.caseMilestone.create({
+    return this.prisma.caseMilestone.create({
       data: {
         caseId,
         title: data.title,
@@ -219,12 +219,12 @@ export class CaseService {
   }
 
   async updateMilestoneStatus(caseId: string, milestoneId: string, status: any, userId: string) {
-    const milestone = await prisma.caseMilestone.findFirst({
+    const milestone = await this.prisma.caseMilestone.findFirst({
       where: { id: milestoneId, caseId },
     });
     if (!milestone) throw new NotFoundException(`Milestone ${milestoneId} for Case ${caseId} not found`);
 
-    return prisma.caseMilestone.update({
+    return this.prisma.caseMilestone.update({
       where: { id: milestoneId },
       data: {
         status,
@@ -234,10 +234,10 @@ export class CaseService {
   }
 
   async addTimelineEvent(caseId: string, data: { title: string; description?: string; eventDate?: string }, userId: string) {
-    const caseItem = await prisma.case.findUnique({ where: { id: caseId } });
+    const caseItem = await this.prisma.case.findUnique({ where: { id: caseId } });
     if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
 
-    return prisma.caseTimeline.create({
+    return this.prisma.caseTimeline.create({
       data: {
         caseId,
         title: data.title,
@@ -248,14 +248,14 @@ export class CaseService {
   }
 
   async getCaseTimeline(caseId: string) {
-    return prisma.caseTimeline.findMany({
+    return this.prisma.caseTimeline.findMany({
       where: { caseId },
       orderBy: { eventDate: 'desc' },
     });
   }
 
   async getCaseAgreement(caseId: string, userId: string) {
-    const caseItem = await prisma.case.findUnique({
+    const caseItem = await this.prisma.case.findUnique({
       where: { id: caseId },
       include: { agreement: true },
     });
@@ -263,7 +263,7 @@ export class CaseService {
 
     let agreement = caseItem.agreement;
     if (!agreement) {
-      agreement = await prisma.caseAgreement.create({
+      agreement = await this.prisma.caseAgreement.create({
         data: {
           caseId,
           termsContent: DEFAULT_AGREEMENT_TERMS,
@@ -291,7 +291,7 @@ export class CaseService {
   }
 
   async signCaseAgreement(caseId: string, data: SignAgreementDto, userId: string, ipAddress: string = '127.0.0.1') {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const caseItem = await tx.case.findUnique({
         where: { id: caseId },
         include: { agreement: true },
@@ -405,7 +405,7 @@ export class CaseService {
   }
 
   async declineCaseAgreement(caseId: string, data: DeclineAgreementDto, userId: string) {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const caseItem = await tx.case.findUnique({
         where: { id: caseId },
         include: { agreement: true },
@@ -474,7 +474,7 @@ export class CaseService {
   }
 
   async getOrCreateCaseChat(caseId: string, userId?: string) {
-    const caseItem = await prisma.case.findUnique({
+    const caseItem = await this.prisma.case.findUnique({
       where: { id: caseId },
       include: { agreement: true },
     });

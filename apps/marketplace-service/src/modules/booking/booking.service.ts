@@ -6,7 +6,8 @@ import {
   ConflictException,
   Optional,
 } from '@nestjs/common';
-import { PrismaClient, BookingStatus, ConsultationType } from '@prisma/client/marketplace';
+import { BookingStatus, ConsultationType } from '@prisma/client/marketplace';
+import { PrismaService } from '../../database/prisma.service';
 import { CommunicationServiceClient } from '../../integrations/communication-service.client';
 import { GoogleMeetService } from '../integrations/google-meet.service';
 import { UserServiceClient } from '../../integrations/user-service.client';
@@ -14,11 +15,10 @@ import { BookingCancellationService } from './services/booking-cancellation.serv
 import { BookingRescheduleService } from './services/booking-reschedule.service';
 import { BookingDisputeService } from './services/booking-dispute.service';
 
-const prisma = new PrismaClient();
-
 @Injectable()
 export class BookingService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly cancellationService: BookingCancellationService,
     private readonly rescheduleService: BookingRescheduleService,
     private readonly disputeService: BookingDisputeService,
@@ -73,7 +73,7 @@ export class BookingService {
     }
 
     // Double booking conflict prevention inside Interactive Transaction
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const existingOverlapping = await tx.booking.findFirst({
         where: {
           attorneyId: data.attorneyId,
@@ -147,7 +147,7 @@ export class BookingService {
   }
 
   async acceptBooking(id: string, attorneyId: string) {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({ where: { id } });
       if (!booking) throw new NotFoundException(`Booking ${id} not found`);
 
@@ -192,7 +192,7 @@ export class BookingService {
   }
 
   async declineBooking(id: string, attorneyId: string, reason?: string) {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({ where: { id } });
       if (!booking) throw new NotFoundException(`Booking ${id} not found`);
 
@@ -254,13 +254,13 @@ export class BookingService {
     }
 
     const [items, total] = await Promise.all([
-      prisma.booking.findMany({
+      this.prisma.booking.findMany({
         where,
         skip,
         take: limit,
         orderBy: { bookingDate: 'desc' },
       }),
-      prisma.booking.count({ where }),
+      this.prisma.booking.count({ where }),
     ]);
 
     return {
@@ -273,7 +273,7 @@ export class BookingService {
   }
 
   async findBookingById(id: string) {
-    const booking = await prisma.booking.findUnique({
+    const booking = await this.prisma.booking.findUnique({
       where: { id },
       include: {
         bookingEvents: { orderBy: { createdAt: 'asc' } },
@@ -293,7 +293,7 @@ export class BookingService {
   }
 
   async updateBookingStatus(id: string, status: BookingStatus, updatedBy: string, reason?: string) {
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({ where: { id } });
       if (!booking) throw new NotFoundException(`Booking with ID ${id} not found`);
 
@@ -357,7 +357,7 @@ export class BookingService {
   // =========================================================================
 
   async createBlackout(attorneyId: string, data: { startDate: string; endDate: string; reason?: string }) {
-    return prisma.availabilityBlackout.create({
+    return this.prisma.availabilityBlackout.create({
       data: {
         attorneyId,
         startDate: new Date(data.startDate),
@@ -368,14 +368,14 @@ export class BookingService {
   }
 
   async getBlackouts(attorneyId: string) {
-    return prisma.availabilityBlackout.findMany({
+    return this.prisma.availabilityBlackout.findMany({
       where: { attorneyId },
       orderBy: { startDate: 'asc' },
     });
   }
 
   async getOrCreateBookingChat(bookingId: string, userId?: string) {
-    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+    const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
     if (!booking) throw new NotFoundException(`Booking ${bookingId} not found`);
 
     if (this.communicationServiceClient) {
@@ -442,7 +442,7 @@ export class BookingService {
     const dateFormatted = targetDate.toISOString().split('T')[0];
 
     // 1. Check if the date is blocked by an attorney blackout / vacation
-    const blackout = await prisma.availabilityBlackout.findFirst({
+    const blackout = await this.prisma.availabilityBlackout.findFirst({
       where: {
         attorneyId,
         startDate: { lte: targetDate },
@@ -461,7 +461,7 @@ export class BookingService {
     }
 
     // 2. Fetch the attorney's weekly recurring availability window for this weekday
-    const window = await prisma.availabilityWindow.findFirst({
+    const window = await this.prisma.availabilityWindow.findFirst({
       where: {
         attorneyId,
         weekday,
@@ -484,7 +484,7 @@ export class BookingService {
     }
 
     // 3. Fetch existing confirmed / active portal bookings for this date
-    const existingBookings = await prisma.booking.findMany({
+    const existingBookings = await this.prisma.booking.findMany({
       where: {
         attorneyId,
         bookingDate: targetDate,

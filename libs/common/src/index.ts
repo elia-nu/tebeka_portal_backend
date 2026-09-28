@@ -5,3 +5,5 @@ export * from './resilience';
 export * from './metrics';
 export * from './tracing';
 export * from './interceptors/sanitize-response.interceptor';
+export * from './health/health.module';
+export * from './health/health.controller';

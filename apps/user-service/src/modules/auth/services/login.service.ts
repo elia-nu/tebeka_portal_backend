@@ -4,15 +4,14 @@ import { AppLoggerService } from '@workspace/logger';
 import * as bcrypt from 'bcrypt';
 import { verifyPassword as betterAuthVerify } from 'better-auth/crypto';
 import { auth } from '../../../auth';
-import { prisma } from '../auth-shared/prisma';
+import { PrismaService } from '@workspace/database';
 import { SessionTokenService } from './session-token.service';
 import { LoginDto } from '../dto/auth.dto';
 
 @Injectable()
 export class LoginService {
-  private prisma = prisma;
-
   constructor(
+    private readonly prisma: PrismaService,
     private readonly cacheService: CacheService,
     private readonly sessionTokenService: SessionTokenService,
     private readonly logger: AppLoggerService,

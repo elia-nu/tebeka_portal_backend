@@ -1,16 +1,17 @@
-import { Controller, Get, Post, Param, Body, Query, Req } from '@nestjs/common';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { Controller, Get, Post, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard } from '@workspace/auth';
 
-@AllowAnonymous()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller()
 export class PortalServicesController {
   @Post('bookings')
   async createBooking(@Body() body: any, @Req() req: any) {
+    const userId = req.user?.id;
     return {
       id: `booking-${Date.now()}`,
       referenceNumber: `CONS-2026-${Math.floor(100000 + Math.random() * 900000)}`,
-      attorneyId: body.attorneyId || 'attorney-123',
-      clientId: req.user?.id || 'client-123',
+      attorneyId: body.attorneyId,
+      clientId: userId,
       scheduledAt: body.scheduledAt || new Date().toISOString(),
       status: 'CONFIRMED',
       createdAt: new Date().toISOString()
@@ -47,12 +48,13 @@ export class PortalServicesController {
 
   @Post('cases')
   async createCase(@Body() body: any, @Req() req: any) {
+    const userId = req.user?.id;
     return {
       id: `case-${Date.now()}`,
       referenceNumber: `CASE-2026-${Math.floor(100000 + Math.random() * 900000)}`,
       title: body.title || 'Commercial Contract Dispute',
       status: 'OPEN',
-      clientId: req.user?.id || 'client-123',
+      clientId: userId,
       createdAt: new Date().toISOString()
     };
   }
@@ -111,7 +113,7 @@ export class PortalServicesController {
   async submitReview(@Body() body: any) {
     return {
       id: `rev-${Date.now()}`,
-      attorneyId: body.attorneyId || 'attorney-123',
+      attorneyId: body.attorneyId,
       rating: body.rating || 5,
       comment: body.comment || 'Excellent legal counsel and communication.',
       createdAt: new Date().toISOString()

@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes, Ip } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes, Ip, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard } from '@workspace/auth';
 import { CaseService } from './case.service';
 import { CreateCaseDto, CreateCaseSchema, UpdateCaseStatusDto, UpdateCaseStatusSchema, QueryCaseDto, QueryCaseSchema } from './dto/case.dto';
 import { SignAgreementDto, SignAgreementSchema, DeclineAgreementDto, DeclineAgreementSchema } from './dto/agreement.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('cases')
 export class CaseController {
   constructor(private readonly caseService: CaseService) {}
@@ -18,8 +20,8 @@ export class CaseController {
   @Get()
   @UsePipes(new JoiValidationPipe(QueryCaseSchema))
   async findUserCases(@Query() query: QueryCaseDto, @Req() req: any) {
-    const userId = req.user?.id || query.userId;
-    const role = req.user?.role || query.role || 'CLIENT';
+    const userId = req.user.id;
+    const role = req.user.role || query.role || 'CLIENT';
     return this.caseService.findUserCases(userId, role, query);
   }
 
@@ -31,13 +33,13 @@ export class CaseController {
   @Patch(':id/status')
   @UsePipes(new JoiValidationPipe(UpdateCaseStatusSchema))
   async updateStatus(@Param('id') id: string, @Body() body: UpdateCaseStatusDto, @Req() req: any) {
-    const userId = req.user?.id || 'system';
+    const userId = req.user.id;
     return this.caseService.updateCaseStatus(id, body.status, userId);
   }
 
   @Get(':id/agreement')
   async getCaseAgreement(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user?.id || req.headers['x-user-id'] || 'client-1';
+    const userId = req.user.id;
     return this.caseService.getCaseAgreement(id, userId);
   }
 
@@ -49,7 +51,7 @@ export class CaseController {
     @Req() req: any,
     @Ip() ip: string
   ) {
-    const userId = req.user?.id || req.headers['x-user-id'] || 'client-1';
+    const userId = req.user.id;
     const clientIp = req.headers['x-forwarded-for'] || ip || '127.0.0.1';
     return this.caseService.signCaseAgreement(id, body, userId, String(clientIp));
   }
@@ -61,7 +63,7 @@ export class CaseController {
     @Body() body: DeclineAgreementDto,
     @Req() req: any
   ) {
-    const userId = req.user?.id || req.headers['x-user-id'] || 'client-1';
+    const userId = req.user.id;
     return this.caseService.declineCaseAgreement(id, body, userId);
   }
 
@@ -71,7 +73,7 @@ export class CaseController {
     @Body() body: { title: string; dueDate?: string },
     @Req() req: any
   ) {
-    const userId = req.user?.id || 'attorney-1';
+    const userId = req.user.id;
     return this.caseService.createMilestone(id, body, userId);
   }
 
@@ -82,7 +84,7 @@ export class CaseController {
     @Body() body: { status: string },
     @Req() req: any
   ) {
-    const userId = req.user?.id || 'attorney-1';
+    const userId = req.user.id;
     return this.caseService.updateMilestoneStatus(id, milestoneId, body.status, userId);
   }
 
@@ -92,7 +94,7 @@ export class CaseController {
     @Body() body: { title: string; description?: string; eventDate?: string },
     @Req() req: any
   ) {
-    const userId = req.user?.id || 'attorney-1';
+    const userId = req.user.id;
     return this.caseService.addTimelineEvent(id, body, userId);
   }
 
@@ -103,13 +105,13 @@ export class CaseController {
 
   @Post(':id/chat')
   async createCaseChat(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user?.id || 'client-1';
+    const userId = req.user.id;
     return this.caseService.getOrCreateCaseChat(id, userId);
   }
 
   @Get(':id/chat')
   async getCaseChat(@Param('id') id: string, @Req() req: any) {
-    const userId = req.user?.id || 'client-1';
+    const userId = req.user.id;
     return this.caseService.getOrCreateCaseChat(id, userId);
   }
 }

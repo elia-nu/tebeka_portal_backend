@@ -1,33 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { prisma } from '../attorneys-shared/prisma';
+import { PrismaService } from '@workspace/database';
 
 @Injectable()
 export class AttorneyProfileChangeService {
+  constructor(private readonly prisma: PrismaService) {}
   // Guarded Profile Changes (Sensitive fields require Admin review)
   async requestProfileChange(attorneyId: string, data: any) {
-    let profile = await prisma.attorneyProfile.findUnique({ where: { id: attorneyId } });
+    let profile = await this.prisma.attorneyProfile.findUnique({ where: { id: attorneyId } });
     if (!profile) {
-      profile = await prisma.attorneyProfile.findUnique({ where: { userId: attorneyId } });
+      profile = await this.prisma.attorneyProfile.findUnique({ where: { userId: attorneyId } });
     }
     if (!profile) {
       throw new NotFoundException(`Attorney profile not found for ${attorneyId}`);
     }
-
-    const slaDueDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000); // 2-day SLA for guarded change review
-    const vCase = await prisma.verificationCase.create({
-      data: {
-        attorneyId: profile.id,
-        caseType: 'GUARDED_CHANGE',
-        status: 'SUBMITTED',
-        slaDueDate,
-        checklists: {
-          create: [
-            { itemName: 'guarded_field_accuracy', status: 'PENDING' },
-            { itemName: 'document_proof_verified', status: 'PENDING' }
-          ]
-        }
-      }
-    });
 
     const changesToProcess: Array<{ field: string; newValue: any }> = [];
 
@@ -55,14 +40,59 @@ export class AttorneyProfileChangeService {
       }
     }
 
+    const checklistsToCreate = [
+      { itemName: 'guarded_field_accuracy', status: 'PENDING' },
+      { itemName: 'document_proof_verified', status: 'PENDING' }
+    ];
+
+    const requestedFields = changesToProcess.map(c => c.field);
+    if (requestedFields.some(f => ['barNumber', 'barRegistrationNumber', 'licenseNumber', 'bar_registration_number'].includes(f))) {
+      checklistsToCreate.push({ itemName: 'bar_number_verification', status: 'PENDING' });
+    }
+    if (requestedFields.some(f => ['practiceAreas', 'practiceAreaIds', 'practice_areas'].includes(f))) {
+      checklistsToCreate.push({ itemName: 'practice_area_qualification', status: 'PENDING' });
+    }
+    if (requestedFields.some(f => ['licenseBookUrl', 'barRegistrationUrl', 'nationalIdDocumentUrl', 'nationalIdNumber', 'otherSupportingDocuments', 'credentials'].includes(f))) {
+      checklistsToCreate.push({ itemName: 'credential_document_verified', status: 'PENDING' });
+    }
+    if (requestedFields.some(f => ['feeBand', 'fee_band', 'consultationFeeBand'].includes(f))) {
+      checklistsToCreate.push({ itemName: 'fee_band_tier_compliance', status: 'PENDING' });
+    }
+
+    const slaDueDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000); // 2-day SLA for guarded change review
+    const vCase = await this.prisma.verificationCase.create({
+      data: {
+        attorneyId: profile.id,
+        caseType: 'GUARDED_CHANGE',
+        status: 'SUBMITTED',
+        slaDueDate,
+        checklists: {
+          create: checklistsToCreate as any
+        }
+      }
+    });
+
     const guardedChanges: any[] = [];
     for (const item of changesToProcess) {
-      const gc = await prisma.guardedChange.create({
+      let rawOldValue = (profile as any)[item.field];
+      if (item.field === 'barNumber' && !rawOldValue) rawOldValue = profile.barRegistrationNumber || profile.licenseNumber;
+      if (item.field === 'practiceAreaIds' && !rawOldValue) rawOldValue = profile.practiceAreas;
+      if (item.field === 'fee_band' && !rawOldValue) rawOldValue = profile.feeBand;
+
+      const formattedOldValue = typeof rawOldValue === 'object' && rawOldValue !== null
+        ? JSON.stringify(rawOldValue)
+        : String(rawOldValue || '');
+
+      const formattedNewValue = typeof item.newValue === 'object' && item.newValue !== null
+        ? JSON.stringify(item.newValue)
+        : String(item.newValue);
+
+      const gc = await this.prisma.guardedChange.create({
         data: {
           attorneyId: profile.id,
           field: item.field,
-          oldValue: String((profile as any)[item.field] || ''),
-          newValue: String(item.newValue),
+          oldValue: formattedOldValue,
+          newValue: formattedNewValue,
           verificationCaseId: vCase.id,
           status: 'PENDING'
         }
@@ -81,13 +111,13 @@ export class AttorneyProfileChangeService {
   }
 
   async getPendingProfileChanges(attorneyId: string) {
-    let profile = await prisma.attorneyProfile.findUnique({ where: { id: attorneyId } });
+    let profile = await this.prisma.attorneyProfile.findUnique({ where: { id: attorneyId } });
     if (!profile) {
-      profile = await prisma.attorneyProfile.findUnique({ where: { userId: attorneyId } });
+      profile = await this.prisma.attorneyProfile.findUnique({ where: { userId: attorneyId } });
     }
     const targetId = profile ? profile.id : attorneyId;
 
-    return prisma.guardedChange.findMany({
+    return this.prisma.guardedChange.findMany({
       where: { attorneyId: targetId, status: 'PENDING' },
       include: { verificationCase: true },
       orderBy: { createdAt: 'desc' }
@@ -95,9 +125,9 @@ export class AttorneyProfileChangeService {
   }
 
   async approveProfileChange(changeId: string, reviewerId: string) {
-    let change = await prisma.guardedChange.findUnique({ where: { id: changeId } });
+    let change = await this.prisma.guardedChange.findUnique({ where: { id: changeId } });
     if (!change) {
-      change = await prisma.guardedChange.findFirst({
+      change = await this.prisma.guardedChange.findFirst({
         where: {
           OR: [
             { id: changeId },
@@ -121,31 +151,31 @@ export class AttorneyProfileChangeService {
 
     if (change.field === 'fieldName' && change.verificationCaseId) {
       actualField = change.newValue;
-      const companion = await prisma.guardedChange.findFirst({
+      const companion = await this.prisma.guardedChange.findFirst({
         where: { verificationCaseId: change.verificationCaseId, field: 'requestedValue' }
       });
       if (companion) {
         actualNewValue = companion.newValue;
-        await prisma.guardedChange.update({
+        await this.prisma.guardedChange.update({
           where: { id: companion.id },
           data: { status: 'APPROVED', decision: 'APPROVED', decisionBy: reviewerId, decisionAt: new Date() }
         }).catch(() => {});
       }
     } else if (change.field === 'requestedValue' && change.verificationCaseId) {
-      const companion = await prisma.guardedChange.findFirst({
+      const companion = await this.prisma.guardedChange.findFirst({
         where: { verificationCaseId: change.verificationCaseId, field: 'fieldName' }
       });
       if (companion) {
         actualField = companion.newValue;
         actualNewValue = change.newValue;
-        await prisma.guardedChange.update({
+        await this.prisma.guardedChange.update({
           where: { id: companion.id },
           data: { status: 'APPROVED', decision: 'APPROVED', decisionBy: reviewerId, decisionAt: new Date() }
         }).catch(() => {});
       }
     }
 
-    const updatedChange = await prisma.guardedChange.update({
+    const updatedChange = await this.prisma.guardedChange.update({
       where: { id: change.id },
       data: {
         status: 'APPROVED',
@@ -159,7 +189,7 @@ export class AttorneyProfileChangeService {
     const intFields = ['barAdmissionYear', 'yearsOfExperience', 'experienceYears', 'bufferTimeMinutes', 'maxBookingsPerDay', 'age'];
     const floatFields = ['consultationFee', 'consultationFees', 'latitude', 'longitude', 'rating'];
     const boolFields = ['onlineConsultation', 'videoSupport', 'hasVerifiedBadge', 'credentialClaimsMatch'];
-    const arrayFields = ['practiceAreas', 'languages', 'languagesSpoken', 'otherSupportingDocuments'];
+    const arrayFields = ['practiceAreas', 'practiceAreaIds', 'languages', 'languagesSpoken', 'otherSupportingDocuments'];
 
     let convertedValue: any = actualNewValue;
     if (intFields.includes(actualField)) {
@@ -178,10 +208,22 @@ export class AttorneyProfileChangeService {
     }
 
     const profileUpdate: any = {};
-    profileUpdate[actualField] = convertedValue;
+    if (actualField === 'barNumber' || actualField === 'barRegistrationNumber') {
+      profileUpdate.barRegistrationNumber = convertedValue;
+      profileUpdate.licenseNumber = convertedValue;
+    } else if (actualField === 'licenseNumber') {
+      profileUpdate.licenseNumber = convertedValue;
+      profileUpdate.barRegistrationNumber = convertedValue;
+    } else if (actualField === 'practiceAreaIds' || actualField === 'practiceAreas' || actualField === 'practice_areas') {
+      profileUpdate.practiceAreas = convertedValue;
+    } else if (actualField === 'fee_band' || actualField === 'consultationFeeBand') {
+      profileUpdate.feeBand = convertedValue;
+    } else {
+      profileUpdate[actualField] = convertedValue;
+    }
 
     try {
-      await prisma.attorneyProfile.update({
+      await this.prisma.attorneyProfile.update({
         where: { id: change.attorneyId },
         data: profileUpdate
       });
@@ -189,10 +231,20 @@ export class AttorneyProfileChangeService {
       console.error(`Failed to update attorneyProfile field ${actualField}:`, e);
     }
 
+    // Sync credentials if document was approved
+    if (actualField === 'barRegistrationUrl' || actualField === 'licenseBookUrl' || actualField === 'nationalIdDocumentUrl') {
+      const credType = actualField === 'barRegistrationUrl' ? 'BAR_CERTIFICATE'
+        : (actualField === 'licenseBookUrl' ? 'BAR_LICENSE' : 'NATIONAL_ID');
+      await this.prisma.credential.updateMany({
+        where: { attorneyId: change.attorneyId, credentialType: credType },
+        data: { verificationStatus: 'APPROVED', verifiedAt: new Date() }
+      }).catch(() => {});
+    }
+
     if (actualField === 'fullName') {
-      const att = await prisma.attorneyProfile.findUnique({ where: { id: change.attorneyId } });
+      const att = await this.prisma.attorneyProfile.findUnique({ where: { id: change.attorneyId } });
       if (att?.userId) {
-        await prisma.user.update({
+        await this.prisma.user.update({
           where: { id: att.userId },
           data: { name: actualNewValue }
         }).catch(() => {});
@@ -201,11 +253,11 @@ export class AttorneyProfileChangeService {
 
     // Update linked VerificationCase if all guarded changes are approved
     if (change.verificationCaseId) {
-      const remainingPending = await prisma.guardedChange.count({
+      const remainingPending = await this.prisma.guardedChange.count({
         where: { verificationCaseId: change.verificationCaseId, status: 'PENDING' }
       });
       if (remainingPending === 0) {
-        await prisma.verificationCase.update({
+        await this.prisma.verificationCase.update({
           where: { id: change.verificationCaseId },
           data: {
             status: 'APPROVED',
@@ -214,7 +266,7 @@ export class AttorneyProfileChangeService {
           }
         }).catch(() => {});
 
-        await prisma.verificationChecklist.updateMany({
+        await this.prisma.verificationChecklist.updateMany({
           where: { verificationCaseId: change.verificationCaseId },
           data: { status: 'PASSED', completedBy: reviewerId, completedAt: new Date() }
         }).catch(() => {});
@@ -225,9 +277,9 @@ export class AttorneyProfileChangeService {
   }
 
   async rejectProfileChange(changeId: string, reason: string, reviewerId: string) {
-    let change = await prisma.guardedChange.findUnique({ where: { id: changeId } });
+    let change = await this.prisma.guardedChange.findUnique({ where: { id: changeId } });
     if (!change) {
-      change = await prisma.guardedChange.findFirst({
+      change = await this.prisma.guardedChange.findFirst({
         where: {
           OR: [
             { id: changeId },
@@ -246,7 +298,7 @@ export class AttorneyProfileChangeService {
       };
     }
 
-    const updatedChange = await prisma.guardedChange.update({
+    const updatedChange = await this.prisma.guardedChange.update({
       where: { id: change.id },
       data: {
         status: 'REJECTED',
@@ -258,11 +310,11 @@ export class AttorneyProfileChangeService {
 
     if ((change.field === 'fieldName' || change.field === 'requestedValue') && change.verificationCaseId) {
       const companionField = change.field === 'fieldName' ? 'requestedValue' : 'fieldName';
-      const companion = await prisma.guardedChange.findFirst({
+      const companion = await this.prisma.guardedChange.findFirst({
         where: { verificationCaseId: change.verificationCaseId, field: companionField }
       });
       if (companion) {
-        await prisma.guardedChange.update({
+        await this.prisma.guardedChange.update({
           where: { id: companion.id },
           data: { status: 'REJECTED', decision: 'REJECTED', decisionBy: reviewerId, decisionAt: new Date() }
         }).catch(() => {});
@@ -270,7 +322,7 @@ export class AttorneyProfileChangeService {
     }
 
     if (change.verificationCaseId) {
-      await prisma.verificationCase.update({
+      await this.prisma.verificationCase.update({
         where: { id: change.verificationCaseId },
         data: {
           status: 'REJECTED',
@@ -279,7 +331,7 @@ export class AttorneyProfileChangeService {
         }
       }).catch(() => {});
 
-      await prisma.verificationChecklist.updateMany({
+      await this.prisma.verificationChecklist.updateMany({
         where: { verificationCaseId: change.verificationCaseId },
         data: { status: 'FAILED', remarks: reason, completedBy: reviewerId, completedAt: new Date() }
       }).catch(() => {});

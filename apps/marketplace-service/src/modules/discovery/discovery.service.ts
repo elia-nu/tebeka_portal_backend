@@ -1,19 +1,37 @@
 import { Injectable, NotFoundException, Logger, Optional } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client/marketplace';
+import { PrismaService } from '../../database/prisma.service';
 import { UserServiceClient } from '../../integrations/user-service.client';
 import { RankingService } from '../ranking/ranking.service';
 import { QueryDiscoveryDto, QuestionnaireDiscoveryDto } from './dto/query-discovery.dto';
 
-const prisma = new PrismaClient();
-
 @Injectable()
 export class DiscoveryService {
   private readonly logger = new Logger(DiscoveryService.name);
+  private readonly discoveryCache = new Map<string, { data: any; expiresAt: number }>();
+  private readonly DISCOVERY_CACHE_TTL_MS = 60 * 1000; // 60-second public discovery cache (FR-ADMIN-01, FR-AUTH-05)
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly userServiceClient: UserServiceClient,
     @Optional() private readonly rankingService?: RankingService
   ) {}
+
+  clearDiscoveryCache(attorneyId?: string) {
+    if (attorneyId) {
+      // Clear detail cache and invalidate search lists
+      this.discoveryCache.delete(`attorney_detail:${attorneyId}`);
+      for (const [key] of this.discoveryCache) {
+        if (key.startsWith('pub_attorneys:') || key.startsWith('questionnaire:')) {
+          this.discoveryCache.delete(key);
+        }
+      }
+      this.logger.log(`Public discovery cache purged for attorneyId: ${attorneyId}`);
+    } else {
+      this.discoveryCache.clear();
+      this.logger.log('All public discovery caches purged');
+    }
+    return { status: 'success', message: 'Discovery cache purged successfully' };
+  }
 
   private maskSurname(name?: string | null): string {
     if (!name) return 'Advocate Verified';
@@ -28,6 +46,12 @@ export class DiscoveryService {
    * 1. Public Attorney Discovery with Advanced Filters & Credential Vault Result Cards
    */
   async getPublicAttorneys(query: QueryDiscoveryDto, isAnonymous = false) {
+    const cacheKey = `pub_attorneys:${JSON.stringify(query)}:${isAnonymous}`;
+    const cached = this.discoveryCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
     const page = Math.max(1, Number(query.page) || 1);
     let limit = Math.max(1, Number(query.limit) || 20);
 
@@ -81,18 +105,18 @@ export class DiscoveryService {
     const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const [items, total] = await Promise.all([
-      prisma.discoveryIndex.findMany({
+      this.prisma.discoveryIndex.findMany({
         where,
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
       }),
-      prisma.discoveryIndex.count({ where }),
+      this.prisma.discoveryIndex.count({ where }),
     ]);
 
     // Fetch availability & build Credential Vault result cards
     const attorneyIds = items.map((i) => i.attorneyId);
-    const availabilities = await prisma.availabilityWindow.findMany({
+    const availabilities = await this.prisma.availabilityWindow.findMany({
       where: {
         attorneyId: { in: attorneyIds },
         isAvailable: true,
@@ -137,7 +161,7 @@ export class DiscoveryService {
       };
     });
 
-    return {
+    const result = {
       items: formattedCards,
       total,
       page,
@@ -151,12 +175,21 @@ export class DiscoveryService {
         },
       }),
     };
+
+    this.discoveryCache.set(cacheKey, { data: result, expiresAt: Date.now() + this.DISCOVERY_CACHE_TTL_MS });
+    return result;
   }
 
   /**
    * 2. Guided Questionnaire Flow (Matter Type -> Urgency -> Location -> Language)
    */
   async processQuestionnaire(dto: QuestionnaireDiscoveryDto, isAnonymous = false) {
+    const cacheKey = `questionnaire:${JSON.stringify(dto)}:${isAnonymous}`;
+    const cached = this.discoveryCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
     this.logger.log(`Processing Guided Questionnaire: ${dto.matterType} | Urgency: ${dto.urgency} | Loc: ${dto.city || 'Any'}`);
 
     const where: any = {
@@ -176,12 +209,12 @@ export class DiscoveryService {
     const limit = isAnonymous ? 3 : 15;
 
     const [items, total] = await Promise.all([
-      prisma.discoveryIndex.findMany({
+      this.prisma.discoveryIndex.findMany({
         where,
         take: limit,
         orderBy: { [sortBy]: 'desc' },
       }),
-      prisma.discoveryIndex.count({ where }),
+      this.prisma.discoveryIndex.count({ where }),
     ]);
 
     const formattedCards = items.map((item) => {
@@ -210,7 +243,7 @@ export class DiscoveryService {
       };
     });
 
-    return {
+    const result = {
       questionnaireSummary: {
         matterType: dto.matterType,
         urgency: dto.urgency,
@@ -227,13 +260,22 @@ export class DiscoveryService {
         },
       }),
     };
+
+    this.discoveryCache.set(cacheKey, { data: result, expiresAt: Date.now() + this.DISCOVERY_CACHE_TTL_MS });
+    return result;
   }
 
   /**
    * 3. Attorney Detail View (with Live User Profile & Credential Vault projection)
    */
   async getAttorneyDetails(attorneyId: string) {
-    const discovery = await prisma.discoveryIndex.findUnique({
+    const cacheKey = `attorney_detail:${attorneyId}`;
+    const cached = this.discoveryCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
+    const discovery = await this.prisma.discoveryIndex.findUnique({
       where: { attorneyId },
     });
 
@@ -243,13 +285,13 @@ export class DiscoveryService {
 
     const userServiceProfile = await this.userServiceClient.getAttorneyProfile(attorneyId);
 
-    const availability = await prisma.availabilityWindow.findMany({
+    const availability = await this.prisma.availabilityWindow.findMany({
       where: { attorneyId, isAvailable: true },
     });
 
     const barAdmissionYear = discovery.experienceScore ? Math.max(1990, new Date().getFullYear() - Math.round(discovery.experienceScore / 5)) : 2016;
 
-    return {
+    const result = {
       ...discovery,
       userProfile: userServiceProfile || { id: attorneyId, note: 'User Service integration active' },
       availability,
@@ -263,5 +305,8 @@ export class DiscoveryService {
         profileCompleteness: 100,
       },
     };
+
+    this.discoveryCache.set(cacheKey, { data: result, expiresAt: Date.now() + this.DISCOVERY_CACHE_TTL_MS });
+    return result;
   }
 }

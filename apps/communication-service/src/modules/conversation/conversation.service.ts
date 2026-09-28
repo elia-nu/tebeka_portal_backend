@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { PrismaClient, ConversationStatus, ConversationType, ParticipantRole } from '@prisma/client/communication';
-
-const prisma = new PrismaClient();
+import { ConversationStatus, ConversationType, ParticipantRole } from '@prisma/client/communication';
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class ConversationService {
+  constructor(private readonly prisma: PrismaService) {}
   async createConversation(data: any, createdById: string) {
     const allParticipantIds = Array.from(new Set([createdById, ...(data.participantIds || [])]));
 
@@ -14,7 +14,7 @@ export class ConversationService {
 
     // Check if an existing direct or booking/case conversation already matches
     if (data.bookingId) {
-      const existing = await prisma.conversation.findFirst({
+      const existing = await this.prisma.conversation.findFirst({
         where: { bookingId: data.bookingId },
         include: { participants: true },
       });
@@ -22,7 +22,7 @@ export class ConversationService {
     }
 
     if (data.caseId) {
-      const existing = await prisma.conversation.findFirst({
+      const existing = await this.prisma.conversation.findFirst({
         where: { caseId: data.caseId },
         include: { participants: true },
       });
@@ -30,7 +30,7 @@ export class ConversationService {
     }
 
     // Create conversation & participants inside an interactive transaction
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const conversation = await tx.conversation.create({
         data: {
           title: data.title || null,
@@ -94,7 +94,7 @@ export class ConversationService {
     }
 
     const [conversations, total] = await Promise.all([
-      prisma.conversation.findMany({
+      this.prisma.conversation.findMany({
         where,
         skip,
         take: limit,
@@ -108,7 +108,7 @@ export class ConversationService {
           },
         },
       }),
-      prisma.conversation.count({ where }),
+      this.prisma.conversation.count({ where }),
     ]);
 
     // Enhance each conversation with unread count for requesting user
@@ -117,7 +117,7 @@ export class ConversationService {
         const participant = conv.participants.find((p) => p.userId === userId);
         const lastReadAt = participant?.lastReadAt || new Date(0);
 
-        const unreadCount = await prisma.message.count({
+        const unreadCount = await this.prisma.message.count({
           where: {
             conversationId: conv.id,
             senderId: { not: userId },
@@ -145,7 +145,7 @@ export class ConversationService {
   }
 
   async getConversationDetails(conversationId: string, userId: string) {
-    const conversation = await prisma.conversation.findUnique({
+    const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
       include: {
         participants: true,
@@ -170,7 +170,7 @@ export class ConversationService {
   }
 
   async archiveConversation(conversationId: string, userId: string) {
-    const participant = await prisma.conversationParticipant.findUnique({
+    const participant = await this.prisma.conversationParticipant.findUnique({
       where: { conversationId_userId: { conversationId, userId } },
     });
 
@@ -178,41 +178,41 @@ export class ConversationService {
       throw new NotFoundException(`Conversation participant record not found`);
     }
 
-    return prisma.conversationParticipant.update({
+    return this.prisma.conversationParticipant.update({
       where: { conversationId_userId: { conversationId, userId } },
       data: { isArchived: true },
     });
   }
 
   async closeConversation(conversationId: string, userId: string) {
-    const conversation = await prisma.conversation.findUnique({
+    const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
       include: { participants: true },
     });
 
     if (!conversation) throw new NotFoundException(`Conversation ${conversationId} not found`);
 
-    return prisma.conversation.update({
+    return this.prisma.conversation.update({
       where: { id: conversationId },
       data: { status: ConversationStatus.CLOSED },
     });
   }
 
   async blockConversation(conversationId: string, userId: string) {
-    const conversation = await prisma.conversation.findUnique({
+    const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
     });
 
     if (!conversation) throw new NotFoundException(`Conversation ${conversationId} not found`);
 
-    return prisma.conversation.update({
+    return this.prisma.conversation.update({
       where: { id: conversationId },
       data: { status: ConversationStatus.BLOCKED },
     });
   }
 
   async getOrCreateBookingConversation(bookingId: string, clientId: string, attorneyId: string, title?: string) {
-    const existing = await prisma.conversation.findFirst({
+    const existing = await this.prisma.conversation.findFirst({
       where: { bookingId },
       include: {
         participants: true,
@@ -235,7 +235,7 @@ export class ConversationService {
   }
 
   async getOrCreateCaseConversation(caseId: string, clientId: string, attorneyId: string, title?: string) {
-    const existing = await prisma.conversation.findFirst({
+    const existing = await this.prisma.conversation.findFirst({
       where: { caseId },
       include: {
         participants: true,

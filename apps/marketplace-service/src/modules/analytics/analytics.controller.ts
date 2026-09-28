@@ -1,6 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
 import { AnalyticsService } from './analytics.service';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'SUPER_ADMIN')
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}

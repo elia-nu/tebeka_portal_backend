@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '@workspace/database';
 
 @Injectable()
 export class ConfigurationService {
+  constructor(private readonly prisma: PrismaService) {}
   private currentSettings = {
     version: 3,
     siteName: 'Tebeka Legal Portal',
@@ -37,7 +36,7 @@ export class ConfigurationService {
       throw new BadRequestException(`Key '${data.key}' is not governed by Dual-Approval. Allowed keys: ${governedKeys.join(', ')}`);
     }
 
-    const proposal = await prisma.makerCheckerConfigChange.create({
+    const proposal = await this.prisma.makerCheckerConfigChange.create({
       data: {
         key: data.key,
         proposedValue: data.proposedValue,
@@ -56,7 +55,7 @@ export class ConfigurationService {
 
   // Dual-Approval Approval by Admin B
   async approveConfigChange(proposalId: string, approvingAdminId: string) {
-    const proposal = await prisma.makerCheckerConfigChange.findUnique({
+    const proposal = await this.prisma.makerCheckerConfigChange.findUnique({
       where: { id: proposalId }
     });
 
@@ -80,7 +79,7 @@ export class ConfigurationService {
     this.currentSettings.updatedAt = new Date();
     this.history.push({ ...this.currentSettings });
 
-    const updatedProposal = await prisma.makerCheckerConfigChange.update({
+    const updatedProposal = await this.prisma.makerCheckerConfigChange.update({
       where: { id: proposalId },
       data: {
         status: 'APPROVED',
@@ -98,14 +97,14 @@ export class ConfigurationService {
   }
 
   async getPendingProposals() {
-    return prisma.makerCheckerConfigChange.findMany({
+    return this.prisma.makerCheckerConfigChange.findMany({
       where: { status: 'PENDING_APPROVAL' },
       orderBy: { createdAt: 'desc' }
     });
   }
 
   async rejectConfigChange(proposalId: string, rejectingAdminId: string, reason?: string) {
-    const proposal = await prisma.makerCheckerConfigChange.findUnique({
+    const proposal = await this.prisma.makerCheckerConfigChange.findUnique({
       where: { id: proposalId }
     });
 
@@ -122,7 +121,7 @@ export class ConfigurationService {
       });
     }
 
-    const updatedProposal = await prisma.makerCheckerConfigChange.update({
+    const updatedProposal = await this.prisma.makerCheckerConfigChange.update({
       where: { id: proposalId },
       data: {
         status: 'REJECTED',

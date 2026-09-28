@@ -1,15 +1,16 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client/financial';
+import { PrismaService } from '../../database/prisma.service';
 import { EventBusService } from '@workspace/event-bus';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class FinancialOutboxPublisherWorker implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(FinancialOutboxPublisherWorker.name);
   private timer: NodeJS.Timeout | null = null;
 
-  constructor(private readonly eventBus: EventBusService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBusService,
+  ) {}
 
   onModuleInit() {
     this.timer = setInterval(() => this.publishPendingEvents(), 5000);
@@ -23,7 +24,7 @@ export class FinancialOutboxPublisherWorker implements OnModuleInit, OnModuleDes
 
   async publishPendingEvents() {
     try {
-      const pendingEvents = await prisma.outboxEvent.findMany({
+      const pendingEvents = await this.prisma.outboxEvent.findMany({
         where: { status: 'PENDING' },
         take: 20,
         orderBy: { createdAt: 'asc' },
@@ -37,7 +38,7 @@ export class FinancialOutboxPublisherWorker implements OnModuleInit, OnModuleDes
             ...(typeof event.payload === 'object' ? event.payload : { data: event.payload }),
           });
 
-          await prisma.outboxEvent.update({
+          await this.prisma.outboxEvent.update({
             where: { id: event.id },
             data: {
               status: 'PUBLISHED',

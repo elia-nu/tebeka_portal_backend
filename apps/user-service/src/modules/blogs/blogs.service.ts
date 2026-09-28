@@ -5,7 +5,8 @@ import {
   BadRequestException,
   Optional,
 } from '@nestjs/common';
-import { PrismaClient, BlogStatus } from '@prisma/client';
+import { BlogStatus } from '@prisma/client';
+import { PrismaService } from '@workspace/database';
 import { CommunicationServiceClient } from '../../integrations/communication-service.client';
 import { generateSlug, calculateReadingTime } from './utils/slug.util';
 import {
@@ -22,11 +23,10 @@ import { BlogCategoriesService } from './services/blog-categories.service';
 import { BlogModerationService } from './services/blog-moderation.service';
 import { BlogInteractionsService } from './services/blog-interactions.service';
 
-const prisma = new PrismaClient();
-
 @Injectable()
 export class BlogsService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly categoriesService: BlogCategoriesService,
     private readonly moderationService: BlogModerationService,
     private readonly interactionsService: BlogInteractionsService,
@@ -107,7 +107,7 @@ export class BlogsService {
     const status = dto.submitForReview ? BlogStatus.PENDING_REVIEW : BlogStatus.DRAFT;
     const imageUrl = featuredImageUrl || dto.featuredImageUrl || null;
 
-    return prisma.blogPost.create({
+    return this.prisma.blogPost.create({
       data: {
         title: dto.title,
         slug,
@@ -139,7 +139,7 @@ export class BlogsService {
   }
 
   async updateBlog(id: string, authorId: string, role: string, dto: UpdateBlogDto, featuredImageUrl?: string) {
-    const blog = await prisma.blogPost.findUnique({ where: { id } });
+    const blog = await this.prisma.blogPost.findUnique({ where: { id } });
     if (!blog) throw new NotFoundException(`Blog post ${id} not found`);
 
     const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
@@ -168,7 +168,7 @@ export class BlogsService {
       data.featuredImageUrl = dto.featuredImageUrl || null;
     }
 
-    return prisma.blogPost.update({
+    return this.prisma.blogPost.update({
       where: { id },
       data,
       include: {
@@ -179,7 +179,7 @@ export class BlogsService {
   }
 
   async submitBlogForReview(id: string, authorId: string) {
-    const blog = await prisma.blogPost.findUnique({
+    const blog = await this.prisma.blogPost.findUnique({
       where: { id },
       include: { author: { select: { name: true } } },
     });
@@ -193,7 +193,7 @@ export class BlogsService {
       throw new BadRequestException('This blog is already published');
     }
 
-    const updated = await prisma.blogPost.update({
+    const updated = await this.prisma.blogPost.update({
       where: { id },
       data: {
         status: BlogStatus.PENDING_REVIEW,
@@ -204,7 +204,7 @@ export class BlogsService {
     // Notify all active Admins
     setImmediate(async () => {
       try {
-        const admins = await prisma.user.findMany({
+        const admins = await this.prisma.user.findMany({
           where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] }, status: 'ACTIVE' },
           select: { id: true },
         });
@@ -237,7 +237,7 @@ export class BlogsService {
     }
 
     const [items, total] = await Promise.all([
-      prisma.blogPost.findMany({
+      this.prisma.blogPost.findMany({
         where,
         skip,
         take: limit,
@@ -247,7 +247,7 @@ export class BlogsService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.blogPost.count({ where }),
+      this.prisma.blogPost.count({ where }),
     ]);
 
     return {
@@ -260,7 +260,7 @@ export class BlogsService {
   }
 
   async deleteBlog(id: string, authorId: string, role: string) {
-    const blog = await prisma.blogPost.findUnique({ where: { id } });
+    const blog = await this.prisma.blogPost.findUnique({ where: { id } });
     if (!blog) throw new NotFoundException(`Blog post ${id} not found`);
 
     const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
@@ -268,7 +268,7 @@ export class BlogsService {
       throw new ForbiddenException('You do not have permission to delete this blog');
     }
 
-    return prisma.blogPost.delete({ where: { id } });
+    return this.prisma.blogPost.delete({ where: { id } });
   }
 
   // =========================================================================
@@ -326,7 +326,7 @@ export class BlogsService {
     }
 
     const [items, total] = await Promise.all([
-      prisma.blogPost.findMany({
+      this.prisma.blogPost.findMany({
         where,
         skip,
         take: limit,
@@ -344,7 +344,7 @@ export class BlogsService {
         },
         orderBy,
       }),
-      prisma.blogPost.count({ where }),
+      this.prisma.blogPost.count({ where }),
     ]);
 
     return {
@@ -357,7 +357,7 @@ export class BlogsService {
   }
 
   async getPublicBlogBySlugOrId(slugOrId: string, currentUserId?: string) {
-    const blog = await prisma.blogPost.findFirst({
+    const blog = await this.prisma.blogPost.findFirst({
       where: {
         OR: [{ slug: slugOrId }, { id: slugOrId }],
         status: BlogStatus.PUBLISHED,
@@ -400,14 +400,14 @@ export class BlogsService {
     if (!blog) throw new NotFoundException(`Published blog post not found`);
 
     // Increment views count
-    await prisma.blogPost.update({
+    await this.prisma.blogPost.update({
       where: { id: blog.id },
       data: { viewsCount: { increment: 1 } },
     });
 
     let hasLiked = false;
     if (currentUserId) {
-      const userLike = await prisma.blogLike.findUnique({
+      const userLike = await this.prisma.blogLike.findUnique({
         where: { blogId_userId: { blogId: blog.id, userId: currentUserId } },
       });
       hasLiked = !!userLike;

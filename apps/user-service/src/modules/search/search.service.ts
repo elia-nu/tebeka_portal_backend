@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '@workspace/database';
 
 @Injectable()
 export class SearchService {
+  constructor(private readonly prisma: PrismaService) {}
   async searchUsers(query: any) {
     const q = query.q || '';
-    const users = await prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       where: {
         OR: [
           { email: { contains: q, mode: 'insensitive' } },
@@ -22,7 +21,7 @@ export class SearchService {
 
   async searchAttorneys(query: any) {
     const q = query.q || '';
-    const attorneys = await prisma.attorneyProfile.findMany({
+    const attorneys = await this.prisma.attorneyProfile.findMany({
       where: {
         OR: [
           { city: { contains: q, mode: 'insensitive' } },

@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AppLoggerService } from '@workspace/logger';
-import { prisma } from '../auth-shared/prisma';
+import { PrismaService } from '@workspace/database';
 import { getSmtpTransporter } from '../auth-shared/mailer.util';
 import { OTP_HASH_SALT_ROUNDS } from '../auth-shared/constants';
 import { generateNumericOtp } from '../auth-shared/otp-code.util';
@@ -11,9 +11,10 @@ export type EmailStatusState = 'EXISTING_REGISTERED' | 'VERIFIED_PENDING_REGISTR
 
 @Injectable()
 export class EmailVerificationService {
-  private prisma = prisma;
-
-  constructor(private readonly logger: AppLoggerService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly logger: AppLoggerService,
+  ) {}
 
   /**
    * Check status of email:

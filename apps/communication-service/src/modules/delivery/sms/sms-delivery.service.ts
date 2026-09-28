@@ -1,19 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient, QueueJobStatus, NotificationChannel } from '@prisma/client/communication';
+import { QueueJobStatus, NotificationChannel } from '@prisma/client/communication';
+import { PrismaService } from '../../../database/prisma.service';
 import { AppLoggerService } from '@workspace/logger';
 import { SmsService } from '@workspace/sms';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class SmsDeliveryService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly smsService: SmsService,
     private readonly logger: AppLoggerService
   ) {}
 
   async sendSmsJob(jobId: string) {
-    const job = await prisma.sMSQueue.findUnique({
+    const job = await this.prisma.sMSQueue.findUnique({
       where: { id: jobId },
       include: { notification: true },
     });
@@ -32,7 +32,7 @@ export class SmsDeliveryService {
         throw new Error(result.error);
       }
 
-      await prisma.sMSQueue.update({
+      await this.prisma.sMSQueue.update({
         where: { id: jobId },
         data: {
           status: QueueJobStatus.COMPLETED,
@@ -40,7 +40,7 @@ export class SmsDeliveryService {
         },
       });
 
-      await prisma.notificationLog.create({
+      await this.prisma.notificationLog.create({
         data: {
           notificationId: job.notificationId,
           channel: NotificationChannel.SMS,
@@ -63,7 +63,7 @@ export class SmsDeliveryService {
       this.logger.error(`[SMS-DELIVERY] Failed dispatching SMS job ${jobId} to ${job.recipientPhone}: ${error?.message || error}`, error?.stack, 'SmsDeliveryService');
 
       try {
-        await prisma.sMSQueue.update({
+        await this.prisma.sMSQueue.update({
           where: { id: jobId },
           data: {
             status: isDeadLetter ? QueueJobStatus.DEAD_LETTER : QueueJobStatus.FAILED,
@@ -73,7 +73,7 @@ export class SmsDeliveryService {
           },
         });
 
-        await prisma.notificationLog.create({
+        await this.prisma.notificationLog.create({
           data: {
             notificationId: job.notificationId,
             channel: NotificationChannel.SMS,
@@ -90,7 +90,7 @@ export class SmsDeliveryService {
   }
 
   async processPendingSmsJobs() {
-    const pendingJobs = await prisma.sMSQueue.findMany({
+    const pendingJobs = await this.prisma.sMSQueue.findMany({
       where: {
         status: { in: [QueueJobStatus.PENDING, QueueJobStatus.FAILED] },
         nextAttemptAt: { lte: new Date() },

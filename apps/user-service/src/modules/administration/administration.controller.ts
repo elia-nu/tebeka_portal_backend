@@ -1,12 +1,10 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
 import { AdministrationService } from './administration.service';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
-@AllowAnonymous()
-@Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'SUPER_ADMIN')
+@Controller('admin')
 export class AdministrationController {
   constructor(private readonly administrationService: AdministrationService) {}
 
@@ -39,7 +37,7 @@ export class AdministrationController {
     return this.administrationService.adminSuspendUserReasoned(id, {
       reasonCode: body.reasonCode,
       adminNote: body.adminNote,
-      adminId: req.user?.id || 'super-admin-1',
+      adminId: req.user.id,
       ipAddress: req.ip
     });
   }

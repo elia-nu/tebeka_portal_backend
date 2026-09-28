@@ -1,14 +1,16 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { PrismaClient, RefundStatus, PaymentStatus } from '@prisma/client/financial';
+import { RefundStatus, PaymentStatus } from '@prisma/client/financial';
+import { PrismaService } from '../../database/prisma.service';
 import { EventBusService } from '@workspace/event-bus';
-
-const prisma = new PrismaClient();
 
 @Injectable()
 export class FinancialEventsConsumer implements OnModuleInit {
   private readonly logger = new Logger(FinancialEventsConsumer.name);
 
-  constructor(private readonly eventBus: EventBusService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBusService,
+  ) {}
 
   onModuleInit() {
     this.subscribeToEvents();
@@ -19,7 +21,7 @@ export class FinancialEventsConsumer implements OnModuleInit {
     this.eventBus.subscribeIdempotent(
       'BOOKING_CANCELLED',
       'financial-service',
-      prisma,
+      this.prisma,
       async (data: any) => {
         this.logger.log(
           `Handling BOOKING_CANCELLED event for booking: ${data.bookingId}, refund: ${data.refundPercentage}%`
@@ -27,7 +29,7 @@ export class FinancialEventsConsumer implements OnModuleInit {
         const bookingId = data.bookingId;
         if (!bookingId) return;
 
-        const payment = await prisma.payment.findFirst({
+        const payment = await this.prisma.payment.findFirst({
           where: { bookingId, status: PaymentStatus.COMPLETED },
         });
 
@@ -45,7 +47,7 @@ export class FinancialEventsConsumer implements OnModuleInit {
         const originalAmount = Number(payment.amount);
         const refundAmount = (originalAmount * refundPercentage) / 100;
 
-        await prisma.$transaction(async (tx) => {
+        await this.prisma.$transaction(async (tx) => {
           // 1. Create PENDING Refund Record for Manual Admin/Attorney Review
           const refund = await tx.refund.create({
             data: {
@@ -86,7 +88,7 @@ export class FinancialEventsConsumer implements OnModuleInit {
     this.eventBus.subscribeIdempotent(
       'BOOKING_NOSHOW',
       'financial-service',
-      prisma,
+      this.prisma,
       async (data: any) => {
         this.logger.log(
           `Handling BOOKING_NOSHOW event for booking: ${data.bookingId}, fault: ${data.faultParty}`
@@ -94,7 +96,7 @@ export class FinancialEventsConsumer implements OnModuleInit {
         const bookingId = data.bookingId;
         if (!bookingId) return;
 
-        const payment = await prisma.payment.findFirst({
+        const payment = await this.prisma.payment.findFirst({
           where: { bookingId, status: PaymentStatus.COMPLETED },
         });
 
@@ -102,7 +104,7 @@ export class FinancialEventsConsumer implements OnModuleInit {
 
         if (data.faultParty === 'ATTORNEY') {
           const refundAmount = Number(payment.amount);
-          await prisma.$transaction(async (tx) => {
+          await this.prisma.$transaction(async (tx) => {
             const refund = await tx.refund.create({
               data: {
                 paymentId: payment.id,

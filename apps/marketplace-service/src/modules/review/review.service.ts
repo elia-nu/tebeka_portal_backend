@@ -1,17 +1,17 @@
 import { Injectable, BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaClient, BookingStatus, ReviewStatus } from '@prisma/client/marketplace';
-
-const prisma = new PrismaClient();
+import { BookingStatus, ReviewStatus } from '@prisma/client/marketplace';
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class ReviewService {
+  constructor(private readonly prisma: PrismaService) {}
   async createReview(bookingId: string, data: any, clientId: string) {
     if (!data.rating || data.rating < 1 || data.rating > 5) {
       throw new BadRequestException('Rating must be an integer between 1 and 5');
     }
 
     // Strict Interactive Transaction: All reads, validations, writes, and event emission inside tx
-    return prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({
         where: { id: bookingId },
       });
@@ -101,13 +101,13 @@ export class ReviewService {
     const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const [items, total] = await Promise.all([
-      prisma.review.findMany({
+      this.prisma.review.findMany({
         where,
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
       }),
-      prisma.review.count({ where }),
+      this.prisma.review.count({ where }),
     ]);
 
     const avgRating = total > 0 ? (items.reduce((sum, r) => sum + r.rating, 0) / items.length).toFixed(2) : 0;
@@ -120,14 +120,14 @@ export class ReviewService {
       throw new BadRequestException('Rebuttal response text is required');
     }
 
-    const review = await prisma.review.findUnique({ where: { id: reviewId } });
+    const review = await this.prisma.review.findUnique({ where: { id: reviewId } });
     if (!review) throw new NotFoundException(`Review ${reviewId} not found`);
 
     if (review.attorneyId !== attorneyId) {
       throw new BadRequestException('Only the reviewed attorney can submit a rebuttal response.');
     }
 
-    return prisma.review.update({
+    return this.prisma.review.update({
       where: { id: reviewId },
       data: {
         rebuttal: rebuttalText.trim(),
@@ -137,20 +137,20 @@ export class ReviewService {
   }
 
   async updateModerationStatus(reviewId: string, status: ReviewStatus, adminId: string) {
-    const review = await prisma.review.findUnique({ where: { id: reviewId } });
+    const review = await this.prisma.review.findUnique({ where: { id: reviewId } });
     if (!review) throw new NotFoundException(`Review ${reviewId} not found`);
 
-    return prisma.review.update({
+    return this.prisma.review.update({
       where: { id: reviewId },
       data: { status },
     });
   }
 
   async reportReview(reviewId: string, data: { reason: string }, reportedBy: string) {
-    const review = await prisma.review.findUnique({ where: { id: reviewId } });
+    const review = await this.prisma.review.findUnique({ where: { id: reviewId } });
     if (!review) throw new NotFoundException(`Review ${reviewId} not found`);
 
-    return prisma.reviewReport.create({
+    return this.prisma.reviewReport.create({
       data: {
         reviewId,
         reportedBy,

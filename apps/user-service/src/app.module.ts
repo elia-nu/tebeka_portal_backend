@@ -1,12 +1,13 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
+import { AuthModule as SharedAuthModule } from '@workspace/auth';
 import { auth } from './auth';
 import { AppConfigModule } from '@workspace/config';
 import { AppLoggerModule, AppLoggerService, CorrelationIdMiddleware, HttpLoggingInterceptor } from '@workspace/logger';
 import { EventBusModule } from '@workspace/event-bus';
 import { CacheModule } from '@workspace/cache';
-import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware, SanitizeResponseInterceptor } from '@workspace/common';
+import { MetricsController, MetricsInterceptor, MetricsModule, TracingMiddleware, SanitizeResponseInterceptor, AppHealthModule } from '@workspace/common';
 
 import { UserAuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -29,9 +30,11 @@ import { UserEventsModule } from './modules/events/user-events.module';
 @Module({
   imports: [
     AuthModule.forRoot({ auth }),
+    SharedAuthModule,
     AppConfigModule,
     AppLoggerModule,
     MetricsModule,
+    AppHealthModule,
     EventBusModule,
     CacheModule,
     DatabaseModule,
