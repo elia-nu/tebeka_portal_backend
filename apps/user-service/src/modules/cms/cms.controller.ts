@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Req, Header } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Req, Header } from '@nestjs/common';
 import { CmsService } from './cms.service';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
@@ -8,14 +8,20 @@ export class CmsController {
 
   @AllowAnonymous()
   @Get('public/pages')
-  async getPublicPages() {
-    return this.cmsService.getPublicPages();
+  async getPublicPages(@Query('locale') locale?: string) {
+    return this.cmsService.getPublicPages(locale || 'en');
   }
 
   @AllowAnonymous()
   @Get('public/pages/:slug')
-  async getPublicPageBySlug(@Param('slug') slug: string) {
-    return this.cmsService.getPublicPageBySlug(slug);
+  async getPublicPageBySlug(@Param('slug') slug: string, @Query('locale') locale?: string) {
+    return this.cmsService.getPublicPageBySlug(slug, locale || 'en');
+  }
+
+  @AllowAnonymous()
+  @Get('public/stats/summary')
+  async getPublicStatsSummary() {
+    return this.cmsService.getPublicStatsSummary();
   }
 
   @AllowAnonymous()
