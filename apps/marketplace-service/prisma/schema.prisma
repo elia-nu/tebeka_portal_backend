@@ -95,6 +95,7 @@ enum TicketStatus {
 
 model PracticeArea {
   id                    String                 @id @default(uuid())
+  key                   String?                @unique
   nameEn                String                 @map("name_en")
   nameAm                String                 @map("name_am")
   descriptionEn         String?                @map("description_en")
@@ -207,6 +208,10 @@ model Booking {
   rescheduleCount  Int                 @default(0) @map("reschedule_count")
   noShowReportedBy String?             @map("no_show_reported_by")
   noShowReason     String?             @map("no_show_reason")
+  policyVersion    String              @default("v3.0-OQ1/2") @map("policy_version")
+  cancelledByRole  String?             @map("cancelled_by_role")
+  refundTier       String?             @map("refund_tier")
+  refundAmountSantim BigInt?           @map("refund_amount_santim")
   createdAt        DateTime            @default(now()) @map("created_at")
 
   bookingEvents    BookingEvent[]
@@ -338,6 +343,8 @@ model CaseDocument {
   fileKey      String       @map("file_key")
   mimeType     String       @map("mime_type")
   size         Int
+  sha256       String?      @map("sha256")
+  isEncrypted  Boolean      @default(true) @map("is_encrypted")
   documentType DocumentType @default(CASE_DOCUMENT) @map("document_type")
   isTemplate   Boolean      @default(false) @map("is_template")
   version      Int          @default(1)
@@ -440,4 +447,15 @@ model ProcessedEvent {
 
   @@unique([eventId, consumerName])
   @@map("processed_events")
+}
+
+model NotifyMeSubscription {
+  id             String   @id @default(uuid())
+  clientId       String   @map("client_id")
+  filterCriteria Json     @map("filter_criteria")
+  isActive       Boolean  @default(true) @map("is_active")
+  notifiedAt     DateTime? @map("notified_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("notify_me_subscriptions")
 }

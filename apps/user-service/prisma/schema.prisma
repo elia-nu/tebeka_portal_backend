@@ -354,6 +354,7 @@ model AttorneyProfile {
   hasVerifiedBadge      Boolean            @default(false) @map("has_verified_badge")
   credentialClaimsMatch Boolean            @default(false) @map("credential_claims_match")
   profileCompleteness   Int                @default(0) @map("profile_completeness")
+  missingCompletenessFields String[]         @default([]) @map("missing_completeness_fields")
   rating                Float              @default(0.0)
   reviewCount           Int                @default(0) @map("review_count")
   totalReviews          Int                @default(0) @map("total_reviews")
@@ -452,6 +453,7 @@ model VerificationCase {
   isSlaPaused        Boolean                 @default(false) @map("is_sla_paused")
   slaPausedAt        DateTime?               @map("sla_paused_at")
   slaResumedAt       DateTime?               @map("sla_resumed_at")
+  slaBreached        Boolean                 @default(false) @map("sla_breached")
   submittedAt        DateTime                @default(now()) @map("submitted_at")
   verifiedAt         DateTime?               @map("verified_at")
   rejectedReason     String?                 @map("rejected_reason")
@@ -541,14 +543,18 @@ model UserPreference {
 }
 
 model AdminAction {
-  id        String   @id @default(uuid())
-  adminId   String   @map("admin_id")
-  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  action    String
-  entity    String
-  entityId  String   @map("entity_id")
-  ipAddress String?  @map("ip_address")
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  adminId     String   @map("admin_id")
+  admin       User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action      String
+  entity      String
+  entityId    String   @map("entity_id")
+  reasonCode  String?  @map("reason_code")
+  adminNote   String?  @map("admin_note")
+  beforeState Json?    @map("before_state")
+  afterState  Json?    @map("after_state")
+  ipAddress   String?  @map("ip_address")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("admin_actions")
 }

@@ -154,11 +154,13 @@ model Message {
   deletedForIds  String[]      @default([]) @map("deleted_for_ids")
   replyToId      String?       @map("reply_to_id")
   metadata       Json?
+  reportCategory String?       @map("report_category")
   sentAt         DateTime      @default(now()) @map("sent_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
 
   attachments    MessageAttachment[]
   reads          MessageRead[]
+  reports        MessageReport[]
 
   @@index([conversationId, sentAt])
   @@index([senderId])
@@ -187,6 +189,22 @@ model MessageRead {
 
   @@id([messageId, userId])
   @@map("message_reads")
+}
+
+model MessageReport {
+  id          String   @id @default(uuid())
+  messageId   String   @map("message_id")
+  message     Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  reporterId  String   @map("reporter_id")
+  category    String
+  actionTaken String?  @map("action_taken")
+  resolvedBy  String?  @map("resolved_by")
+  resolvedAt  DateTime? @map("resolved_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([messageId])
+  @@index([reporterId])
+  @@map("message_reports")
 }
 
 // --------------------------------------------------------
@@ -222,20 +240,22 @@ model Notification {
 }
 
 model NotificationTemplate {
-  id          String                @id @default(uuid())
-  key         String                @unique
-  name        String
-  description String?
-  channels    NotificationChannel[]
-  subjectEn   String?               @map("subject_en")
-  subjectAm   String?               @map("subject_am")
-  bodyEn      String                @map("body_en")
-  bodyAm      String                @map("body_am")
-  variables   String[]              @default([])
-  isActive    Boolean               @default(true) @map("is_active")
-  version     Int                   @default(1)
-  createdAt   DateTime              @default(now()) @map("created_at")
-  updatedAt   DateTime              @updatedAt @map("updated_at")
+  id                String                @id @default(uuid())
+  key               String                @unique
+  name              String
+  description       String?
+  channels          NotificationChannel[]
+  subjectEn         String?               @map("subject_en")
+  subjectAm         String?               @map("subject_am")
+  bodyEn            String                @map("body_en")
+  bodyAm            String                @map("body_am")
+  variables         String[]              @default([])
+  variablesSchema   Json?                 @map("variables_schema")
+  quietHoursExempt  Boolean               @default(false) @map("quiet_hours_exempt")
+  isActive          Boolean               @default(true) @map("is_active")
+  version           Int                   @default(1)
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
 
   @@map("notification_templates")
 }
