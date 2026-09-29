@@ -28,7 +28,7 @@ export class BookingCancellationService {
         throw new BadRequestException('Cannot cancel a completed consultation');
       }
 
-      // Tiered cancellation & refund policy calculation (BR-BOOK-03)
+      // Tiered cancellation & refund policy calculation (SRS v3.0 BR-BOOK-02/03 & OQ#1/2)
       const dateStr =
         typeof booking.bookingDate === 'string'
           ? (booking.bookingDate as string).split('T')[0]
@@ -41,26 +41,34 @@ export class BookingCancellationService {
       const isAttorneyCancelling = userId === booking.attorneyId;
 
       if (isAttorneyCancelling) {
-        // Attorney cancels -> client receives 100% full refund
+        // Attorney cancels -> client receives 100% full refund + reliability tracking penalty
         refundPercentage = 100;
         refundPolicyTier = 'ATTORNEY_FULL_REFUND';
       } else {
-        // Client tiered cancellation policy
+        // Client cancellation: >=24h 100% full refund; <24h 50% partial refund per governing SRS v3.0 policy
         if (hoursUntilAppointment >= 24) {
           refundPercentage = 100;
           refundPolicyTier = 'FULL_24H_PRIOR';
-        } else if (hoursUntilAppointment >= 12) {
-          refundPercentage = 50;
-          refundPolicyTier = 'PARTIAL_12H_TO_24H';
         } else {
-          refundPercentage = 0;
-          refundPolicyTier = 'LATE_LESS_THAN_12H';
+          refundPercentage = 50;
+          refundPolicyTier = 'PARTIAL_UNDER_24H';
         }
       }
 
+      const cancelledByRole = isAttorneyCancelling ? 'ATTORNEY' : 'CLIENT';
+      const policyVersion = 'v3.0-OQ1/2';
+      const originalAmountSantim = BigInt(150000); // 1500 ETB = 150,000 santim
+      const refundAmountSantim = (originalAmountSantim * BigInt(refundPercentage)) / BigInt(100);
+
       const updated = await tx.booking.update({
         where: { id },
-        data: { status: BookingStatus.CANCELLED },
+        data: {
+          status: BookingStatus.CANCELLED,
+          policyVersion,
+          cancelledByRole,
+          refundTier: refundPolicyTier,
+          refundAmountSantim,
+        },
       });
 
       await tx.bookingEvent.create({
@@ -85,9 +93,12 @@ export class BookingCancellationService {
             clientId: booking.clientId,
             attorneyId: booking.attorneyId,
             cancelledBy: userId,
+            cancelledByRole,
+            policyVersion,
             isAttorneyCancelling,
             refundPercentage,
             refundPolicyTier,
+            refundAmountSantim: refundAmountSantim.toString(),
             reason: reason || 'Cancelled by user',
           },
         },
@@ -102,8 +113,12 @@ export class BookingCancellationService {
 
       return {
         ...updated,
+        policyVersion,
+        cancelledByRole,
         refundPercentage,
         refundPolicyTier,
+        refundTier: refundPolicyTier,
+        refundAmountSantim,
       };
     });
   }

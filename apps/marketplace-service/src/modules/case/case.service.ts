@@ -510,4 +510,67 @@ export class CaseService {
         : 'Agreement pending execution. Both client and attorney must sign the Non-Circumvention Agreement to unlock direct messaging.',
     };
   }
+
+  // Conflict of Interest Gate & Case Acceptance Decision (BR-CASE-01 / TC-CASE-01)
+  async recordCaseDecision(
+    caseId: string,
+    decision: 'ACCEPT' | 'DECLINE',
+    coiDeclaration: { answers?: Record<string, any>; hasConflict?: boolean; declineReason?: string },
+    attorneyId: string
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const caseItem = await tx.case.findUnique({ where: { id: caseId } });
+      if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
+
+      if (caseItem.attorneyId !== attorneyId) {
+        throw new ForbiddenException('Only the assigned attorney can record an acceptance decision on this case.');
+      }
+
+      if (decision === 'DECLINE') {
+        const updated = await tx.case.update({
+          where: { id: caseId },
+          data: {
+            status: CaseStatus.CLOSED,
+            closedAt: new Date(),
+          },
+        });
+        await tx.outboxEvent.create({
+          data: {
+            aggregateType: 'Case',
+            aggregateId: caseId,
+            eventType: 'CASE_DECLINED',
+            payload: { caseId, attorneyId, reason: coiDeclaration.declineReason || 'Declined by attorney' },
+          },
+        });
+        return { status: 'DECLINED', message: 'Case declined successfully' };
+      }
+
+      // Conflict of Interest Check (BR-CASE-01): Blocks acceptance on declared conflict
+      if (coiDeclaration.hasConflict) {
+        throw new BadRequestException({
+          code: 'CONFLICT_OF_INTEREST_DECLARED',
+          message: 'Acceptance blocked: Attorney indicated a Conflict of Interest. Client will be offered re-matching.'
+        });
+      }
+
+      const updated = await tx.case.update({
+        where: { id: caseId },
+        data: {
+          status: CaseStatus.IN_PROGRESS,
+          conflictAcknowledged: true,
+        },
+      });
+
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'Case',
+          aggregateId: caseId,
+          eventType: 'CASE_ACCEPTED',
+          payload: { caseId, attorneyId, clientId: caseItem.clientId },
+        },
+      });
+
+      return { status: 'ACCEPTED', message: 'Case accepted successfully', case: updated };
+    });
+  }
 }
