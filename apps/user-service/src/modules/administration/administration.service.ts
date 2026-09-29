@@ -62,13 +62,17 @@ export class AdministrationService {
       data: { status: 'SUSPENDED', verificationStatus: 'SUSPENDED' }
     });
 
-    // 3. Log AdminAction record
+    // 3. Log AdminAction record with reasonCode, adminNote, beforeState, and afterState
     await this.prisma.adminAction.create({
       data: {
         adminId: actionData.adminId,
         action: 'USER_SUSPENDED_REASONED',
         entity: 'User',
         entityId: userId,
+        reasonCode: actionData.reasonCode,
+        adminNote: actionData.adminNote,
+        beforeState: { status: user?.status || 'ACTIVE' },
+        afterState: { status: 'SUSPENDED' },
         ipAddress: actionData.ipAddress
       }
     });
