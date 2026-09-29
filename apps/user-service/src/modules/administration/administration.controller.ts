@@ -1,12 +1,16 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
 import { AdministrationService } from './administration.service';
+import { AttorneyProfileChangeService } from '../attorneys/services/attorney-profile-change.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'SUPER_ADMIN')
 @Controller('admin')
 export class AdministrationController {
-  constructor(private readonly administrationService: AdministrationService) {}
+  constructor(
+    private readonly administrationService: AdministrationService,
+    private readonly attorneyProfileChangeService: AttorneyProfileChangeService
+  ) {}
 
   @Get('users')
   async getAdminUsers(@Query() query: any) {
@@ -80,5 +84,26 @@ export class AdministrationController {
   @Patch('attorneys/:id/suspend')
   async adminSuspendAttorney(@Param('id') id: string) {
     return this.administrationService.adminSuspendAttorney(id);
+  }
+
+  @Get('attorneys/:id/pending-profile-changes')
+  async getPendingProfileChanges(@Param('id') id: string) {
+    return this.attorneyProfileChangeService.getPendingProfileChanges(id);
+  }
+
+  @Patch('attorneys/profile-changes/:changeId/approve')
+  async approveProfileChange(@Param('changeId') changeId: string, @Req() req: any) {
+    const reviewerId = req.user?.id || 'admin-reviewer';
+    return this.attorneyProfileChangeService.approveProfileChange(changeId, reviewerId);
+  }
+
+  @Patch('attorneys/profile-changes/:changeId/reject')
+  async rejectProfileChange(
+    @Param('changeId') changeId: string,
+    @Body() body: { reason: string },
+    @Req() req: any
+  ) {
+    const reviewerId = req.user?.id || 'admin-reviewer';
+    return this.attorneyProfileChangeService.rejectProfileChange(changeId, body.reason, reviewerId);
   }
 }

@@ -20,6 +20,6 @@ import { UsersModule } from '../users/users.module';
     AttorneyProfileChangeService,
     AttorneyGoogleCalendarService,
   ],
-  exports: [AttorneyProfileService, AttorneyVaultService, AttorneyGoogleCalendarService],
+  exports: [AttorneyProfileService, AttorneyVaultService, AttorneyGoogleCalendarService, AttorneyProfileChangeService],
 })
 export class AttorneysModule {}
