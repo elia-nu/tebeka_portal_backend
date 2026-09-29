@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { EventBusService } from '@workspace/event-bus';
 import { GoogleMeetService } from '../integrations/google-meet.service';
+import { DiscoveryService } from '../discovery/discovery.service';
 
 @Injectable()
 export class MarketplaceEventsConsumer implements OnModuleInit {
@@ -10,7 +11,8 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
-    private readonly googleMeetService: GoogleMeetService
+    private readonly googleMeetService: GoogleMeetService,
+    @Optional() private readonly discoveryService?: DiscoveryService
   ) {}
 
   onModuleInit() {
@@ -59,6 +61,39 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
           practiceAreaIds: data.practiceAreaIds || [],
         },
       });
+    });
+
+    this.eventBus.subscribe('ATTORNEY_SUSPENDED', async (data: any) => {
+      const attorneyId = data.attorneyId || data.aggregateId;
+      this.logger.log(`Handling ATTORNEY_SUSPENDED event: removing attorney ${attorneyId} from DiscoveryIndex`);
+      if (!attorneyId) return;
+
+      await this.prisma.discoveryIndex.deleteMany({
+        where: { attorneyId },
+      });
+      this.discoveryService?.clearDiscoveryCache(attorneyId);
+    });
+
+    this.eventBus.subscribe('ATTORNEY_UNVERIFIED', async (data: any) => {
+      const attorneyId = data.attorneyId || data.aggregateId;
+      this.logger.log(`Handling ATTORNEY_UNVERIFIED event: removing attorney ${attorneyId} from DiscoveryIndex`);
+      if (!attorneyId) return;
+
+      await this.prisma.discoveryIndex.deleteMany({
+        where: { attorneyId },
+      });
+      this.discoveryService?.clearDiscoveryCache(attorneyId);
+    });
+
+    this.eventBus.subscribe('USER_SUSPENDED', async (data: any) => {
+      const attorneyId = data.attorneyId || data.userId || data.aggregateId;
+      this.logger.log(`Handling USER_SUSPENDED event: removing attorney ${attorneyId} from DiscoveryIndex`);
+      if (!attorneyId) return;
+
+      await this.prisma.discoveryIndex.deleteMany({
+        where: { attorneyId },
+      });
+      this.discoveryService?.clearDiscoveryCache(attorneyId);
     });
 
     // Cross-Service Saga: Ingest PAYMENT_COMPLETED event from financial-service

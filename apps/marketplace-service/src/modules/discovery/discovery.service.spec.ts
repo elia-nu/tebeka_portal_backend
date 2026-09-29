@@ -101,4 +101,44 @@ describe('DiscoveryService - 60s Cache & Cache Purge', () => {
     await service.getAttorneyDetails('att-1');
     expect(mockPrisma.discoveryIndex.findUnique).toHaveBeenCalledTimes(2);
   });
+
+  it('should purge all cached entries globally when clearDiscoveryCache is called with no arguments', async () => {
+    const query = { page: 1, limit: 10 };
+    await service.getPublicAttorneys(query);
+    await service.getAttorneyDetails('att-1');
+    expect(mockPrisma.discoveryIndex.findMany).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.discoveryIndex.findUnique).toHaveBeenCalledTimes(1);
+
+    // Global purge
+    const res = service.clearDiscoveryCache();
+    expect(res.status).toBe('success');
+    expect(res.message).toBe('Discovery cache purged successfully');
+
+    // Both should query DB again
+    await service.getPublicAttorneys(query);
+    await service.getAttorneyDetails('att-1');
+    expect(mockPrisma.discoveryIndex.findMany).toHaveBeenCalledTimes(2);
+    expect(mockPrisma.discoveryIndex.findUnique).toHaveBeenCalledTimes(2);
+  });
+
+  it('should cache questionnaire flow and invalidate upon cache purge', async () => {
+    const qDto = { matterType: 'Corporate Law', urgency: 'FLEXIBLE', city: 'Addis Ababa' };
+
+    // 1st call -> queries DB
+    const res1 = await service.processQuestionnaire(qDto as any);
+    expect(res1.recommendations.length).toBe(1);
+    expect(mockPrisma.discoveryIndex.findMany).toHaveBeenCalledTimes(1);
+
+    // 2nd call -> served from cache
+    const res2 = await service.processQuestionnaire(qDto as any);
+    expect(res2.recommendations.length).toBe(1);
+    expect(mockPrisma.discoveryIndex.findMany).toHaveBeenCalledTimes(1);
+
+    // Purge cache for attorney
+    service.clearDiscoveryCache('att-1');
+
+    // 3rd call -> queries DB again
+    await service.processQuestionnaire(qDto as any);
+    expect(mockPrisma.discoveryIndex.findMany).toHaveBeenCalledTimes(2);
+  });
 });
