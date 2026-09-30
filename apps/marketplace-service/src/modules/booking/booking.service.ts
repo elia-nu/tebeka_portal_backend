@@ -433,12 +433,17 @@ export class BookingService {
     targetDateStr: string,
     slotDurationMinutes = 60,
   ) {
-    const targetDate = new Date(targetDateStr);
+    const dateParts = targetDateStr.split('-').map(Number);
+    if (dateParts.length !== 3 || dateParts.some(isNaN)) {
+      throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD');
+    }
+    const [year, month, day] = dateParts;
+    const targetDate = new Date(Date.UTC(year, month - 1, day));
     if (isNaN(targetDate.getTime())) {
       throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD');
     }
 
-    const weekday = targetDate.getDay(); // 0 = Sunday, 1 = Monday, ...
+    const weekday = targetDate.getUTCDay(); // 0 = Sunday, 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday, 6 = Saturday
     const dateFormatted = targetDate.toISOString().split('T')[0];
 
     // 1. Check if the date is blocked by an attorney blackout / vacation
@@ -469,9 +474,9 @@ export class BookingService {
       },
     });
 
-    // Fallback default window (09:00 - 17:00 on weekdays) if no explicit custom window stored
-    const workingStartTime = window?.startTime || (weekday >= 1 && weekday <= 5 ? '09:00' : null);
-    const workingEndTime = window?.endTime || (weekday >= 1 && weekday <= 5 ? '17:00' : null);
+    // No hardcoded fallback: if no availability window is configured in DB, attorney is unavailable
+    const workingStartTime = window?.startTime || null;
+    const workingEndTime = window?.endTime || null;
 
     if (!workingStartTime || !workingEndTime) {
       return {
@@ -548,6 +553,7 @@ export class BookingService {
       attorneyId,
       date: dateFormatted,
       weekday,
+      isAvailable: availableSlots.length > 0,
       workingHours: { startTime: workingStartTime, endTime: workingEndTime },
       slotDurationMinutes,
       isGoogleSyncActive,

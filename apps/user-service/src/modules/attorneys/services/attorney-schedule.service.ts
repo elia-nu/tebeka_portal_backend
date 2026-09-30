@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '@workspace/database';
 
 @Injectable()
 export class AttorneyScheduleService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async getPracticeAreas() {
     return [
       { id: 'pa-1', nameEn: 'Corporate Law', nameAm: 'የንግድ ሕግ', icon: 'gavel', sortOrder: 1, isActive: true },
@@ -44,60 +47,147 @@ export class AttorneyScheduleService {
     return dayMap[String(weekday)] || 'Monday';
   }
 
+  private parseWeekday(inputWeekday: any, inputDayOfWeek?: string): { weekday: number; dayOfWeek: string } {
+    if (inputDayOfWeek) {
+      const str = String(inputDayOfWeek).trim().toUpperCase();
+      const strMap: Record<string, number> = {
+        SUNDAY: 0,
+        MONDAY: 1,
+        TUESDAY: 2,
+        WEDNESDAY: 3,
+        THURSDAY: 4,
+        FRIDAY: 5,
+        SATURDAY: 6,
+      };
+      if (strMap[str] !== undefined) {
+        const w = strMap[str];
+        return { weekday: w, dayOfWeek: this.getWeekdayName(w) };
+      }
+    }
+
+    if (inputWeekday !== undefined && inputWeekday !== null) {
+      const num = Number(inputWeekday);
+      if (!isNaN(num)) {
+        const normalized = num % 7;
+        return { weekday: normalized, dayOfWeek: this.getWeekdayName(normalized) };
+      }
+    }
+
+    return { weekday: 1, dayOfWeek: 'Monday' };
+  }
+
+  private async resolveProfile(attorneyIdOrUserId: string) {
+    let profile = await this.prisma.attorneyProfile.findUnique({
+      where: { id: attorneyIdOrUserId },
+    });
+    if (!profile) {
+      profile = await this.prisma.attorneyProfile.findUnique({
+        where: { userId: attorneyIdOrUserId },
+      });
+    }
+    return profile;
+  }
+
   async getAvailability(attorneyId: string) {
-    return [
-      {
-        id: 'av-1',
-        attorneyId,
-        weekday: 1,
-        dayOfWeek: 'Monday',
-        startTime: '09:00',
-        endTime: '17:00',
-        timezone: 'Africa/Addis_Ababa',
-        isAvailable: true,
-      },
-      {
-        id: 'av-2',
-        attorneyId,
-        weekday: 2,
-        dayOfWeek: 'Tuesday',
-        startTime: '09:00',
-        endTime: '17:00',
-        timezone: 'Africa/Addis_Ababa',
-        isAvailable: true,
-      },
-    ];
+    const profile = await this.resolveProfile(attorneyId);
+    const targetId = profile?.id || attorneyId;
+
+    return this.prisma.availabilityWindow.findMany({
+      where: { attorneyId: targetId },
+      orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }],
+    });
   }
 
   async createAvailability(attorneyId: string, data: any) {
-    const weekday = data.weekday !== undefined ? Number(data.weekday) : 1;
-    return {
-      id: `av-${Date.now()}`,
-      attorneyId,
-      weekday,
-      dayOfWeek: data.dayOfWeek || this.getWeekdayName(weekday),
-      startTime: data.startTime || '09:00',
-      endTime: data.endTime || '17:00',
-      timezone: data.timezone || 'Africa/Addis_Ababa',
-      isAvailable: data.isAvailable !== undefined ? data.isAvailable : true,
-      ...data,
-    };
+    const profile = await this.resolveProfile(attorneyId);
+    const targetAttorneyId = profile ? profile.id : attorneyId;
+
+    const { weekday, dayOfWeek } = this.parseWeekday(data.weekday, data.dayOfWeek);
+
+    return this.prisma.availabilityWindow.create({
+      data: {
+        attorneyId: targetAttorneyId,
+        weekday,
+        dayOfWeek: data.dayOfWeek || dayOfWeek,
+        startTime: data.startTime || '09:00',
+        endTime: data.endTime || '17:00',
+        timezone: data.timezone || 'Africa/Addis_Ababa',
+        isAvailable: data.isAvailable !== undefined ? Boolean(data.isAvailable) : true,
+      },
+    });
   }
 
   async updateAvailability(id: string, data: any) {
-    const dayOfWeek = data.weekday !== undefined ? this.getWeekdayName(data.weekday) : data.dayOfWeek;
-    return { id, ...(dayOfWeek ? { dayOfWeek } : {}), ...data };
+    const existing = await this.prisma.availabilityWindow.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`Availability window "${id}" not found`);
+    }
+
+    const updateData: any = {};
+    if (data.weekday !== undefined || data.dayOfWeek !== undefined) {
+      const { weekday, dayOfWeek } = this.parseWeekday(data.weekday ?? existing.weekday, data.dayOfWeek);
+      updateData.weekday = weekday;
+      updateData.dayOfWeek = data.dayOfWeek || dayOfWeek;
+    }
+    if (data.startTime !== undefined) updateData.startTime = data.startTime;
+    if (data.endTime !== undefined) updateData.endTime = data.endTime;
+    if (data.timezone !== undefined) updateData.timezone = data.timezone;
+    if (data.isAvailable !== undefined) updateData.isAvailable = Boolean(data.isAvailable);
+
+    return this.prisma.availabilityWindow.update({
+      where: { id },
+      data: updateData,
+    });
   }
 
   async deleteAvailability(id: string) {
+    const existing = await this.prisma.availabilityWindow.findUnique({ where: { id } });
+    if (!existing) {
+      return { status: 'success', message: `Availability window ${id} deleted` };
+    }
+    await this.prisma.availabilityWindow.delete({ where: { id } });
     return { status: 'success', message: `Availability window ${id} deleted` };
   }
 
   async blockDate(data: any) {
-    return { status: 'success', message: 'Date blocked successfully', blockedDate: data.date };
+    const attorneyId = data.attorneyId;
+    let targetAttorneyId = attorneyId;
+    if (attorneyId) {
+      const profile = await this.resolveProfile(attorneyId);
+      if (profile) targetAttorneyId = profile.id;
+    }
+
+    const date = new Date(data.date);
+    const blackout = await this.prisma.availabilityBlackout.create({
+      data: {
+        attorneyId: targetAttorneyId,
+        startDate: date,
+        endDate: date,
+        reason: data.reason || 'Date blocked',
+      },
+    });
+
+    return { status: 'success', message: 'Date blocked successfully', blackout, blockedDate: data.date };
   }
 
   async setVacation(data: any) {
-    return { status: 'success', message: 'Vacation period set', startDate: data.startDate, endDate: data.endDate };
+    const attorneyId = data.attorneyId;
+    let targetAttorneyId = attorneyId;
+    if (attorneyId) {
+      const profile = await this.resolveProfile(attorneyId);
+      if (profile) targetAttorneyId = profile.id;
+    }
+
+    const blackout = await this.prisma.availabilityBlackout.create({
+      data: {
+        attorneyId: targetAttorneyId,
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
+        reason: data.reason || 'Vacation',
+      },
+    });
+
+    return { status: 'success', message: 'Vacation period set', blackout, startDate: data.startDate, endDate: data.endDate };
   }
 }
+

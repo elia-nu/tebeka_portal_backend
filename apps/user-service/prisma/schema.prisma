@@ -369,6 +369,8 @@ model AttorneyProfile {
   credentials           Credential[]
   verificationCases     VerificationCase[]
   guardedChanges        GuardedChange[]
+  availabilityWindows   AvailabilityWindow[]
+  availabilityBlackouts AvailabilityBlackout[]
 
   @@index([licenseNumber])
   @@index([nationalIdNumber])
@@ -760,3 +762,33 @@ model BlogShare {
   @@index([userId])
   @@map("blog_shares")
 }
+
+model AvailabilityWindow {
+  id          String          @id @default(uuid())
+  attorneyId  String          @map("attorney_id")
+  attorney    AttorneyProfile @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
+  weekday     Int
+  dayOfWeek   String?         @map("day_of_week")
+  startTime   String          @map("start_time")
+  endTime     String          @map("end_time")
+  timezone    String          @default("Africa/Addis_Ababa")
+  isAvailable Boolean         @default(true) @map("is_available")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@map("availability_windows")
+}
+
+model AvailabilityBlackout {
+  id          String          @id @default(uuid())
+  attorneyId  String          @map("attorney_id")
+  attorney    AttorneyProfile @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
+  startDate   DateTime        @map("start_date")
+  endDate     DateTime        @map("end_date")
+  reason      String?
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@map("availability_blackouts")
+}
+

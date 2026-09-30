@@ -109,4 +109,74 @@ describe('BookingService', () => {
       expect(mockPrisma.outboxEvent.create).toHaveBeenCalled();
     });
   });
+
+  describe('getAvailableSlotsForDate (FR-BOOK-01 / Fallback Removal & Timezone Accuracy)', () => {
+    it('should throw BadRequestException if date format is invalid', async () => {
+      await expect(service.getAvailableSlotsForDate('att-1', 'invalid-date')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should return isAvailable=false when attorney has no availability window configured in DB (No Fallback)', async () => {
+      mockPrisma.availabilityBlackout = { findFirst: jest.fn().mockResolvedValue(null) };
+      mockPrisma.availabilityWindow = { findFirst: jest.fn().mockResolvedValue(null) };
+
+      // 2026-10-07 is a Wednesday (weekday: 3)
+      const result = await service.getAvailableSlotsForDate('att-1', '2026-10-07');
+      expect(result.isAvailable).toBe(false);
+      expect(result.availableSlots).toEqual([]);
+      expect(result.reason).toBe('Attorney does not have working hours configured for this day');
+      expect(mockPrisma.availabilityWindow.findFirst).toHaveBeenCalledWith({
+        where: {
+          attorneyId: 'att-1',
+          weekday: 3,
+          isAvailable: true,
+        },
+      });
+    });
+
+    it('should return slots when availability window exists for Wednesday (2026-10-07 / weekday: 3)', async () => {
+      mockPrisma.availabilityBlackout = { findFirst: jest.fn().mockResolvedValue(null) };
+      mockPrisma.availabilityWindow = {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'win-1',
+          attorneyId: 'att-1',
+          weekday: 3,
+          startTime: '10:00',
+          endTime: '13:00',
+          isAvailable: true,
+        }),
+      };
+      mockPrisma.booking.findMany.mockResolvedValue([]);
+
+      const result = await service.getAvailableSlotsForDate('att-1', '2026-10-07', 60);
+      expect(result.isAvailable).toBe(true);
+      expect(result.availableSlots).toEqual([
+        { startTime: '10:00', endTime: '11:00' },
+        { startTime: '11:00', endTime: '12:00' },
+        { startTime: '12:00', endTime: '13:00' },
+      ]);
+      expect(mockPrisma.availabilityWindow.findFirst).toHaveBeenCalledWith({
+        where: {
+          attorneyId: 'att-1',
+          weekday: 3,
+          isAvailable: true,
+        },
+      });
+    });
+
+    it('should return isAvailable=false when date is within an availability blackout', async () => {
+      mockPrisma.availabilityBlackout = {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'blk-1',
+          attorneyId: 'att-1',
+          reason: 'Annual Vacation',
+        }),
+      };
+
+      const result = await service.getAvailableSlotsForDate('att-1', '2026-10-07');
+      expect(result.isAvailable).toBe(false);
+      expect(result.availableSlots).toEqual([]);
+      expect(result.reason).toBe('Annual Vacation');
+    });
+  });
 });
+
