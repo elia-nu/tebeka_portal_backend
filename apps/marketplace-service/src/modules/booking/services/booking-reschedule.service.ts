@@ -8,12 +8,14 @@ import {
 import { BookingStatus } from '@prisma/client/marketplace';
 import { PrismaService } from '../../../database/prisma.service';
 import { GoogleMeetService } from '../../integrations/google-meet.service';
+import { UserServiceClient } from '../../../integrations/user-service.client';
 
 @Injectable()
 export class BookingRescheduleService {
   constructor(
     private readonly prisma: PrismaService,
     @Optional() private readonly googleMeetService?: GoogleMeetService,
+    @Optional() private readonly userServiceClient?: UserServiceClient,
   ) {}
 
   async rescheduleBooking(
@@ -22,6 +24,7 @@ export class BookingRescheduleService {
     userId: string,
   ) {
     const bookingDate = new Date(data.bookingDate);
+    const dateStr = typeof data.bookingDate === 'string' ? data.bookingDate.split('T')[0] : data.bookingDate.toISOString().split('T')[0];
 
     return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({
@@ -30,6 +33,39 @@ export class BookingRescheduleService {
 
       if (!booking) {
         throw new NotFoundException(`Booking ${id} not found`);
+      }
+
+      // Check Google Calendar Free/Busy if attorney has connected their calendar
+      if (this.userServiceClient && this.googleMeetService) {
+        try {
+          const attorneyProfile = await this.userServiceClient.getAttorneyProfile(booking.attorneyId);
+          if (attorneyProfile?.isGoogleSyncEnabled && attorneyProfile?.googleRefreshToken) {
+            const reqSlotStart = new Date(`${dateStr}T${data.startTime}:00+03:00`);
+            const reqSlotEnd = new Date(`${dateStr}T${data.endTime}:00+03:00`);
+            const dayStart = new Date(`${dateStr}T00:00:00+03:00`);
+            const dayEnd = new Date(`${dateStr}T23:59:59+03:00`);
+
+            const busyBlocks = await this.googleMeetService.getAttorneyBusyIntervals(
+              attorneyProfile.googleRefreshToken,
+              dayStart,
+              dayEnd,
+              attorneyProfile.googleCalendarId || 'primary',
+            );
+
+            const hasGoogleConflict = busyBlocks.some(
+              (b) => reqSlotStart < b.end && reqSlotEnd > b.start,
+            );
+
+            if (hasGoogleConflict) {
+              throw new ConflictException({
+                code: 'GOOGLE_CALENDAR_BUSY',
+                message: 'The attorney is unavailable at the selected reschedule time (busy on Google Calendar).',
+              });
+            }
+          }
+        } catch (err: any) {
+          if (err instanceof ConflictException) throw err;
+        }
       }
 
       const conflict = await tx.booking.findFirst({
