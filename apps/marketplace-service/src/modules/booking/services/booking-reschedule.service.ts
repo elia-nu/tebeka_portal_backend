@@ -18,13 +18,25 @@ export class BookingRescheduleService {
     @Optional() private readonly userServiceClient?: UserServiceClient,
   ) {}
 
+  private parseTimeToMinutes(timeStr: string): number {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + (minutes || 0);
+  }
+
   async rescheduleBooking(
     id: string,
     data: { bookingDate: string; startTime: string; endTime: string },
     userId: string,
   ) {
-    const bookingDate = new Date(data.bookingDate);
     const dateStr = typeof data.bookingDate === 'string' ? data.bookingDate.split('T')[0] : data.bookingDate.toISOString().split('T')[0];
+    const dateParts = dateStr.split('-').map(Number);
+    if (dateParts.length !== 3 || dateParts.some(isNaN)) {
+      throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD');
+    }
+    const [year, month, day] = dateParts;
+    const normalizedBookingDate = new Date(Date.UTC(year, month - 1, day));
+    const dayStart = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    const dayEnd = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
     return this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({
@@ -42,8 +54,6 @@ export class BookingRescheduleService {
           if (attorneyProfile?.isGoogleSyncEnabled && attorneyProfile?.googleRefreshToken) {
             const reqSlotStart = new Date(`${dateStr}T${data.startTime}:00+03:00`);
             const reqSlotEnd = new Date(`${dateStr}T${data.endTime}:00+03:00`);
-            const dayStart = new Date(`${dateStr}T00:00:00+03:00`);
-            const dayEnd = new Date(`${dateStr}T23:59:59+03:00`);
 
             const busyBlocks = await this.googleMeetService.getAttorneyBusyIntervals(
               attorneyProfile.googleRefreshToken,
@@ -68,24 +78,35 @@ export class BookingRescheduleService {
         }
       }
 
-      const conflict = await tx.booking.findFirst({
+      const existingBookingsOnDate = await tx.booking.findMany({
         where: {
           attorneyId: booking.attorneyId,
-          bookingDate,
-          startTime: data.startTime,
+          bookingDate: { gte: dayStart, lte: dayEnd },
           id: { not: id },
-          status: { in: [BookingStatus.ACCEPTED_PENDING_PAYMENT, BookingStatus.CONFIRMED] },
+          status: { in: [BookingStatus.ACCEPTED_PENDING_PAYMENT, BookingStatus.CONFIRMED, BookingStatus.REQUESTED] },
         },
       });
 
-      if (conflict) {
-        throw new ConflictException('The requested reschedule time slot is unavailable.');
+      const newStartMinutes = this.parseTimeToMinutes(data.startTime);
+      const newEndMinutes = this.parseTimeToMinutes(data.endTime);
+
+      const hasBookingConflict = existingBookingsOnDate.some((b) => {
+        const bStart = this.parseTimeToMinutes(b.startTime);
+        const bEnd = this.parseTimeToMinutes(b.endTime);
+        return newStartMinutes < bEnd && newEndMinutes > bStart;
+      });
+
+      if (hasBookingConflict) {
+        throw new ConflictException({
+          code: 'BOOKING_SLOT_CONFLICT',
+          message: 'The requested reschedule time slot is already reserved / booked.',
+        });
       }
 
       const updated = await tx.booking.update({
         where: { id },
         data: {
-          bookingDate,
+          bookingDate: normalizedBookingDate,
           startTime: data.startTime,
           endTime: data.endTime,
           status: BookingStatus.ACCEPTED_PENDING_PAYMENT,

@@ -256,7 +256,105 @@ describe('BookingService', () => {
       expect(result.availableSlots).toEqual([]);
       expect(result.reason).toBe('Annual Vacation');
     });
+
+    it('should filter out reserved/booked slots (CONFIRMED, ACCEPTED_PENDING_PAYMENT, REQUESTED)', async () => {
+      mockPrisma.availabilityBlackout = { findFirst: jest.fn().mockResolvedValue(null) };
+      mockPrisma.availabilityWindow = {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'win-1',
+          attorneyId: 'att-1',
+          weekday: 3,
+          startTime: '09:00',
+          endTime: '12:00',
+          isAvailable: true,
+        }),
+      };
+      // 10:00 - 11:00 is already reserved in status REQUESTED
+      mockPrisma.booking.findMany.mockResolvedValue([
+        {
+          id: 'book-reserved-1',
+          attorneyId: 'att-1',
+          bookingDate: new Date('2026-10-07T00:00:00.000Z'),
+          startTime: '10:00',
+          endTime: '11:00',
+          status: BookingStatus.REQUESTED,
+        },
+      ]);
+
+      const result = await service.getAvailableSlotsForDate('att-1', '2026-10-07', 60);
+      expect(result.isAvailable).toBe(true);
+      expect(result.availableSlotsCount).toBe(2);
+      expect(result.availableSlots).toEqual([
+        { startTime: '09:00', endTime: '10:00' },
+        { startTime: '11:00', endTime: '12:00' },
+      ]);
+    });
+
+    it('should mark full date as isAvailable=false when all candidate slots are reserved', async () => {
+      mockPrisma.availabilityBlackout = { findFirst: jest.fn().mockResolvedValue(null) };
+      mockPrisma.availabilityWindow = {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'win-1',
+          attorneyId: 'att-1',
+          weekday: 3,
+          startTime: '09:00',
+          endTime: '11:00',
+          isAvailable: true,
+        }),
+      };
+      // Both 09:00-10:00 and 10:00-11:00 are booked
+      mockPrisma.booking.findMany.mockResolvedValue([
+        {
+          id: 'b-1',
+          attorneyId: 'att-1',
+          bookingDate: new Date('2026-10-07T00:00:00.000Z'),
+          startTime: '09:00',
+          endTime: '10:00',
+          status: BookingStatus.CONFIRMED,
+        },
+        {
+          id: 'b-2',
+          attorneyId: 'att-1',
+          bookingDate: new Date('2026-10-07T00:00:00.000Z'),
+          startTime: '10:00',
+          endTime: '11:00',
+          status: BookingStatus.ACCEPTED_PENDING_PAYMENT,
+        },
+      ]);
+
+      const result = await service.getAvailableSlotsForDate('att-1', '2026-10-07', 60);
+      expect(result.isAvailable).toBe(false);
+      expect(result.availableSlotsCount).toBe(0);
+      expect(result.availableSlots).toEqual([]);
+      expect(result.reason).toBe('All slots for this date are already reserved / booked');
+    });
+
+    it('should throw ConflictException (BOOKING_SLOT_CONFLICT) when createBooking attempts to book an already reserved slot', async () => {
+      mockPrisma.booking.findMany.mockResolvedValue([
+        {
+          id: 'existing-1',
+          attorneyId: 'att-1',
+          bookingDate: new Date('2026-10-07T00:00:00.000Z'),
+          startTime: '10:00',
+          endTime: '11:00',
+          status: BookingStatus.REQUESTED,
+        },
+      ]);
+
+      await expect(
+        service.createBooking(
+          {
+            attorneyId: 'att-1',
+            bookingDate: '2026-10-07',
+            startTime: '10:00',
+            endTime: '11:00',
+          },
+          'client-1',
+        ),
+      ).rejects.toThrow(ConflictException);
+    });
   });
 });
+
 
 

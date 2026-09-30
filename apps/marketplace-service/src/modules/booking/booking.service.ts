@@ -36,8 +36,15 @@ export class BookingService {
     if (!data.bookingDate) throw new BadRequestException('bookingDate is required');
     if (!data.startTime || !data.endTime) throw new BadRequestException('startTime and endTime are required');
 
-    const bookingDate = new Date(data.bookingDate);
     const dateStr = typeof data.bookingDate === 'string' ? data.bookingDate.split('T')[0] : data.bookingDate.toISOString().split('T')[0];
+    const dateParts = dateStr.split('-').map(Number);
+    if (dateParts.length !== 3 || dateParts.some(isNaN)) {
+      throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD');
+    }
+    const [year, month, day] = dateParts;
+    const normalizedBookingDate = new Date(Date.UTC(year, month - 1, day));
+    const dayStart = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    const dayEnd = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
     // Check Google Calendar Free/Busy if attorney has connected their calendar
     if (this.userServiceClient && this.googleMeetService) {
@@ -46,8 +53,6 @@ export class BookingService {
         if (attorneyProfile?.isGoogleSyncEnabled && attorneyProfile?.googleRefreshToken) {
           const reqSlotStart = new Date(`${dateStr}T${data.startTime}:00+03:00`);
           const reqSlotEnd = new Date(`${dateStr}T${data.endTime}:00+03:00`);
-          const dayStart = new Date(`${dateStr}T00:00:00+03:00`);
-          const dayEnd = new Date(`${dateStr}T23:59:59+03:00`);
 
           const busyBlocks = await this.googleMeetService.getAttorneyBusyIntervals(
             attorneyProfile.googleRefreshToken,
@@ -72,21 +77,29 @@ export class BookingService {
       }
     }
 
-    // Double booking conflict prevention inside Interactive Transaction
+    // Double booking & reservation conflict prevention inside Interactive Transaction
     return this.prisma.$transaction(async (tx) => {
-      const existingOverlapping = await tx.booking.findFirst({
+      const existingBookingsOnDate = await tx.booking.findMany({
         where: {
           attorneyId: data.attorneyId,
-          bookingDate,
-          startTime: data.startTime,
-          status: { in: [BookingStatus.CONFIRMED, BookingStatus.ACCEPTED_PENDING_PAYMENT] },
+          bookingDate: { gte: dayStart, lte: dayEnd },
+          status: { in: [BookingStatus.CONFIRMED, BookingStatus.ACCEPTED_PENDING_PAYMENT, BookingStatus.REQUESTED] },
         },
       });
 
-      if (existingOverlapping) {
+      const newStartMinutes = this.parseTimeToMinutes(data.startTime);
+      const newEndMinutes = this.parseTimeToMinutes(data.endTime);
+
+      const hasBookingConflict = existingBookingsOnDate.some((b) => {
+        const bStart = this.parseTimeToMinutes(b.startTime);
+        const bEnd = this.parseTimeToMinutes(b.endTime);
+        return newStartMinutes < bEnd && newEndMinutes > bStart;
+      });
+
+      if (hasBookingConflict) {
         throw new ConflictException({
           code: 'BOOKING_SLOT_CONFLICT',
-          message: 'The selected time slot is already booked or accepted pending payment.',
+          message: 'The selected time slot is already reserved / booked.',
         });
       }
 
@@ -99,7 +112,7 @@ export class BookingService {
           clientId,
           attorneyId: data.attorneyId,
           availabilityId: data.availabilityId || null,
-          bookingDate,
+          bookingDate: normalizedBookingDate,
           startTime: data.startTime,
           endTime: data.endTime,
           consultationType: data.consultationType || ConsultationType.VIDEO,
@@ -439,6 +452,8 @@ export class BookingService {
     }
     const [year, month, day] = dateParts;
     const targetDate = new Date(Date.UTC(year, month - 1, day));
+    const dayStart = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    const dayEnd = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
     if (isNaN(targetDate.getTime())) {
       throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD');
     }
@@ -450,8 +465,8 @@ export class BookingService {
     const blackout = await this.prisma.availabilityBlackout.findFirst({
       where: {
         attorneyId,
-        startDate: { lte: targetDate },
-        endDate: { gte: targetDate },
+        startDate: { lte: dayEnd },
+        endDate: { gte: dayStart },
       },
     });
 
@@ -488,11 +503,11 @@ export class BookingService {
       };
     }
 
-    // 3. Fetch existing confirmed / active portal bookings for this date
+    // 3. Fetch existing confirmed / active portal bookings for this date (covers full UTC day range)
     const existingBookings = await this.prisma.booking.findMany({
       where: {
         attorneyId,
-        bookingDate: targetDate,
+        bookingDate: { gte: dayStart, lte: dayEnd },
         status: { in: [BookingStatus.CONFIRMED, BookingStatus.ACCEPTED_PENDING_PAYMENT, BookingStatus.REQUESTED] },
       },
     });
@@ -506,13 +521,13 @@ export class BookingService {
         const attorneyProfile = await this.userServiceClient.getAttorneyProfile(attorneyId);
         if (attorneyProfile?.isGoogleSyncEnabled && attorneyProfile?.googleRefreshToken) {
           isGoogleSyncActive = true;
-          const dayStart = new Date(`${dateFormatted}T00:00:00+03:00`);
-          const dayEnd = new Date(`${dateFormatted}T23:59:59+03:00`);
+          const gDayStart = new Date(`${dateFormatted}T00:00:00+03:00`);
+          const gDayEnd = new Date(`${dateFormatted}T23:59:59+03:00`);
 
           googleBusyIntervals = await this.googleMeetService.getAttorneyBusyIntervals(
             attorneyProfile.googleRefreshToken,
-            dayStart,
-            dayEnd,
+            gDayStart,
+            gDayEnd,
             attorneyProfile.googleCalendarId || 'primary',
           );
         }
@@ -549,11 +564,21 @@ export class BookingService {
       return true;
     });
 
+    const isAvailable = availableSlots.length > 0;
+
     return {
       attorneyId,
       date: dateFormatted,
       weekday,
-      isAvailable: availableSlots.length > 0,
+      isAvailable,
+      ...(isAvailable
+        ? {}
+        : {
+            reason:
+              existingBookings.length > 0
+                ? 'All slots for this date are already reserved / booked'
+                : 'No available slots for this date',
+          }),
       workingHours: { startTime: workingStartTime, endTime: workingEndTime },
       slotDurationMinutes,
       isGoogleSyncActive,
