@@ -474,9 +474,14 @@ export class BookingService {
       return {
         attorneyId,
         date: dateFormatted,
+        weekday,
         isAvailable: false,
         reason: blackout.reason || 'Attorney is on vacation / blackout',
-        availableSlots: [],
+        workingHours: null as { startTime: string; endTime: string } | null,
+        slotDurationMinutes,
+        isGoogleSyncActive: false,
+        availableSlotsCount: 0,
+        availableSlots: [] as Array<{ startTime: string; endTime: string }>,
       };
     }
 
@@ -497,9 +502,14 @@ export class BookingService {
       return {
         attorneyId,
         date: dateFormatted,
+        weekday,
         isAvailable: false,
         reason: 'Attorney does not have working hours configured for this day',
-        availableSlots: [],
+        workingHours: null as { startTime: string; endTime: string } | null,
+        slotDurationMinutes,
+        isGoogleSyncActive: false,
+        availableSlotsCount: 0,
+        availableSlots: [] as Array<{ startTime: string; endTime: string }>,
       };
     }
 

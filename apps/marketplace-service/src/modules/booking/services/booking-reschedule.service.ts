@@ -28,7 +28,8 @@ export class BookingRescheduleService {
     data: { bookingDate: string; startTime: string; endTime: string },
     userId: string,
   ) {
-    const dateStr = typeof data.bookingDate === 'string' ? data.bookingDate.split('T')[0] : data.bookingDate.toISOString().split('T')[0];
+    const rawDate = data.bookingDate as unknown;
+    const dateStr = typeof rawDate === 'string' ? rawDate.split('T')[0] : (rawDate instanceof Date ? rawDate.toISOString().split('T')[0] : String(rawDate).split('T')[0]);
     const dateParts = dateStr.split('-').map(Number);
     if (dateParts.length !== 3 || dateParts.some(isNaN)) {
       throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD');
