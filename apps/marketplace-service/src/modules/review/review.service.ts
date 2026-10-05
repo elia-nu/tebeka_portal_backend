@@ -156,6 +156,131 @@ export class ReviewService {
         reportedBy,
         reason: data.reason || 'Flagged for moderation review',
       },
+      include: {
+        review: true,
+      },
+    });
+  }
+
+  async getReviewReports(query: any = {}) {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.max(1, Number(query.limit) || 20);
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (query.status) where.status = query.status;
+    if (query.reviewId) where.reviewId = query.reviewId;
+    if (query.reportedBy) where.reportedBy = query.reportedBy;
+
+    const allowedSortFields = ['createdAt', 'status'];
+    const sortBy = allowedSortFields.includes(query.sortBy) ? query.sortBy : 'createdAt';
+    const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+
+    const [items, total] = await Promise.all([
+      this.prisma.reviewReport.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          review: {
+            include: {
+              booking: {
+                select: {
+                  id: true,
+                  referenceNumber: true,
+                  clientId: true,
+                  attorneyId: true,
+                  bookingDate: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { [sortBy]: sortOrder },
+      }),
+      this.prisma.reviewReport.count({ where }),
+    ]);
+
+    // Calculate 1 business day SLA tracking per SRS FR-ADMIN-03
+    const now = Date.now();
+    const formattedItems = items.map((item) => {
+      const createdAtMs = new Date(item.createdAt).getTime();
+      // 1 business day (24 hours) SLA target for moderation
+      const slaDeadline = new Date(createdAtMs + 24 * 60 * 60 * 1000);
+      const isBreached = item.status === 'PENDING' && now > slaDeadline.getTime();
+      const remainingMs = Math.max(0, slaDeadline.getTime() - now);
+
+      return {
+        ...item,
+        sla: {
+          targetBusinessDays: 1,
+          slaDeadline,
+          isBreached,
+          remainingHours: item.status === 'PENDING' ? Math.round(remainingMs / (1000 * 60 * 60)) : 0,
+        },
+      };
+    });
+
+    return {
+      items: formattedItems,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      summary: {
+        pendingCount: await this.prisma.reviewReport.count({ where: { status: 'PENDING' } }),
+        actionedCount: await this.prisma.reviewReport.count({ where: { status: 'ACTIONED' } }),
+        dismissedCount: await this.prisma.reviewReport.count({ where: { status: 'DISMISSED' } }),
+      },
+    };
+  }
+
+  async updateReviewReport(reportId: string, data: any, adminId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const report = await tx.reviewReport.findUnique({
+        where: { id: reportId },
+        include: { review: true },
+      });
+
+      if (!report) {
+        throw new NotFoundException(`Review report ${reportId} not found`);
+      }
+
+      const updatedReport = await tx.reviewReport.update({
+        where: { id: reportId },
+        data: {
+          status: data.status,
+          actionTaken: data.actionTaken || null,
+          adminNotes: data.adminNotes || null,
+          resolvedBy: adminId,
+          resolvedAt: new Date(),
+        },
+      });
+
+      if (data.reviewStatus && report.reviewId) {
+        await tx.review.update({
+          where: { id: report.reviewId },
+          data: { status: data.reviewStatus },
+        });
+      }
+
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'ReviewReport',
+          aggregateId: reportId,
+          eventType: 'REVIEW_REPORT_MODERATED',
+          payload: {
+            reportId,
+            reviewId: report.reviewId,
+            status: data.status,
+            actionTaken: data.actionTaken,
+            adminId,
+            reviewStatus: data.reviewStatus,
+          },
+        },
+      });
+
+      return updatedReport;
     });
   }
 }

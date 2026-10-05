@@ -1,5 +1,5 @@
 import * as Joi from 'joi';
-import { ReviewStatus } from '@prisma/client/marketplace';
+import { ReviewStatus, ReportStatus } from '@prisma/client/marketplace';
 
 export interface CreateReviewDto {
   rating: number;
@@ -36,4 +36,38 @@ export const QueryReviewSchema = Joi.object({
   minRating: Joi.number().integer().min(1).max(5).optional(),
   sortBy: Joi.string().valid('createdAt', 'rating').default('createdAt'),
   sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
+});
+
+export interface QueryReviewReportDto {
+  page?: number;
+  limit?: number;
+  status?: ReportStatus;
+  reviewId?: string;
+  reportedBy?: string;
+  sortBy?: 'createdAt' | 'status';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export const QueryReviewReportSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+  status: Joi.string().valid('PENDING', 'REVIEWED', 'DISMISSED', 'ACTIONED').optional(),
+  reviewId: Joi.string().uuid().optional(),
+  reportedBy: Joi.string().uuid().optional(),
+  sortBy: Joi.string().valid('createdAt', 'status').default('createdAt'),
+  sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
+});
+
+export interface UpdateReviewReportDto {
+  status: ReportStatus;
+  actionTaken?: string;
+  adminNotes?: string;
+  reviewStatus?: ReviewStatus;
+}
+
+export const UpdateReviewReportSchema = Joi.object({
+  status: Joi.string().valid('PENDING', 'REVIEWED', 'DISMISSED', 'ACTIONED').required(),
+  actionTaken: Joi.string().trim().max(255).optional(),
+  adminNotes: Joi.string().trim().max(1000).optional(),
+  reviewStatus: Joi.string().valid('PENDING', 'PUBLISHED', 'FLAGGED', 'HIDDEN').optional(),
 });

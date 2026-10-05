@@ -15,6 +15,7 @@ import { BookingModule } from './modules/booking/booking.module';
 import { CaseModule } from './modules/case/case.module';
 import { DocumentModule } from './modules/document/document.module';
 import { ReviewModule } from './modules/review/review.module';
+import { DisputeModule } from './modules/dispute/dispute.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
@@ -38,6 +39,7 @@ import { MarketplaceDatabaseModule } from './database/database.module';
     CaseModule,
     DocumentModule,
     ReviewModule,
+    DisputeModule,
     SchedulerModule,
     DashboardModule,
     AnalyticsModule,

@@ -1,7 +1,16 @@
 import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, RolesGuard, Roles, Public } from '@workspace/auth';
 import { ReviewService } from './review.service';
-import { CreateReviewDto, CreateReviewSchema, QueryReviewDto, QueryReviewSchema } from './dto/review.dto';
+import {
+  CreateReviewDto,
+  CreateReviewSchema,
+  QueryReviewDto,
+  QueryReviewSchema,
+  QueryReviewReportDto,
+  QueryReviewReportSchema,
+  UpdateReviewReportDto,
+  UpdateReviewReportSchema,
+} from './dto/review.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -52,5 +61,51 @@ export class ReviewController {
   ) {
     const reportedBy = req.user.id;
     return this.reviewService.reportReview(id, body, reportedBy);
+  }
+
+  // Unified Admin Review Moderation Queue (SCR-ADMIN-04 / FR-ADMIN-03)
+  @Get('reviews/reports')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @UsePipes(new JoiValidationPipe(QueryReviewReportSchema))
+  async getReviewReports(@Query() query: QueryReviewReportDto) {
+    return this.reviewService.getReviewReports(query);
+  }
+
+  @Get('reviews/moderation-queue')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @UsePipes(new JoiValidationPipe(QueryReviewReportSchema))
+  async getReviewModerationQueue(@Query() query: QueryReviewReportDto) {
+    return this.reviewService.getReviewReports(query);
+  }
+
+  @Get('admin/reviews/reports')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @UsePipes(new JoiValidationPipe(QueryReviewReportSchema))
+  async getAdminReviewReports(@Query() query: QueryReviewReportDto) {
+    return this.reviewService.getReviewReports(query);
+  }
+
+  @Patch('reviews/reports/:reportId')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @UsePipes(new JoiValidationPipe(UpdateReviewReportSchema))
+  async updateReviewReport(
+    @Param('reportId') reportId: string,
+    @Body() body: UpdateReviewReportDto,
+    @Req() req: any
+  ) {
+    const adminId = req.user.id;
+    return this.reviewService.updateReviewReport(reportId, body, adminId);
+  }
+
+  @Patch('reviews/reports/:reportId/status')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @UsePipes(new JoiValidationPipe(UpdateReviewReportSchema))
+  async updateReviewReportStatus(
+    @Param('reportId') reportId: string,
+    @Body() body: UpdateReviewReportDto,
+    @Req() req: any
+  ) {
+    const adminId = req.user.id;
+    return this.reviewService.updateReviewReport(reportId, body, adminId);
   }
 }
