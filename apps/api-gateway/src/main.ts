@@ -32,6 +32,7 @@ function colorStatus(status: number): string {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  (app as any).set('trust proxy', 1);
   const config = app.get(AppConfigService);
   const logger = app.get(AppLoggerService);
   app.useLogger(logger);
@@ -88,44 +89,33 @@ async function bootstrap() {
     }),
   );
 
-  // Reverse Proxy Routing for User Service
-  app.use(
-    createProxyMiddleware({
-      target: userServiceUrl,
-      changeOrigin: true,
-      pathFilter: [
-        '/api/v1/auth/**',
-        '/api/v1/users/**',
-        '/api/v1/attorneys/**',
-        '/api/v1/verifications/**',
-        '/api/v1/settings/**',
-        '/api/v1/admin/**',
-        '/api/v1/roles/**',
-        '/api/v1/permissions/**',
-        '/api/v1/audit-logs/**',
-        '/api/v1/localization/**',
-        '/api/v1/i18n/**',
-        '/api/v1/translations/**',
-        '/api/v1/queues/**',
-        '/api/v1/files/**',
-        '/api/v1/public/**',
-        '/api/v1/blogs/**',
-      ],
-    })
-  );
-
-  // Reverse Proxy Routing for Marketplace Service
+  // Reverse Proxy Routing for Marketplace Service (Disputes, Bookings, Cases, Reviews, Discovery)
   app.use(
     createProxyMiddleware({
       target: marketplaceServiceUrl,
       changeOrigin: true,
       pathFilter: [
+        '/api/v1/discovery',
         '/api/v1/discovery/**',
+        '/api/v1/search',
         '/api/v1/search/**',
+        '/api/v1/ranking',
         '/api/v1/ranking/**',
+        '/api/v1/bookings',
         '/api/v1/bookings/**',
+        '/api/v1/cases',
         '/api/v1/cases/**',
+        '/api/v1/reviews',
         '/api/v1/reviews/**',
+        '/api/v1/disputes',
+        '/api/v1/disputes/**',
+        '/api/v1/admin/disputes',
+        '/api/v1/admin/disputes/**',
+        '/api/v1/admin/reviews',
+        '/api/v1/admin/reviews/**',
+        '/api/v1/admin/queues/disputes',
+        '/api/v1/admin/queues/disputes/**',
+        '/api/v1/marketplace',
         '/api/v1/marketplace/**',
       ],
       pathRewrite: {
@@ -140,11 +130,17 @@ async function bootstrap() {
       target: financialServiceUrl,
       changeOrigin: true,
       pathFilter: [
+        '/api/v1/financial',
         '/api/v1/financial/**',
+        '/api/v1/payments',
         '/api/v1/payments/**',
+        '/api/v1/wallets',
         '/api/v1/wallets/**',
+        '/api/v1/escrow',
         '/api/v1/escrow/**',
+        '/api/v1/subscriptions',
         '/api/v1/subscriptions/**',
+        '/api/v1/refunds',
         '/api/v1/refunds/**',
       ],
       pathRewrite: {
@@ -153,21 +149,73 @@ async function bootstrap() {
     })
   );
 
-  // Reverse Proxy Routing for Communication Service
+  // Reverse Proxy Routing for Communication Service (Messages, Chats, Notifications, Message Reports)
   app.use(
     createProxyMiddleware({
       target: communicationServiceUrl,
       changeOrigin: true,
       ws: true,
       pathFilter: [
+        '/api/v1/communication',
         '/api/v1/communication/**',
+        '/api/v1/conversations',
         '/api/v1/conversations/**',
+        '/api/v1/messages',
         '/api/v1/messages/**',
+        '/api/v1/admin/messages',
+        '/api/v1/admin/messages/**',
+        '/api/v1/notifications',
         '/api/v1/notifications/**',
+        '/api/v1/notification-templates',
         '/api/v1/notification-templates/**',
+        '/api/v1/chat',
         '/api/v1/chat/**',
+        '/chat',
         '/chat/**',
+        '/notifications',
         '/notifications/**',
+      ],
+    })
+  );
+
+  // Reverse Proxy Routing for User Service (Auth, Users, Attorneys, Verification, Config, Queues, Audit)
+  app.use(
+    createProxyMiddleware({
+      target: userServiceUrl,
+      changeOrigin: true,
+      pathFilter: [
+        '/api/v1/auth',
+        '/api/v1/auth/**',
+        '/api/v1/users',
+        '/api/v1/users/**',
+        '/api/v1/attorneys',
+        '/api/v1/attorneys/**',
+        '/api/v1/verifications',
+        '/api/v1/verifications/**',
+        '/api/v1/settings',
+        '/api/v1/settings/**',
+        '/api/v1/admin',
+        '/api/v1/admin/**',
+        '/api/v1/roles',
+        '/api/v1/roles/**',
+        '/api/v1/permissions',
+        '/api/v1/permissions/**',
+        '/api/v1/audit-logs',
+        '/api/v1/audit-logs/**',
+        '/api/v1/localization',
+        '/api/v1/localization/**',
+        '/api/v1/i18n',
+        '/api/v1/i18n/**',
+        '/api/v1/translations',
+        '/api/v1/translations/**',
+        '/api/v1/queues',
+        '/api/v1/queues/**',
+        '/api/v1/files',
+        '/api/v1/files/**',
+        '/api/v1/public',
+        '/api/v1/public/**',
+        '/api/v1/blogs',
+        '/api/v1/blogs/**',
       ],
     })
   );

@@ -10,7 +10,7 @@ export class AppConfigService {
   }
 
   get apiGatewayPort(): number {
-    return Number(this.configService.get<number>('API_GATEWAY_PORT', 3000));
+    return Number(this.configService.get<number>('API_GATEWAY_PORT', 5000));
   }
 
   get corsAllowedOrigins(): string[] {
