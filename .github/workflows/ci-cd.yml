@@ -1,0 +1,110 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - 'feat/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  workflow_dispatch:
+
+env:
+  NX_DAEMON: 'false'
+  NX_TUI: 'false'
+  CI: 'true'
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Clients
+        run: |
+          npx prisma generate --schema=apps/user-service/prisma/schema.prisma
+          npx prisma generate --schema=apps/marketplace-service/prisma/schema.prisma
+          npx prisma generate --schema=apps/financial-service/prisma/schema.prisma
+          npx prisma generate --schema=apps/communication-service/prisma/schema.prisma
+
+      - name: Run Tests
+        run: npx nx run-many --target=test --all --passWithNoTests
+
+      - name: Build All Services
+        run: npx nx run-many --target=build --all
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-artifacts
+          path: dist/
+          retention-days: 7
+
+  docker-build:
+    name: Docker Build Check
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Docker Compose Build
+        run: docker compose -f docker-compose.prod.yml build
