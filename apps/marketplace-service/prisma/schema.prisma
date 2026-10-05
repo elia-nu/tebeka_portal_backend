@@ -22,6 +22,7 @@ enum BookingStatus {
   CANCELLED
   COMPLETED
   NOSHOW
+  DISPUTED
   EXPIRED
 }
 
@@ -42,9 +43,18 @@ enum CaseStatus {
   OPEN
   IN_PROGRESS
   PENDING_REVIEW
+  DISPUTED
+  RESOLVED
   CLOSED
   ARCHIVED
   CANCELLED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
 }
 
 enum AgreementStatus {
@@ -218,6 +228,7 @@ model Booking {
   bookingTimelines BookingTimeline[]
   case             Case?
   review           Review?
+  disputes         Dispute[]
 
   @@map("bookings")
 }
@@ -285,6 +296,7 @@ model Case {
   caseMilestones  CaseMilestone[]
   caseTimelines   CaseTimeline[]
   agreement       CaseAgreement?
+  disputes        Dispute[]
 
   @@map("cases")
 }
@@ -391,9 +403,42 @@ model ReviewReport {
   reportedBy  String       @map("reported_by")
   reason      String
   status      ReportStatus @default(PENDING)
+  actionTaken String?      @map("action_taken")
+  adminNotes  String?      @map("admin_notes")
+  resolvedBy  String?      @map("resolved_by")
+  resolvedAt  DateTime?    @map("resolved_at")
   createdAt   DateTime     @default(now()) @map("created_at")
 
   @@map("review_reports")
+}
+
+model Dispute {
+  id                 String        @id @default(uuid())
+  referenceNumber     String        @unique @map("reference_number")
+  caseId             String?       @map("case_id")
+  case               Case?         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  bookingId          String?       @map("booking_id")
+  booking            Booking?      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  targetType         String        @default("CASE") @map("target_type")
+  openedBy           String        @map("opened_by")
+  reason             String
+  details            String?
+  evidenceUrls       String[]      @default([]) @map("evidence_urls")
+  status             DisputeStatus @default(OPEN)
+  priority           Priority      @default(HIGH)
+  slaDeadline        DateTime      @map("sla_deadline")
+  resolutionOutcome String?       @map("resolution_outcome")
+  resolutionNotes    String?       @map("resolution_notes")
+  resolvedBy         String?       @map("resolved_by")
+  resolvedAt         DateTime?     @map("resolved_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  @@index([caseId])
+  @@index([bookingId])
+  @@index([openedBy])
+  @@index([status])
+  @@map("disputes")
 }
 
 model PublicPage {
