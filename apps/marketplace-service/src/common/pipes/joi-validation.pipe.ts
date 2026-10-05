@@ -15,6 +15,11 @@ export class JoiValidationPipe implements PipeTransform {
       return value;
     }
 
+    // Skip validation for string params when schema expects an object
+    if (metadata && metadata.type === 'param' && typeof value === 'string') {
+      return value;
+    }
+
     // Skip validation for empty query parameters if this pipe is validating a body schema
     if (metadata && metadata.type === 'query' && (!value || Object.keys(value).length === 0)) {
       return value;
