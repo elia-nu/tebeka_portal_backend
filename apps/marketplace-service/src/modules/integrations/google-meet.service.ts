@@ -48,7 +48,14 @@ export class GoogleMeetService {
     const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
     const adminEmail = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL;
 
-    if (serviceAccountEmail && privateKey) {
+    if (clientId && clientSecret && refreshToken) {
+      const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+      oauth2Client.setCredentials({ refresh_token: refreshToken });
+      this.calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+      this.isConfigured = true;
+      this.hasDomainWideDelegation = true;
+      this.logger.log('Google Meet & Calendar API initialized via OAuth2 Refresh Token (User Account)');
+    } else if (serviceAccountEmail && privateKey) {
       const auth = new google.auth.JWT({
         email: serviceAccountEmail,
         key: privateKey,
@@ -59,13 +66,6 @@ export class GoogleMeetService {
       this.isConfigured = true;
       this.hasDomainWideDelegation = Boolean(adminEmail);
       this.logger.log('Google Meet & Calendar API initialized via Google Service Account');
-    } else if (clientId && clientSecret && refreshToken) {
-      const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
-      oauth2Client.setCredentials({ refresh_token: refreshToken });
-      this.calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-      this.isConfigured = true;
-      this.hasDomainWideDelegation = true;
-      this.logger.log('Google Meet & Calendar API initialized via OAuth2 Refresh Token');
     } else {
       this.logger.warn(
         'Google Calendar/Meet API credentials not found in .env. Fallback room generator will be used.'
