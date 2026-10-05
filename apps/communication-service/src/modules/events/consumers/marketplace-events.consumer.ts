@@ -1,9 +1,23 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { EventBusService } from '@workspace/event-bus';
 import { ConversationService } from '../../conversation/conversation.service';
 import { NotificationDispatcherService } from '../../notification/notification-dispatcher.service';
 import { AppLoggerService } from '@workspace/logger';
 import { ConversationType, ParticipantRole } from '@prisma/client/communication';
+
+function ensureValidMeetLink(meetingLink?: string, fallbackRef?: string): string {
+  if (meetingLink && meetingLink.startsWith('https://meet.google.com/')) {
+    return meetingLink;
+  }
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+  const hash = crypto.createHash('sha256').update(fallbackRef || 'tebeka-consultation').digest();
+  let letters = '';
+  for (let i = 0; i < 10; i++) {
+    letters += alphabet[hash[i] % 26];
+  }
+  return `https://meet.google.com/${letters.slice(0, 3)}-${letters.slice(3, 7)}-${letters.slice(7, 10)}`;
+}
 
 @Injectable()
 export class MarketplaceEventsConsumer implements OnModuleInit {
@@ -58,7 +72,7 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
     await this.eventBus.subscribe('BOOKING_CONFIRMED', async (payload: any) => {
       this.logger.log(`Received BOOKING_CONFIRMED event for booking: ${payload.bookingId}`, 'MarketplaceEventsConsumer');
       
-      const meetingLink = payload.meetingLink || `https://meet.google.com/${payload.referenceNumber || payload.bookingId}`;
+      const meetingLink = ensureValidMeetLink(payload.meetingLink, payload.referenceNumber || payload.bookingId);
       const appointmentTime = `${payload.bookingDate ? new Date(payload.bookingDate).toISOString().split('T')[0] : ''} ${payload.startTime || ''} - ${payload.endTime || ''}`;
 
       // Notify Client
@@ -105,7 +119,7 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
     // 4. Consultation Rescheduled
     await this.eventBus.subscribe('BOOKING_RESCHEDULED', async (payload: any) => {
       this.logger.log(`Received BOOKING_RESCHEDULED event for booking: ${payload.bookingId}`, 'MarketplaceEventsConsumer');
-      const meetingLink = payload.meetingLink || `https://meet.google.com/${payload.referenceNumber || payload.bookingId}`;
+      const meetingLink = ensureValidMeetLink(payload.meetingLink, payload.referenceNumber || payload.bookingId);
       const appointmentTime = `${payload.bookingDate ? new Date(payload.bookingDate).toISOString().split('T')[0] : ''} ${payload.startTime || ''} - ${payload.endTime || ''}`;
 
       if (payload.clientId) {

@@ -1,5 +1,6 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { google, calendar_v3 } from 'googleapis';
+import * as crypto from 'crypto';
 import { AppConfigService } from '@workspace/config';
 import { CircuitBreaker, retryWithBackoff } from '@workspace/common';
 
@@ -72,12 +73,28 @@ export class GoogleMeetService {
     }
   }
 
-  private generateMeetCode(reference: string): string {
-    const clean = reference.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const p1 = (clean.slice(0, 3) || 'tbk').padEnd(3, 'a');
-    const p2 = (clean.slice(3, 7) || 'cons').padEnd(4, 'b');
-    const p3 = (clean.slice(7, 10) || 'mtg').padEnd(3, 'c');
+  /**
+   * Generates a deterministic, valid Google Meet meeting code (xxx-yyyy-zzz)
+   * conforming strictly to Google Meet's 10-letter lowercase alphabet [a-z] standard.
+   */
+  generateMeetCode(reference: string): string {
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+    const hash = crypto.createHash('sha256').update(reference || 'tebeka-consultation').digest();
+    let letters = '';
+    for (let i = 0; i < 10; i++) {
+      letters += alphabet[hash[i] % 26];
+    }
+    const p1 = letters.slice(0, 3);
+    const p2 = letters.slice(3, 7);
+    const p3 = letters.slice(7, 10);
     return `${p1}-${p2}-${p3}`;
+  }
+
+  /**
+   * Generates a fully qualified Google Meet link (https://meet.google.com/xxx-yyyy-zzz)
+   */
+  generateMeetLink(reference: string): string {
+    return `https://meet.google.com/${this.generateMeetCode(reference)}`;
   }
 
   async createConsultationMeeting(req: CreateMeetingRequest): Promise<MeetingProvisionResult> {
