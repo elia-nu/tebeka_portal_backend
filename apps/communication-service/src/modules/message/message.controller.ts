@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Query, Req, UsePipes, UseGuards, UnauthorizedException } from '@nestjs/common';
-import { JwtAuthGuard, RolesGuard } from '@workspace/auth';
+import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
 import { MessageService } from './message.service';
 import {
   SendMessageDto,
@@ -10,6 +10,12 @@ import {
   DeleteMessageSchema,
   QueryMessageDto,
   QueryMessageSchema,
+  ReportMessageDto,
+  ReportMessageSchema,
+  QueryMessageReportDto,
+  QueryMessageReportSchema,
+  ModerateMessageDto,
+  ModerateMessageSchema,
 } from './dto/message.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
@@ -75,5 +81,80 @@ export class MessageController {
     }
     return this.messageService.markAllMessagesRead(id, userId);
   }
-}
 
+  // Report Chat Message (SCR-ADMIN-04 / FR-ADMIN-03)
+  @Post('messages/:id/report')
+  @UsePipes(new JoiValidationPipe(ReportMessageSchema))
+  async reportMessage(
+    @Param('id') id: string,
+    @Body() body: ReportMessageDto,
+    @Req() req: any
+  ) {
+    const reporterId = req.user?.id;
+    if (!reporterId) {
+      throw new UnauthorizedException('Authentication required');
+    }
+    return this.messageService.reportMessage(id, body, reporterId);
+  }
+
+  @Post('chat/messages/:id/report')
+  @UsePipes(new JoiValidationPipe(ReportMessageSchema))
+  async reportChatMessage(
+    @Param('id') id: string,
+    @Body() body: ReportMessageDto,
+    @Req() req: any
+  ) {
+    const reporterId = req.user?.id;
+    if (!reporterId) {
+      throw new UnauthorizedException('Authentication required');
+    }
+    return this.messageService.reportMessage(id, body, reporterId);
+  }
+
+  // Unified Chat Moderation Queue for Admins
+  @Get('messages/reports')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @UsePipes(new JoiValidationPipe(QueryMessageReportSchema))
+  async getMessageReports(@Query() query: QueryMessageReportDto) {
+    return this.messageService.getMessageReports(query);
+  }
+
+  @Get('messages/moderation-queue')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @UsePipes(new JoiValidationPipe(QueryMessageReportSchema))
+  async getMessageModerationQueue(@Query() query: QueryMessageReportDto) {
+    return this.messageService.getMessageReports(query);
+  }
+
+  @Get('admin/messages/reports')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @UsePipes(new JoiValidationPipe(QueryMessageReportSchema))
+  async getAdminMessageReports(@Query() query: QueryMessageReportDto) {
+    return this.messageService.getMessageReports(query);
+  }
+
+  // Admin Chat Moderation Action
+  @Patch('messages/reports/:reportId')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @UsePipes(new JoiValidationPipe(ModerateMessageSchema))
+  async moderateMessageReport(
+    @Param('reportId') reportId: string,
+    @Body() body: ModerateMessageDto,
+    @Req() req: any
+  ) {
+    const adminId = req.user.id;
+    return this.messageService.moderateMessage(reportId, body, adminId);
+  }
+
+  @Patch('messages/:id/moderate')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @UsePipes(new JoiValidationPipe(ModerateMessageSchema))
+  async moderateMessage(
+    @Param('id') id: string,
+    @Body() body: ModerateMessageDto,
+    @Req() req: any
+  ) {
+    const adminId = req.user.id;
+    return this.messageService.moderateMessage(id, body, adminId);
+  }
+}

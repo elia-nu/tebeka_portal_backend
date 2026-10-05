@@ -1,5 +1,5 @@
 import * as Joi from 'joi';
-import { MessageType } from '@prisma/client/communication';
+import { MessageType, ReportStatus } from '@prisma/client/communication';
 
 export interface SendMessageDto {
   content: string;
@@ -59,4 +59,53 @@ export const QueryMessageSchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(50),
   q: Joi.string().trim().allow('').optional(),
   beforeDate: Joi.date().iso().optional(),
+});
+
+export interface ReportMessageDto {
+  reason: string;
+  category?: string;
+  details?: string;
+}
+
+export const ReportMessageSchema = Joi.object({
+  reason: Joi.string().trim().min(3).max(1000).required().messages({
+    'string.empty': 'Report reason is required',
+    'any.required': 'Report reason is required',
+  }),
+  category: Joi.string().valid('OFF_PLATFORM_SOLICITATION', 'HARASSMENT', 'SPAM', 'INAPPROPRIATE_CONTENT', 'OTHER').default('OTHER'),
+  details: Joi.string().trim().max(2000).optional(),
+});
+
+export interface QueryMessageReportDto {
+  page?: number;
+  limit?: number;
+  status?: ReportStatus;
+  category?: string;
+  messageId?: string;
+  reporterId?: string;
+  sortBy?: 'createdAt' | 'status';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export const QueryMessageReportSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+  status: Joi.string().valid('PENDING', 'REVIEWED', 'DISMISSED', 'ACTIONED').optional(),
+  category: Joi.string().optional(),
+  messageId: Joi.string().uuid().optional(),
+  reporterId: Joi.string().uuid().optional(),
+  sortBy: Joi.string().valid('createdAt', 'status').default('createdAt'),
+  sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
+});
+
+export interface ModerateMessageDto {
+  actionTaken: 'DELETE_MESSAGE' | 'WARN_USER' | 'DISMISS' | 'SUSPEND_USER' | string;
+  status?: ReportStatus;
+  adminNotes?: string;
+}
+
+export const ModerateMessageSchema = Joi.object({
+  actionTaken: Joi.string().valid('DELETE_MESSAGE', 'WARN_USER', 'DISMISS', 'SUSPEND_USER').required(),
+  status: Joi.string().valid('PENDING', 'REVIEWED', 'DISMISSED', 'ACTIONED').default('ACTIONED'),
+  adminNotes: Joi.string().trim().max(1000).optional(),
 });
