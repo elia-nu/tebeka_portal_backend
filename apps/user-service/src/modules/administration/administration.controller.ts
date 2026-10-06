@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, RolesGuard, Roles, Public } from '@workspace/auth';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { AdministrationService } from './administration.service';
 import { AttorneyProfileChangeService } from '../attorneys/services/attorney-profile-change.service';
 import { CreatePracticeAreaDto, UpdatePracticeAreaDto } from './dto/practice-area.dto';
@@ -113,12 +114,14 @@ export class AdministrationController {
   // ==========================================
 
   @Public()
+  @AllowAnonymous()
   @Get('practice-areas')
   async getAdminPracticeAreas(@Query() query: any) {
     return this.administrationService.getAdminPracticeAreas(query);
   }
 
   @Public()
+  @AllowAnonymous()
   @Get('practice-areas/:id')
   async getAdminPracticeAreaById(@Param('id') id: string) {
     return this.administrationService.getAdminPracticeAreaById(id);
