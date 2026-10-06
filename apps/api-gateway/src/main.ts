@@ -112,8 +112,6 @@ async function bootstrap() {
       pathFilter: [
         '/api/v1/discovery',
         '/api/v1/discovery/**',
-        '/api/v1/search',
-        '/api/v1/search/**',
         '/api/v1/ranking',
         '/api/v1/ranking/**',
         '/api/v1/bookings',
@@ -231,6 +229,10 @@ async function bootstrap() {
         '/api/v1/public/**',
         '/api/v1/blogs',
         '/api/v1/blogs/**',
+        '/api/v1/search',
+        '/api/v1/search/**',
+        '/api/v1/practice-areas',
+        '/api/v1/practice-areas/**',
       ],
     })
   );
