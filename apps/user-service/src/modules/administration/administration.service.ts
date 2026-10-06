@@ -194,4 +194,126 @@ export class AdministrationService {
       data: { status: 'SUSPENDED', verificationStatus: 'SUSPENDED' },
     });
   }
+
+  // ==========================================
+  // PRACTICE AREAS ADMIN CRUD
+  // ==========================================
+
+  async getAdminPracticeAreas(query: any) {
+    const q = (query.q || query.search || '').trim();
+    const where: any = {};
+
+    if (query.isActive !== undefined && query.isActive !== '') {
+      where.isActive = query.isActive === 'true' || query.isActive === true;
+    }
+
+    if (q) {
+      where.OR = [
+        { nameEn: { contains: q, mode: 'insensitive' } },
+        { nameAm: { contains: q, mode: 'insensitive' } },
+        { key: { contains: q, mode: 'insensitive' } },
+        { descriptionEn: { contains: q, mode: 'insensitive' } },
+        { descriptionAm: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.prisma.practiceArea.findMany({
+        where,
+        orderBy: { sortOrder: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.practiceArea.count({ where }),
+    ]);
+
+    return { items, total, page, limit };
+  }
+
+  async getAdminPracticeAreaById(id: string) {
+    const practiceArea = await this.prisma.practiceArea.findUnique({
+      where: { id },
+    });
+    if (!practiceArea) {
+      throw new NotFoundException(`Practice area with id "${id}" not found`);
+    }
+    return practiceArea;
+  }
+
+  async createAdminPracticeArea(dto: any) {
+    if (!dto.nameEn || !dto.nameAm) {
+      throw new BadRequestException('nameEn and nameAm are required');
+    }
+
+    let key = dto.key?.trim();
+    if (!key) {
+      key = dto.nameEn
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '');
+    }
+
+    // Check if key is taken
+    if (key) {
+      const existing = await this.prisma.practiceArea.findUnique({ where: { key } });
+      if (existing) {
+        throw new BadRequestException(`Practice area with key "${key}" already exists`);
+      }
+    }
+
+    return this.prisma.practiceArea.create({
+      data: {
+        key,
+        nameEn: dto.nameEn.trim(),
+        nameAm: dto.nameAm.trim(),
+        descriptionEn: dto.descriptionEn?.trim() || null,
+        descriptionAm: dto.descriptionAm?.trim() || null,
+        icon: dto.icon?.trim() || null,
+        sortOrder: dto.sortOrder !== undefined ? Number(dto.sortOrder) : 0,
+        isActive: dto.isActive !== undefined ? Boolean(dto.isActive) : true,
+      },
+    });
+  }
+
+  async updateAdminPracticeArea(id: string, dto: any) {
+    const existing = await this.prisma.practiceArea.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`Practice area with id "${id}" not found`);
+    }
+
+    if (dto.key && dto.key !== existing.key) {
+      const keyConflict = await this.prisma.practiceArea.findUnique({ where: { key: dto.key } });
+      if (keyConflict && keyConflict.id !== id) {
+        throw new BadRequestException(`Practice area with key "${dto.key}" already exists`);
+      }
+    }
+
+    return this.prisma.practiceArea.update({
+      where: { id },
+      data: {
+        ...(dto.key !== undefined ? { key: dto.key?.trim() || null } : {}),
+        ...(dto.nameEn !== undefined ? { nameEn: dto.nameEn.trim() } : {}),
+        ...(dto.nameAm !== undefined ? { nameAm: dto.nameAm.trim() } : {}),
+        ...(dto.descriptionEn !== undefined ? { descriptionEn: dto.descriptionEn?.trim() || null } : {}),
+        ...(dto.descriptionAm !== undefined ? { descriptionAm: dto.descriptionAm?.trim() || null } : {}),
+        ...(dto.icon !== undefined ? { icon: dto.icon?.trim() || null } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: Number(dto.sortOrder) } : {}),
+        ...(dto.isActive !== undefined ? { isActive: Boolean(dto.isActive) } : {}),
+      },
+    });
+  }
+
+  async deleteAdminPracticeArea(id: string) {
+    const existing = await this.prisma.practiceArea.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`Practice area with id "${id}" not found`);
+    }
+
+    await this.prisma.practiceArea.delete({ where: { id } });
+    return { success: true, message: `Practice area "${existing.nameEn}" successfully deleted` };
+  }
 }

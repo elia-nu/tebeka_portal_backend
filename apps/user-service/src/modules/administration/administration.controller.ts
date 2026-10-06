@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
 import { AdministrationService } from './administration.service';
 import { AttorneyProfileChangeService } from '../attorneys/services/attorney-profile-change.service';
+import { CreatePracticeAreaDto, UpdatePracticeAreaDto } from './dto/practice-area.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'SUPER_ADMIN')
@@ -105,5 +106,37 @@ export class AdministrationController {
   ) {
     const reviewerId = req.user?.id || 'admin-reviewer';
     return this.attorneyProfileChangeService.rejectProfileChange(changeId, body.reason, reviewerId);
+  }
+
+  // ==========================================
+  // PRACTICE AREAS ADMIN CRUD ENDPOINTS
+  // ==========================================
+
+  @Get('practice-areas')
+  async getAdminPracticeAreas(@Query() query: any) {
+    return this.administrationService.getAdminPracticeAreas(query);
+  }
+
+  @Get('practice-areas/:id')
+  async getAdminPracticeAreaById(@Param('id') id: string) {
+    return this.administrationService.getAdminPracticeAreaById(id);
+  }
+
+  @Post('practice-areas')
+  async createAdminPracticeArea(@Body() body: CreatePracticeAreaDto) {
+    return this.administrationService.createAdminPracticeArea(body);
+  }
+
+  @Patch('practice-areas/:id')
+  async updateAdminPracticeArea(
+    @Param('id') id: string,
+    @Body() body: UpdatePracticeAreaDto
+  ) {
+    return this.administrationService.updateAdminPracticeArea(id, body);
+  }
+
+  @Delete('practice-areas/:id')
+  async deleteAdminPracticeArea(@Param('id') id: string) {
+    return this.administrationService.deleteAdminPracticeArea(id);
   }
 }

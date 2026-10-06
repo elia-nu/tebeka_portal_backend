@@ -32,6 +32,14 @@ describe('AdministrationService (FR-ADMIN Reasoned Suspension & Health)', () => 
       auditLog: {
         create: jest.fn(),
       },
+      practiceArea: {
+        findMany: jest.fn(),
+        count: jest.fn(),
+        findUnique: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -107,5 +115,56 @@ describe('AdministrationService (FR-ADMIN Reasoned Suspension & Health)', () => 
     expect(health.systemStatus).toBe('OPERATIONAL');
     expect(health.metrics.verificationSlaAdherencePercentage).toBeGreaterThanOrEqual(90);
     expect(health.metrics.notificationDeliverySuccessRate).toBeGreaterThanOrEqual(95);
+  });
+
+  describe('Practice Areas Admin CRUD', () => {
+    it('should create a practice area with generated slug key if not provided', async () => {
+      prisma.practiceArea.findUnique.mockResolvedValue(null);
+      prisma.practiceArea.create.mockResolvedValue({
+        id: 'pa-1',
+        key: 'environmental-law',
+        nameEn: 'Environmental Law',
+        nameAm: 'የአካባቢ ጥበቃ ሕግ',
+      });
+
+      const result = await service.createAdminPracticeArea({
+        nameEn: 'Environmental Law',
+        nameAm: 'የአካባቢ ጥበቃ ሕግ',
+      });
+
+      expect(result.id).toBe('pa-1');
+      expect(prisma.practiceArea.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          key: 'environmental-law',
+          nameEn: 'Environmental Law',
+          nameAm: 'የአካባቢ ጥበቃ ሕግ',
+        }),
+      });
+    });
+
+    it('should list practice areas with pagination and search', async () => {
+      prisma.practiceArea.findMany.mockResolvedValue([{ id: 'pa-1', nameEn: 'Corporate Law' }]);
+      prisma.practiceArea.count.mockResolvedValue(1);
+
+      const result = await service.getAdminPracticeAreas({ q: 'corporate', page: 1, limit: 10 });
+      expect(result.items.length).toBe(1);
+      expect(result.total).toBe(1);
+    });
+
+    it('should update a practice area', async () => {
+      prisma.practiceArea.findUnique.mockResolvedValue({ id: 'pa-1', key: 'corporate-law' });
+      prisma.practiceArea.update.mockResolvedValue({ id: 'pa-1', nameEn: 'Updated Corporate Law' });
+
+      const result = await service.updateAdminPracticeArea('pa-1', { nameEn: 'Updated Corporate Law' });
+      expect(result.nameEn).toBe('Updated Corporate Law');
+    });
+
+    it('should delete a practice area', async () => {
+      prisma.practiceArea.findUnique.mockResolvedValue({ id: 'pa-1', nameEn: 'Corporate Law' });
+      prisma.practiceArea.delete.mockResolvedValue({ id: 'pa-1' });
+
+      const result = await service.deleteAdminPracticeArea('pa-1');
+      expect(result.success).toBe(true);
+    });
   });
 });
