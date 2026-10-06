@@ -89,6 +89,21 @@ async function bootstrap() {
     }),
   );
 
+  // Automatically normalize paths without /api/v1 prefix (e.g., /admin/queues/disputes -> /api/v1/admin/queues/disputes)
+  app.use((req, res, next) => {
+    const rawUrl = req.url || '';
+    if (
+      !rawUrl.startsWith('/api/v1') &&
+      !rawUrl.startsWith('/health') &&
+      !rawUrl.startsWith('/metrics') &&
+      !rawUrl.startsWith('/docs') &&
+      !rawUrl.startsWith('/socket.io')
+    ) {
+      req.url = `/api/v1${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+    }
+    next();
+  });
+
   // Reverse Proxy Routing for Marketplace Service (Disputes, Bookings, Cases, Reviews, Discovery)
   app.use(
     createProxyMiddleware({

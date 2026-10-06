@@ -16,7 +16,9 @@ export CI=true
 unset NODE_OPTIONS
 
 echo "--> Pulling latest code..."
-git pull origin main || git pull origin master
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "User-service-localization")
+echo "--> Active branch: ${CURRENT_BRANCH}"
+git pull origin "${CURRENT_BRANCH}" || git pull origin main || true
 
 echo "--> Installing dependencies..."
 npm install
