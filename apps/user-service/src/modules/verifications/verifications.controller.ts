@@ -1,5 +1,6 @@
 import { Controller, Post, Get, Patch, Body, Param, Query, Req, UsePipes, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { VerificationCaseService } from './services/verification-case.service';
 import { VerificationDecisionService } from './services/verification-decision.service';
 import { VerificationFraudService } from './services/verification-fraud.service';
@@ -22,6 +23,7 @@ import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 import { UsersService } from '../users/users.service';
 import { AttorneyProfileChangeService } from '../attorneys/services/attorney-profile-change.service';
 
+@AllowAnonymous()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('verifications')
 export class VerificationsController {

@@ -5,6 +5,7 @@ import { AdministrationService } from './administration.service';
 import { AttorneyProfileChangeService } from '../attorneys/services/attorney-profile-change.service';
 import { CreatePracticeAreaDto, UpdatePracticeAreaDto } from './dto/practice-area.dto';
 
+@AllowAnonymous()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'SUPER_ADMIN')
 @Controller('admin')

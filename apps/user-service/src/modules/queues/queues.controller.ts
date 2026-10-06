@@ -1,7 +1,9 @@
 import { Controller, Get, Post, Delete, Param, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { QueuesService } from './queues.service';
 
+@AllowAnonymous()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'SUPER_ADMIN')
 @Controller('queues')
