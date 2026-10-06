@@ -119,13 +119,11 @@ export class GoogleMeetService {
       return retryWithBackoff(
         async () => {
           const attendees: calendar_v3.Schema$EventAttendee[] = [];
-          if (this.hasDomainWideDelegation) {
-            if (req.clientEmail) {
-              attendees.push({ email: req.clientEmail, displayName: req.clientName || 'Client' });
-            }
-            if (req.attorneyEmail) {
-              attendees.push({ email: req.attorneyEmail, displayName: req.attorneyName || 'Attorney' });
-            }
+          if (req.clientEmail) {
+            attendees.push({ email: req.clientEmail, displayName: req.clientName || 'Client' });
+          }
+          if (req.attorneyEmail) {
+            attendees.push({ email: req.attorneyEmail, displayName: req.attorneyName || 'Attorney' });
           }
 
           const buildPayload = (includeConference: boolean, includeAttendees: boolean): calendar_v3.Schema$Event => ({
@@ -159,6 +157,10 @@ export class GoogleMeetService {
                   },
                 }
               : {}),
+            visibility: 'private',
+            guestsCanModify: false,
+            guestsCanInviteOthers: false,
+            guestsCanSeeOtherGuests: false,
             reminders: {
               useDefault: false,
               overrides: [
@@ -170,11 +172,12 @@ export class GoogleMeetService {
 
           let response: any;
           try {
-            // Attempt 1: Full payload with conference creation
+            // Attempt 1: Full payload with conference creation and attendees
             response = await this.calendar!.events.insert({
               calendarId: 'primary',
               conferenceDataVersion: 1,
-              requestBody: buildPayload(true, this.hasDomainWideDelegation),
+              sendUpdates: 'all',
+              requestBody: buildPayload(true, true),
             });
           } catch (err: any) {
             // If conference type or attendees are unsupported on this service account, fallback to direct event insertion
