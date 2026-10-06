@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@workspace/database';
 
 @Injectable()
@@ -62,5 +62,20 @@ export class SearchService {
       count: results.length,
       results,
     };
+  }
+
+  async getPracticeAreaById(idOrKey: string) {
+    const practiceArea = await this.prisma.practiceArea.findFirst({
+      where: {
+        OR: [
+          { id: idOrKey },
+          { key: idOrKey },
+        ],
+      },
+    });
+    if (!practiceArea) {
+      throw new NotFoundException(`Practice area "${idOrKey}" not found`);
+    }
+    return practiceArea;
   }
 }

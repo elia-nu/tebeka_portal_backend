@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
+import { JwtAuthGuard, RolesGuard, Roles, Public } from '@workspace/auth';
 import { AdministrationService } from './administration.service';
 import { AttorneyProfileChangeService } from '../attorneys/services/attorney-profile-change.service';
 import { CreatePracticeAreaDto, UpdatePracticeAreaDto } from './dto/practice-area.dto';
@@ -112,11 +112,13 @@ export class AdministrationController {
   // PRACTICE AREAS ADMIN CRUD ENDPOINTS
   // ==========================================
 
+  @Public()
   @Get('practice-areas')
   async getAdminPracticeAreas(@Query() query: any) {
     return this.administrationService.getAdminPracticeAreas(query);
   }
 
+  @Public()
   @Get('practice-areas/:id')
   async getAdminPracticeAreaById(@Param('id') id: string) {
     return this.administrationService.getAdminPracticeAreaById(id);

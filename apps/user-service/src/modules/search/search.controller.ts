@@ -1,6 +1,6 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { SearchService } from './search.service';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { Public } from '@workspace/auth';
 
 @Controller()
 export class SearchController {
@@ -16,21 +16,39 @@ export class SearchController {
     return this.searchService.searchAttorneys(query);
   }
 
-  @AllowAnonymous()
+  @Public()
   @Get('search/practice-areas')
   async searchPracticeAreas(@Query() query: any) {
     return this.searchService.searchPracticeAreas(query);
   }
 
-  @AllowAnonymous()
+  @Public()
+  @Get('search/practice-areas/:id')
+  async searchPracticeAreaById(@Param('id') id: string) {
+    return this.searchService.getPracticeAreaById(id);
+  }
+
+  @Public()
   @Get('practice-areas')
   async getPracticeAreas(@Query() query: any) {
     return this.searchService.searchPracticeAreas(query);
   }
 
-  @AllowAnonymous()
+  @Public()
+  @Get('practice-areas/:id')
+  async getPracticeAreaById(@Param('id') id: string) {
+    return this.searchService.getPracticeAreaById(id);
+  }
+
+  @Public()
   @Get('public/practice-areas')
   async getPublicPracticeAreas(@Query() query: any) {
     return this.searchService.searchPracticeAreas(query);
+  }
+
+  @Public()
+  @Get('public/practice-areas/:id')
+  async getPublicPracticeAreaById(@Param('id') id: string) {
+    return this.searchService.getPracticeAreaById(id);
   }
 }
