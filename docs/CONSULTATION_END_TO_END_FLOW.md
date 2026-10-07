@@ -17,9 +17,11 @@
         │                                │────── RabbitMQ (BOOKING_ACCEPTED) ────────────────────►│
         │                                │                             │       (Notify Client)    │
         │                                │                             │                          │
-  [3] Client Checkout ────────────────────────────────────────────────►│                          │
-        │   POST /payments/checkout      │                             │ Chapa Split (15% / 85%)  │
-        │   (Telebirr / Chapa / CBE)     │                             │ Returns Checkout URL     │
+  [3] Client Checkout ──────────────────►│ (Resolves Fee from Profile) │                          │
+        │   POST /bookings/:id/checkout  │────── Internal Payment ────►│ Chapa Split (15% / 85%)  │
+        │   (Body can be empty {})       │                             │ Returns Checkout URL     │
+        │                                │◄───── Return Checkout URL ──│                          │
+        │◄─── Return Checkout URL ───────│                             │                          │
         │                                │                             │                          │
   [4] Payment Verified ───────────────────────────────────────────────►│ (Status: COMPLETED)      │
         │   Webhook / Verify             │                             │ Writes Outbox Event      │
@@ -184,40 +186,35 @@ The attorney reviews the consultation request and accepts.
 
 ---
 
-### Step 3: Client Checkout & Split Payment
-The client initializes payment for the consultation.
+### Step 3: Client Checkout & Split Payment (Zero-Payload Orchestration)
+The client initializes payment for the accepted consultation booking. The backend securely resolves the attorney's authoritative `consultationFee`, client identity, and contact information from the JWT token and profile, preventing client-side price tampering.
 
-* **Endpoint**: `POST /api/v1/payments`
+* **Endpoint**: `POST /api/v1/bookings/b7e21a8f-5192-4f3e-8c31-90a14b3d8810/checkout`
 * **Headers**: `Authorization: Bearer <client_jwt>`
 
-#### Request Payload:
+#### Request Payload (All fields optional — body can be `{}`):
 ```json
 {
-  "bookingId": "b7e21a8f-5192-4f3e-8c31-90a14b3d8810",
-  "payeeId": "attorney_usr_9921",
-  "amount": 2000.0,
-  "currency": "ETB",
   "provider": "CHAPA",
-  "email": "client@example.com",
-  "phone": "+251911223344"
+  "phone": "+251911223344",
+  "email": "client@example.com"
 }
 ```
 
-#### Response:
+> **Note**: If `phone`, `email`, or `provider` are omitted, the backend auto-derives them from the client's JWT token, user profile, and Geo-IP detection engine. `amount` and `payeeId` are strictly resolved server-side from `AttorneyProfile.consultationFee`.
+
+#### Response (`200 OK`):
 ```json
 {
-  "id": "p_8841a0e1-6712-4cf3-b912-4018281141ab",
+  "success": true,
   "bookingId": "b7e21a8f-5192-4f3e-8c31-90a14b3d8810",
-  "payerId": "client_usr_1048",
-  "payeeId": "attorney_usr_9921",
-  "amount": "2000.00",
-  "commission": "300.00",
-  "subaccountId": "SUB_ACCT_yared_94821",
-  "splitPercentage": 15.0,
-  "transactionReference": "TX-1787140800000-8F92A1",
+  "referenceNumber": "CONS-2026-000042",
+  "amount": 2000.0,
+  "currency": "ETB",
   "provider": "CHAPA",
-  "status": "PENDING",
-  "checkoutUrl": "https://checkout.chapa.co/checkout/payment/8F92A1"
+  "transactionReference": "TX-1787140800000-8F92A1",
+  "checkoutUrl": "https://checkout.chapa.co/checkout/payment/8F92A1",
+  "status": "PENDING"
 }
 ```
 

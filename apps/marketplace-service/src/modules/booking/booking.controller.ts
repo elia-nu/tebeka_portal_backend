@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes, UseGuards, Headers } from '@nestjs/common';
 import { JwtAuthGuard, RolesGuard, Public } from '@workspace/auth';
 import { BookingService } from './booking.service';
+import { BookingCheckoutService } from './services/booking-checkout.service';
 import {
   CreateBookingDto,
   CreateBookingSchema,
@@ -11,12 +12,16 @@ import {
   QueryBookingDto,
   QueryBookingSchema,
 } from './dto/booking.dto';
+import { BookingCheckoutDto, BookingCheckoutSchema } from './dto/booking-checkout.dto';
 import { JoiValidationPipe } from '../../common/pipes/joi-validation.pipe';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('bookings')
 export class BookingController {
-  constructor(private readonly bookingService: BookingService) {}
+  constructor(
+    private readonly bookingService: BookingService,
+    private readonly bookingCheckoutService: BookingCheckoutService,
+  ) {}
 
   @Post()
   @UsePipes(new JoiValidationPipe(CreateBookingSchema))
@@ -42,6 +47,19 @@ export class BookingController {
   async acceptBooking(@Param('id') id: string, @Req() req: any) {
     const attorneyId = req.user.id;
     return this.bookingService.acceptBooking(id, attorneyId);
+  }
+
+  @Post(':id/checkout')
+  @UsePipes(new JoiValidationPipe(BookingCheckoutSchema))
+  async checkoutBooking(
+    @Param('id') id: string,
+    @Body() body: BookingCheckoutDto,
+    @Req() req: any,
+    @Headers('x-correlation-id') correlationId?: string,
+  ) {
+    const clientId = req.user?.id;
+    const jwtEmail = req.user?.email;
+    return this.bookingCheckoutService.initiateCheckout(id, clientId, jwtEmail, body, correlationId);
   }
 
   @Patch(':id/decline')
