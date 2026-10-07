@@ -21,7 +21,7 @@ echo "--> Active branch: ${CURRENT_BRANCH}"
 git pull origin "${CURRENT_BRANCH}" || git pull origin main || true
 
 echo "--> Installing dependencies..."
-npm install
+npm install --legacy-peer-deps
 
 echo "--> Generating Prisma clients..."
 npx prisma generate --schema=apps/user-service/prisma/schema.prisma

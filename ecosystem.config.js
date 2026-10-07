@@ -15,18 +15,16 @@ if (fs.existsSync(envPath)) {
       if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
         val = val.slice(1, -1);
       }
-      if (process.env[key] === undefined) {
-        process.env[key] = val;
-      }
+      process.env[key] = val;
     }
   }
 }
 
 function getScriptPath(app) {
   const candidates = [
-    `dist/apps/${app}/main.js`,
+    `dist/apps/${app}/apps/${app}/src/main.js`,
     `dist/apps/${app}/src/main.js`,
-    `dist/apps/${app}/apps/${app}/src/main.js`
+    `dist/apps/${app}/main.js`
   ];
   for (const c of candidates) {
     if (fs.existsSync(path.resolve(__dirname, c))) {
@@ -85,6 +83,7 @@ module.exports = {
         DATABASE_URL_MARKETPLACE: process.env.DATABASE_URL_MARKETPLACE || 'postgresql://postgres:postgres@127.0.0.1:15432/marketplace_db?schema=public',
         DATABASE_URL: process.env.DATABASE_URL_MARKETPLACE || 'postgresql://postgres:postgres@127.0.0.1:15432/marketplace_db?schema=public',
         USER_SERVICE_INTERNAL_URL: process.env.USER_SERVICE_INTERNAL_URL || 'http://127.0.0.1:7001/api/v1',
+        FINANCIAL_SERVICE_INTERNAL_URL: process.env.FINANCIAL_SERVICE_INTERNAL_URL || 'http://127.0.0.1:7003/api/v1',
         COMMUNICATION_SERVICE_INTERNAL_URL: process.env.COMMUNICATION_SERVICE_INTERNAL_URL || 'http://127.0.0.1:7004/api/v1/communication',
         REDIS_HOST: process.env.REDIS_HOST || '127.0.0.1',
         REDIS_PORT: process.env.REDIS_PORT || 6379,
@@ -106,6 +105,16 @@ module.exports = {
         REDIS_PORT: process.env.REDIS_PORT || 6379,
         RABBITMQ_URI: process.env.RABBITMQ_URI || 'amqp://guest:guest@127.0.0.1:5672',
         INTERNAL_SERVICE_SECRET: process.env.INTERNAL_SERVICE_SECRET || 'tebeka-internal-secret-change-in-production',
+        CHAPA_KEY: process.env.CHAPA_KEY,
+        CHAPA_PUBLIC_KEY: process.env.CHAPA_PUBLIC_KEY,
+        CHAPA_SECRET: process.env.CHAPA_SECRET,
+        CHAPA_SECRET_KEY: process.env.CHAPA_SECRET_KEY,
+        CHAPA_WEBHOOK_SECRET_HASH: process.env.CHAPA_WEBHOOK_SECRET_HASH,
+        STRIPE_KEY: process.env.STRIPE_KEY,
+        STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
+        STRIPE_SECRET: process.env.STRIPE_SECRET,
+        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+        STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
       },
     },
     {

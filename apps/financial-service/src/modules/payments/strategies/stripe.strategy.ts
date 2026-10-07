@@ -94,10 +94,11 @@ export class StripeStrategy implements IPaymentProviderStrategy {
     }
 
     try {
+      const frontendUrl = process.env.FRONTEND_URL || 'https://tebeka.alikohub.com';
       const accountLink = await this.stripe.accountLinks.create({
         account: accountId,
-        refresh_url: refreshUrl || 'https://tebeka.et/attorney/payout-setup?refresh=true',
-        return_url: returnUrl || 'https://tebeka.et/attorney/payout-setup?success=true',
+        refresh_url: refreshUrl || `${frontendUrl}/attorney/payout-setup?refresh=true`,
+        return_url: returnUrl || `${frontendUrl}/attorney/payout-setup?success=true`,
         type: 'account_onboarding',
       });
       return accountLink.url;
@@ -164,6 +165,7 @@ export class StripeStrategy implements IPaymentProviderStrategy {
         };
       }
 
+      const frontendUrl = process.env.FRONTEND_URL || 'https://tebeka.alikohub.com';
       const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         mode: 'payment',
@@ -183,8 +185,8 @@ export class StripeStrategy implements IPaymentProviderStrategy {
         payment_intent_data: Object.keys(paymentIntentData).length > 0 ? paymentIntentData : undefined,
         client_reference_id: request.txRef,
         customer_email: request.email || undefined,
-        success_url: request.returnUrl || `https://tebeka.et/payment/success?session_id={CHECKOUT_SESSION_ID}&tx_ref=${request.txRef}`,
-        cancel_url: request.callbackUrl || `https://tebeka.et/payment/cancel?tx_ref=${request.txRef}`,
+        success_url: request.returnUrl || `${frontendUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&tx_ref=${request.txRef}`,
+        cancel_url: request.callbackUrl || `${frontendUrl}/payment/cancel?tx_ref=${request.txRef}`,
         metadata: {
           txRef: request.txRef,
           paymentId: request.paymentId,

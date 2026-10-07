@@ -23,11 +23,12 @@ export class PaymentWebhookController {
   @HttpCode(HttpStatus.OK)
   async handleChapaWebhook(
     @Body() body: any,
-    @Headers('x-chapa-signature') signature: string,
+    @Headers('x-chapa-signature') rawSig: string,
     @Req() req: any
   ) {
     this.logger.log(`📥 Received Chapa Webhook: ${JSON.stringify(body)}`);
 
+    const signature = rawSig || req?.headers?.['x-chapa-signature'] || req?.headers?.['chapa-signature'] || req?.headers?.['x-signature'];
     const rawBody = req?.rawBody;
     const isValid = this.chapaStrategy.verifyWebhookSignature(signature, body, rawBody);
     if (!isValid && process.env.NODE_ENV === 'production') {

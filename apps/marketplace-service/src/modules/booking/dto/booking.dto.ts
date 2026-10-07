@@ -14,9 +14,9 @@ export interface CreateBookingDto {
 }
 
 export const CreateBookingSchema = Joi.object({
-  attorneyId: Joi.string().uuid().required(),
-  clientId: Joi.string().uuid().optional(),
-  availabilityId: Joi.string().uuid().optional(),
+  attorneyId: Joi.string().required(),
+  clientId: Joi.string().optional(),
+  availabilityId: Joi.string().optional(),
   bookingDate: Joi.date().iso().required(),
   startTime: Joi.string().regex(/^([01]\d|2[03]):([0-5]\d)$/).required().messages({
     'string.pattern.base': 'startTime must be in HH:mm format (e.g. 09:30 or 14:00)',

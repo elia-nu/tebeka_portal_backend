@@ -9,10 +9,14 @@ export class FinancialServiceClient {
   private readonly circuitBreaker: CircuitBreaker;
 
   constructor(private readonly configService: AppConfigService) {
-    this.financialServiceBaseUrl =
+    const rawUrl =
       process.env.FINANCIAL_SERVICE_INTERNAL_URL ||
       process.env.FINANCIAL_SERVICE_URL ||
       'http://127.0.0.1:7003/api/v1';
+
+    this.financialServiceBaseUrl = rawUrl.includes('/api/v1')
+      ? rawUrl.replace(/\/$/, '')
+      : `${rawUrl.replace(/\/$/, '')}/api/v1`;
 
     this.circuitBreaker = new CircuitBreaker({
       name: 'Marketplace->FinancialService',

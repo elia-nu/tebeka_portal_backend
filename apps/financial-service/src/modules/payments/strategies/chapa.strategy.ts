@@ -28,16 +28,21 @@ export class ChapaStrategy implements IPaymentProviderStrategy {
     return this.circuitBreaker.execute(async () => {
       return retryWithBackoff(
         async (attempt) => {
+          let email = (request.email || '').trim();
+          if (!email || !email.includes('@')) {
+            email = 'client.tebeka@gmail.com';
+          }
+
           const payload: Record<string, any> = {
             amount: String(request.amount),
             currency: request.currency || 'ETB',
-            email: request.email || 'customer@gmail.com',
+            email,
             first_name: request.firstName || 'Client',
             last_name: request.lastName || 'User',
-            phone_number: request.phone || '',
+            phone_number: request.phone || '0911223344',
             tx_ref: request.txRef,
-            callback_url: request.callbackUrl || 'https://api.tebeka.et/api/v1/payments/webhooks/chapa',
-            return_url: request.returnUrl || 'https://tebeka.et/payment/complete',
+            callback_url: request.callbackUrl || process.env.CHAPA_WEBHOOK_URL || 'https://tebeka.alikohub.com/api/v1/payments/webhooks/chapa',
+            return_url: request.returnUrl || `${process.env.FRONTEND_URL || 'https://tebeka.alikohub.com'}/payment/complete`,
             'customization[title]': 'Tebeka Legal Services',
             'customization[description]': `Payment for reference ${request.txRef}`,
           };
@@ -202,11 +207,16 @@ export class ChapaStrategy implements IPaymentProviderStrategy {
 
   verifyWebhookSignature(signature: string, payload: any, rawBody?: Buffer | string): boolean {
     if (!signature) return false;
-    const secret = process.env.CHAPA_WEBHOOK_SECRET_HASH || this.secretKey;
+    const cleanSig = String(signature).trim().replace(/^["']|["']$/g, '');
+    const secret = (process.env.CHAPA_WEBHOOK_SECRET_HASH || this.secretKey || '').trim().replace(/^["']|["']$/g, '');
+    this.logger.debug(`Chapa verifyWebhookSignature: received signature format validation check.`);
     if (!secret) return true;
 
     // 1. Direct secret hash comparison (Chapa secret hash mode)
-    if (signature === secret) return true;
+    if (cleanSig === secret || cleanSig.toLowerCase() === secret.toLowerCase()) {
+      this.logger.log(`Chapa signature matched secret hash directly.`);
+      return true;
+    }
 
     // 2. HMAC-SHA256 signature calculation over raw or stringified payload
     try {
@@ -215,13 +225,15 @@ export class ChapaStrategy implements IPaymentProviderStrategy {
         : (typeof payload === 'string' ? payload : JSON.stringify(payload));
 
       const hash = crypto.createHmac('sha256', secret).update(payloadStr).digest('hex');
+      const hashWithSecretKey = this.secretKey ? crypto.createHmac('sha256', this.secretKey).update(payloadStr).digest('hex') : '';
 
-      if (hash.toLowerCase() === signature.toLowerCase()) {
+      if (hash.toLowerCase() === cleanSig.toLowerCase() || (hashWithSecretKey && hashWithSecretKey.toLowerCase() === cleanSig.toLowerCase())) {
+        this.logger.log(`Chapa signature matched HMAC-SHA256 hash.`);
         return true;
       }
 
       // Timing-safe comparison if lengths match
-      const signatureBuf = Buffer.from(signature.toLowerCase(), 'utf8');
+      const signatureBuf = Buffer.from(cleanSig.toLowerCase(), 'utf8');
       const hashBuf = Buffer.from(hash.toLowerCase(), 'utf8');
       if (signatureBuf.length === hashBuf.length && crypto.timingSafeEqual(signatureBuf, hashBuf)) {
         return true;
