@@ -25,9 +25,13 @@ export class BookingController {
 
   @Post()
   @UsePipes(new JoiValidationPipe(CreateBookingSchema))
-  async createBooking(@Body() body: CreateBookingDto, @Req() req: any) {
+  async createBooking(
+    @Body() body: CreateBookingDto,
+    @Req() req: any,
+    @Headers('x-correlation-id') correlationId?: string,
+  ) {
     const clientId = req.user?.id || body.clientId;
-    return this.bookingService.createBooking(body, clientId);
+    return this.bookingService.createBooking(body, clientId, correlationId);
   }
 
   @Get()

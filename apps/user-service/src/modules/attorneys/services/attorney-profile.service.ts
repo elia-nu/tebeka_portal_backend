@@ -42,7 +42,7 @@ export class AttorneyProfileService {
   }
 
   async findOne(id: string) {
-    const attorney = await this.prisma.attorneyProfile.findUnique({
+    let attorney = await this.prisma.attorneyProfile.findUnique({
       where: { id },
       include: {
         user: true,
@@ -52,6 +52,20 @@ export class AttorneyProfileService {
         credentials: { include: { documents: true } }
       },
     });
+
+    if (!attorney) {
+      attorney = await this.prisma.attorneyProfile.findUnique({
+        where: { userId: id },
+        include: {
+          user: true,
+          educations: true,
+          guardedChanges: true,
+          verificationCases: true,
+          credentials: { include: { documents: true } }
+        },
+      });
+    }
+
     if (!attorney) throw new NotFoundException(`Attorney profile ${id} not found`);
     return sanitizeUser(attorney);
   }

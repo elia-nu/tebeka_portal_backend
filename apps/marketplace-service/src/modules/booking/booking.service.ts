@@ -31,7 +31,7 @@ export class BookingService {
   // 1. CORE BOOKING CREATION & LIFECYCLE
   // =========================================================================
 
-  async createBooking(data: any, clientId: string) {
+  async createBooking(data: any, clientId: string, correlationId?: string) {
     if (!data.attorneyId) throw new BadRequestException('attorneyId is required');
     if (!data.bookingDate) throw new BadRequestException('bookingDate is required');
     if (!data.startTime || !data.endTime) throw new BadRequestException('startTime and endTime are required');
@@ -49,7 +49,7 @@ export class BookingService {
     // Check Google Calendar Free/Busy if attorney has connected their calendar
     if (this.userServiceClient && this.googleMeetService) {
       try {
-        const attorneyProfile = await this.userServiceClient.getAttorneyProfile(data.attorneyId);
+        const attorneyProfile = await this.userServiceClient.getAttorneyProfile(data.attorneyId, correlationId);
         if (attorneyProfile?.isGoogleSyncEnabled && attorneyProfile?.googleRefreshToken) {
           const reqSlotStart = new Date(`${dateStr}T${data.startTime}:00+03:00`);
           const reqSlotEnd = new Date(`${dateStr}T${data.endTime}:00+03:00`);
@@ -78,7 +78,7 @@ export class BookingService {
     }
 
     // Double booking & reservation conflict prevention inside Interactive Transaction
-    return this.prisma.$transaction(async (tx) => {
+    const createdBooking = await this.prisma.$transaction(async (tx) => {
       const existingBookingsOnDate = await tx.booking.findMany({
         where: {
           attorneyId: data.attorneyId,
@@ -157,10 +157,44 @@ export class BookingService {
 
       return booking;
     });
+
+    return this.enrichBookingWithFee(createdBooking, correlationId);
+  }
+
+  private async enrichBookingWithFee(booking: any, correlationId?: string) {
+    if (!booking) return booking;
+    let consultationFee: number | null = null;
+    let attorney: any = null;
+
+    if (this.userServiceClient && booking.attorneyId) {
+      try {
+        const profile = await this.userServiceClient.getAttorneyProfile(booking.attorneyId, correlationId);
+        if (profile) {
+          const rawFee = profile.consultationFee ?? profile.consultationFees;
+          consultationFee = rawFee !== null && rawFee !== undefined ? Number(rawFee) : null;
+          attorney = {
+            id: profile.id,
+            userId: profile.userId,
+            fullName: profile.user?.fullName || profile.fullName,
+            photoUrl: profile.user?.photoUrl || profile.photoUrl || profile.professionalPhotoUrl,
+            feeBand: profile.feeBand,
+            consultationFee,
+          };
+        }
+      } catch {
+        // Graceful fallback
+      }
+    }
+
+    return {
+      ...booking,
+      consultationFee,
+      attorney,
+    };
   }
 
   async acceptBooking(id: string, attorneyId: string) {
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({ where: { id } });
       if (!booking) throw new NotFoundException(`Booking ${id} not found`);
 
@@ -172,7 +206,7 @@ export class BookingService {
         throw new BadRequestException(`Cannot accept booking in ${booking.status} status`);
       }
 
-      const updated = await tx.booking.update({
+      const updatedBooking = await tx.booking.update({
         where: { id },
         data: { status: BookingStatus.ACCEPTED_PENDING_PAYMENT },
       });
@@ -200,8 +234,10 @@ export class BookingService {
         },
       });
 
-      return updated;
+      return updatedBooking;
     });
+
+    return this.enrichBookingWithFee(updated);
   }
 
   async declineBooking(id: string, attorneyId: string, reason?: string) {
@@ -285,7 +321,8 @@ export class BookingService {
           try {
             const profile = await this.userServiceClient?.getAttorneyProfile(attorneyId, correlationId);
             if (profile) {
-              const fee = Number(profile.consultationFee || profile.consultationFees || 0);
+              const rawFee = profile.consultationFee ?? profile.consultationFees;
+              const fee = rawFee !== null && rawFee !== undefined ? Number(rawFee) : null;
               attorneyMap.set(attorneyId, {
                 id: profile.id,
                 userId: profile.userId,
@@ -333,33 +370,7 @@ export class BookingService {
       throw new NotFoundException(`Booking with ID ${id} not found`);
     }
 
-    let consultationFee: number | null = null;
-    let attorney: any = null;
-
-    if (this.userServiceClient) {
-      try {
-        const profile = await this.userServiceClient.getAttorneyProfile(booking.attorneyId, correlationId);
-        if (profile) {
-          consultationFee = Number(profile.consultationFee || profile.consultationFees || 0);
-          attorney = {
-            id: profile.id,
-            userId: profile.userId,
-            fullName: profile.user?.fullName || profile.fullName,
-            photoUrl: profile.user?.photoUrl || profile.photoUrl || profile.professionalPhotoUrl,
-            feeBand: profile.feeBand,
-            consultationFee,
-          };
-        }
-      } catch {
-        // Graceful fallback
-      }
-    }
-
-    return {
-      ...booking,
-      consultationFee,
-      attorney,
-    };
+    return this.enrichBookingWithFee(booking, correlationId);
   }
 
   async findOne(id: string, correlationId?: string) {

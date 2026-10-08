@@ -20,6 +20,7 @@ describe('BookingService', () => {
         findMany: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
       },
       bookingEvent: {
         create: jest.fn(),
@@ -102,6 +103,46 @@ describe('BookingService', () => {
           'client-1'
         )
       ).rejects.toThrow(ConflictException);
+    });
+
+    it('should create booking and return enriched consultationFee and attorney details', async () => {
+      const mockUserServiceClient = (service as any).userServiceClient;
+      mockUserServiceClient.getAttorneyProfile.mockResolvedValue({
+        id: 'prof-1',
+        userId: 'att-1',
+        consultationFee: 2500.0,
+        feeBand: 'PREMIUM',
+        user: { fullName: 'Advocate Yared Tesfaye' },
+      });
+
+      mockPrisma.booking.findMany.mockResolvedValue([]);
+      mockPrisma.booking.count.mockResolvedValue(0);
+      mockPrisma.booking.create.mockResolvedValue({
+        id: 'b-new',
+        referenceNumber: 'CONS-2026-000001',
+        clientId: 'client-1',
+        attorneyId: 'att-1',
+        bookingDate: new Date('2026-10-07T00:00:00.000Z'),
+        startTime: '14:00',
+        endTime: '15:00',
+        status: BookingStatus.REQUESTED,
+        paymentStatus: 'UNPAID',
+      });
+
+      const result = await service.createBooking(
+        {
+          attorneyId: 'att-1',
+          bookingDate: '2026-10-07',
+          startTime: '14:00',
+          endTime: '15:00',
+        },
+        'client-1',
+      );
+
+      expect(result.id).toBe('b-new');
+      expect(result.consultationFee).toBe(2500.0);
+      expect(result.attorney).toBeDefined();
+      expect(result.attorney.fullName).toBe('Advocate Yared Tesfaye');
     });
   });
 
