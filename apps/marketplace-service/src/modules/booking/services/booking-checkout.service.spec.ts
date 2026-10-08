@@ -80,6 +80,7 @@ describe('BookingCheckoutService', () => {
     );
 
     expect(result.success).toBe(true);
+    expect(result.consultationFee).toBe(2500.0);
     expect(result.amount).toBe(2500.0);
     expect(result.currency).toBe('ETB');
     expect(result.checkoutUrl).toBe('https://checkout.chapa.co/checkout/payment/123456');

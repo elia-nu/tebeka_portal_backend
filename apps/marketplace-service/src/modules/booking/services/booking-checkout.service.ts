@@ -109,6 +109,7 @@ export class BookingCheckoutService {
       success: true,
       bookingId: booking.id,
       referenceNumber: booking.referenceNumber,
+      consultationFee,
       amount: consultationFee,
       currency: paymentResponse?.currency || 'ETB',
       provider: paymentResponse?.provider || dto.provider || 'CHAPA',
