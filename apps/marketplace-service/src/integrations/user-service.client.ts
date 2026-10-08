@@ -10,7 +10,14 @@ export class UserServiceClient {
 
   constructor(private readonly configService: AppConfigService) {
     // Internal direct service-to-service communication URL (skips API Gateway for low latency)
-    this.userServiceBaseUrl = process.env.USER_SERVICE_INTERNAL_URL || process.env.USER_SERVICE_URL || 'http://localhost:3001/api/v1';
+    const rawUrl =
+      process.env.USER_SERVICE_INTERNAL_URL ||
+      process.env.USER_SERVICE_URL ||
+      'http://localhost:3001/api/v1';
+
+    this.userServiceBaseUrl = rawUrl.includes('/api/v1')
+      ? rawUrl.replace(/\/+$/, '')
+      : `${rawUrl.replace(/\/+$/, '')}/api/v1`;
 
     this.circuitBreaker = new CircuitBreaker({
       name: 'Marketplace->UserService',
