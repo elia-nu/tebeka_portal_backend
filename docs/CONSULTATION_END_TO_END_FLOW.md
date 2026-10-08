@@ -210,7 +210,6 @@ The client initializes payment for the accepted consultation booking. The backen
   "bookingId": "b7e21a8f-5192-4f3e-8c31-90a14b3d8810",
   "referenceNumber": "CONS-2026-000042",
   "consultationFee": 2000.0,
-  "amount": 2000.0,
   "currency": "ETB",
   "provider": "CHAPA",
   "transactionReference": "TX-1787140800000-8F92A1",
