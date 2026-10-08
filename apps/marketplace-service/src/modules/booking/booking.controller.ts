@@ -32,15 +32,22 @@ export class BookingController {
 
   @Get()
   @UsePipes(new JoiValidationPipe(QueryBookingSchema))
-  async findUserBookings(@Query() query: QueryBookingDto, @Req() req: any) {
+  async findUserBookings(
+    @Query() query: QueryBookingDto,
+    @Req() req: any,
+    @Headers('x-correlation-id') correlationId?: string,
+  ) {
     const userId = req.user.id;
     const role = req.user.role || query.role || 'CLIENT';
-    return this.bookingService.findUserBookings(userId, role, query);
+    return this.bookingService.findUserBookings(userId, role, query, correlationId);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.bookingService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @Headers('x-correlation-id') correlationId?: string,
+  ) {
+    return this.bookingService.findOne(id, correlationId);
   }
 
   @Patch(':id/accept')

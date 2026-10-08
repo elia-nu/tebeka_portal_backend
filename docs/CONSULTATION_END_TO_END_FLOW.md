@@ -186,6 +186,40 @@ The attorney reviews the consultation request and accepts.
 
 ---
 
+### Step 2.5: Client Queries Booking Details & Consultation Fee
+The client queries booking details or their active bookings list before proceeding to checkout.
+
+* **Endpoint**: `GET /api/v1/bookings/b7e21a8f-5192-4f3e-8c31-90a14b3d8810`
+* **Headers**: `Authorization: Bearer <client_jwt>`
+
+#### Response (`200 OK`):
+```json
+{
+  "id": "b7e21a8f-5192-4f3e-8c31-90a14b3d8810",
+  "referenceNumber": "CONS-2026-000042",
+  "clientId": "client_usr_1048",
+  "attorneyId": "attorney_usr_9921",
+  "bookingDate": "2026-08-25T00:00:00.000Z",
+  "startTime": "14:00",
+  "endTime": "15:00",
+  "consultationType": "VIDEO",
+  "status": "ACCEPTED_PENDING_PAYMENT",
+  "paymentStatus": "UNPAID",
+  "consultationFee": 2000.0,
+  "attorney": {
+    "id": "attorney_prof_9921",
+    "userId": "attorney_usr_9921",
+    "fullName": "Advocate Yared Tesfaye",
+    "feeBand": "PREMIUM",
+    "consultationFee": 2000.0
+  },
+  "meetingLink": null,
+  "createdAt": "2026-08-19T14:40:00.000Z"
+}
+```
+
+---
+
 ### Step 3: Client Checkout & Split Payment (Zero-Payload Orchestration)
 The client initializes payment for the accepted consultation booking. The backend securely resolves the attorney's authoritative `consultationFee`, client identity, and contact information from the JWT token and profile, preventing client-side price tampering.
 

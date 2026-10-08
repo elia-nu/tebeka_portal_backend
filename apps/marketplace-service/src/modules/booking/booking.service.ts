@@ -250,7 +250,7 @@ export class BookingService {
     });
   }
 
-  async findUserBookings(userId: string, role: string, query: any) {
+  async findUserBookings(userId: string, role: string, query: any, correlationId?: string) {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.max(1, Number(query.limit) || 20);
     const skip = (page - 1) * limit;
@@ -276,8 +276,43 @@ export class BookingService {
       this.prisma.booking.count({ where }),
     ]);
 
+    // Batch enrich consultationFee and attorney details
+    const attorneyMap = new Map<string, any>();
+    if (this.userServiceClient && items.length > 0) {
+      const attorneyIds = Array.from(new Set(items.map((b) => b.attorneyId)));
+      await Promise.all(
+        attorneyIds.map(async (attorneyId) => {
+          try {
+            const profile = await this.userServiceClient?.getAttorneyProfile(attorneyId, correlationId);
+            if (profile) {
+              const fee = Number(profile.consultationFee || profile.consultationFees || 0);
+              attorneyMap.set(attorneyId, {
+                id: profile.id,
+                userId: profile.userId,
+                fullName: profile.user?.fullName || profile.fullName,
+                photoUrl: profile.user?.photoUrl || profile.photoUrl || profile.professionalPhotoUrl,
+                feeBand: profile.feeBand,
+                consultationFee: fee,
+              });
+            }
+          } catch {
+            // Graceful fallback
+          }
+        }),
+      );
+    }
+
+    const enrichedItems = items.map((booking) => {
+      const attorney = attorneyMap.get(booking.attorneyId);
+      return {
+        ...booking,
+        consultationFee: attorney?.consultationFee ?? null,
+        attorney: attorney ?? null,
+      };
+    });
+
     return {
-      items,
+      items: enrichedItems,
       total,
       page,
       limit,
@@ -285,7 +320,7 @@ export class BookingService {
     };
   }
 
-  async findBookingById(id: string) {
+  async findBookingById(id: string, correlationId?: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id },
       include: {
@@ -298,11 +333,37 @@ export class BookingService {
       throw new NotFoundException(`Booking with ID ${id} not found`);
     }
 
-    return booking;
+    let consultationFee: number | null = null;
+    let attorney: any = null;
+
+    if (this.userServiceClient) {
+      try {
+        const profile = await this.userServiceClient.getAttorneyProfile(booking.attorneyId, correlationId);
+        if (profile) {
+          consultationFee = Number(profile.consultationFee || profile.consultationFees || 0);
+          attorney = {
+            id: profile.id,
+            userId: profile.userId,
+            fullName: profile.user?.fullName || profile.fullName,
+            photoUrl: profile.user?.photoUrl || profile.photoUrl || profile.professionalPhotoUrl,
+            feeBand: profile.feeBand,
+            consultationFee,
+          };
+        }
+      } catch {
+        // Graceful fallback
+      }
+    }
+
+    return {
+      ...booking,
+      consultationFee,
+      attorney,
+    };
   }
 
-  async findOne(id: string) {
-    return this.findBookingById(id);
+  async findOne(id: string, correlationId?: string) {
+    return this.findBookingById(id, correlationId);
   }
 
   async updateBookingStatus(id: string, status: BookingStatus, updatedBy: string, reason?: string) {

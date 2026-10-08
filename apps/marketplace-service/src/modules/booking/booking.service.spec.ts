@@ -354,6 +354,63 @@ describe('BookingService', () => {
       ).rejects.toThrow(ConflictException);
     });
   });
+
+  describe('findBookingById and findUserBookings (Enriched with consultationFee)', () => {
+    it('should return booking enriched with consultationFee and attorney details on findOne / findBookingById', async () => {
+      mockPrisma.booking.findUnique.mockResolvedValue({
+        id: 'b-100',
+        referenceNumber: 'CONS-2026-000100',
+        clientId: 'client-1',
+        attorneyId: 'att-1',
+        status: BookingStatus.ACCEPTED_PENDING_PAYMENT,
+        bookingEvents: [],
+        bookingTimelines: [],
+      });
+
+      const mockUserServiceClient = (service as any).userServiceClient;
+      mockUserServiceClient.getAttorneyProfile.mockResolvedValue({
+        id: 'prof-1',
+        userId: 'att-1',
+        consultationFee: 3000.0,
+        feeBand: 'PREMIUM',
+        user: { fullName: 'Advocate Yared Tesfaye', photoUrl: 'https://photo.url' },
+      });
+
+      const result = await service.findOne('b-100');
+      expect(result.id).toBe('b-100');
+      expect(result.consultationFee).toBe(3000.0);
+      expect(result.attorney).toBeDefined();
+      expect(result.attorney.consultationFee).toBe(3000.0);
+      expect(result.attorney.fullName).toBe('Advocate Yared Tesfaye');
+    });
+
+    it('should return user bookings list enriched with consultationFee on findUserBookings', async () => {
+      mockPrisma.booking.findMany.mockResolvedValue([
+        {
+          id: 'b-101',
+          referenceNumber: 'CONS-2026-000101',
+          clientId: 'client-1',
+          attorneyId: 'att-1',
+          status: BookingStatus.REQUESTED,
+        },
+      ]);
+      mockPrisma.booking.count = jest.fn().mockResolvedValue(1);
+
+      const mockUserServiceClient = (service as any).userServiceClient;
+      mockUserServiceClient.getAttorneyProfile.mockResolvedValue({
+        id: 'prof-1',
+        userId: 'att-1',
+        consultationFee: 3000.0,
+        feeBand: 'PREMIUM',
+        user: { fullName: 'Advocate Yared Tesfaye' },
+      });
+
+      const result = await service.findUserBookings('client-1', 'CLIENT', {});
+      expect(result.items.length).toBe(1);
+      expect(result.items[0].consultationFee).toBe(3000.0);
+      expect(result.items[0].attorney.fullName).toBe('Advocate Yared Tesfaye');
+    });
+  });
 });
 
 
