@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BookingCancellationService } from './services/booking-cancellation.service';
 import { PrismaService } from '../../database/prisma.service';
+import { UserServiceClient } from '../../integrations/user-service.client';
 import { BookingStatus } from '@prisma/client/marketplace';
 
 describe('BookingCancellationService (FR-BOOK-03 / OQ#1/2 Refund Policy)', () => {
   let service: BookingCancellationService;
   let mockPrisma: any;
+  let mockUserServiceClient: any;
 
   beforeEach(async () => {
     mockPrisma = {
@@ -22,10 +24,18 @@ describe('BookingCancellationService (FR-BOOK-03 / OQ#1/2 Refund Policy)', () =>
       $transaction: jest.fn().mockImplementation(async (callback) => callback(mockPrisma)),
     };
 
+    mockUserServiceClient = {
+      getAttorneyProfile: jest.fn().mockResolvedValue({
+        id: 'att-1',
+        consultationFee: 1500.0,
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BookingCancellationService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: UserServiceClient, useValue: mockUserServiceClient },
       ],
     }).compile();
 

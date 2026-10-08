@@ -138,4 +138,23 @@ describe('BookingCheckoutService', () => {
       service.initiateCheckout('bk-123', 'client-abc', 'client@example.com', {}),
     ).rejects.toThrow(BadRequestException);
   });
+
+  it('should throw BadRequestException if attorney has not configured a valid consultation fee', async () => {
+    mockPrisma.booking.findUnique.mockResolvedValue({
+      id: 'bk-123',
+      clientId: 'client-abc',
+      attorneyId: 'att-xyz',
+      status: BookingStatus.ACCEPTED_PENDING_PAYMENT,
+      paymentStatus: PaymentStatus.UNPAID,
+    });
+
+    mockUserServiceClient.getAttorneyProfile.mockResolvedValue({
+      id: 'prof-xyz',
+      consultationFee: 0, // Unconfigured
+    });
+
+    await expect(
+      service.initiateCheckout('bk-123', 'client-abc', 'client@example.com', {}),
+    ).rejects.toThrow(BadRequestException);
+  });
 });

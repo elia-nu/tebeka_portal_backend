@@ -7,12 +7,14 @@ import {
 import { BookingStatus } from '@prisma/client/marketplace';
 import { PrismaService } from '../../../database/prisma.service';
 import { GoogleMeetService } from '../../integrations/google-meet.service';
+import { UserServiceClient } from '../../../integrations/user-service.client';
 
 @Injectable()
 export class BookingCancellationService {
   constructor(
     private readonly prisma: PrismaService,
     @Optional() private readonly googleMeetService?: GoogleMeetService,
+    @Optional() private readonly userServiceClient?: UserServiceClient,
   ) {}
 
   async cancelBooking(id: string, userId: string, reason?: string) {
@@ -57,8 +59,25 @@ export class BookingCancellationService {
 
       const cancelledByRole = isAttorneyCancelling ? 'ATTORNEY' : 'CLIENT';
       const policyVersion = 'v3.0-OQ1/2';
-      const originalAmountSantim = BigInt(150000); // 1500 ETB = 150,000 santim
-      const refundAmountSantim = (originalAmountSantim * BigInt(refundPercentage)) / BigInt(100);
+
+      // Dynamically resolve actual attorney consultation fee in Santim (1 ETB = 100 Santim)
+      let feeSantim = BigInt(0);
+      if (this.userServiceClient) {
+        try {
+          const profile = await this.userServiceClient.getAttorneyProfile(booking.attorneyId);
+          const fee = Number(profile?.consultationFee || profile?.consultationFees || 0);
+          if (fee > 0) {
+            feeSantim = BigInt(Math.round(fee * 100));
+          }
+        } catch {
+          // Fallback if user service client unreachable
+        }
+      }
+
+      const originalAmountSantim = feeSantim;
+      const refundAmountSantim = originalAmountSantim > BigInt(0)
+        ? (originalAmountSantim * BigInt(refundPercentage)) / BigInt(100)
+        : BigInt(0);
 
       const updated = await tx.booking.update({
         where: { id },

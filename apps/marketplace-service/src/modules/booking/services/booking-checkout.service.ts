@@ -64,12 +64,8 @@ export class BookingCheckoutService {
       consultationFee = Number(attorneyProfile.consultationFee || attorneyProfile.consultationFees || 0);
     }
 
-    // Fallback: If attorney profile fee is 0 or unconfigured, default to standard rate
     if (consultationFee <= 0) {
-      consultationFee = 1500.0; // Default standard consultation rate in ETB
-      this.logger.warn(
-        `Attorney ${booking.attorneyId} has no configured fee. Using standard default: ${consultationFee} ETB`
-      );
+      throw new BadRequestException('Attorney has not configured a valid consultation fee');
     }
 
     // 5. Contact Info Resolution (DTO > JWT > User Profile)
