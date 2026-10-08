@@ -86,16 +86,16 @@ export class AnalyticsService {
   }
 
   async getRevenueAnalytics() {
-    const paidBookings = await this.prisma.booking.count({ where: { paymentStatus: 'PAID' } });
-    const estimatedVolume = paidBookings * 1500;
-    const estimatedPlatformCommission = estimatedVolume * 0.15;
+    const [paidBookings, activeCases] = await Promise.all([
+      this.prisma.booking.count({ where: { paymentStatus: 'PAID' } }),
+      this.prisma.case.count({ where: { status: { in: ['IN_PROGRESS', 'RESOLVED', 'CLOSED'] } } }),
+    ]);
 
     return {
       status: 'success',
       paidBookingsCount: paidBookings,
-      estimatedVolumeETB: estimatedVolume,
-      estimatedPlatformCommissionETB: estimatedPlatformCommission,
-      currency: 'ETB'
+      activeCasesCount: activeCases,
+      currency: 'ETB',
     };
   }
 }

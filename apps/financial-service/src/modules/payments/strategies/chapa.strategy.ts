@@ -28,9 +28,14 @@ export class ChapaStrategy implements IPaymentProviderStrategy {
     return this.circuitBreaker.execute(async () => {
       return retryWithBackoff(
         async (attempt) => {
-          let email = (request.email || '').trim();
+          const email = (request.email || '').trim();
           if (!email || !email.includes('@')) {
-            email = 'client.tebeka@gmail.com';
+            throw new BadRequestException('A valid client email address is required for Chapa checkout');
+          }
+
+          const phone = (request.phone || '').trim();
+          if (!phone) {
+            throw new BadRequestException('A valid client phone number is required for payment gateway checkout');
           }
 
           const payload: Record<string, any> = {
@@ -39,7 +44,7 @@ export class ChapaStrategy implements IPaymentProviderStrategy {
             email,
             first_name: request.firstName || 'Client',
             last_name: request.lastName || 'User',
-            phone_number: request.phone || '0911223344',
+            phone_number: phone,
             tx_ref: request.txRef,
             callback_url: request.callbackUrl || process.env.CHAPA_WEBHOOK_URL || 'https://tebeka.alikohub.com/api/v1/payments/webhooks/chapa',
             return_url: request.returnUrl || `${process.env.FRONTEND_URL || 'https://tebeka.alikohub.com'}/payment/complete`,
