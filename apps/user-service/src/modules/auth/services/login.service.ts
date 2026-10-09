@@ -47,6 +47,10 @@ export class LoginService {
           { phone: identifier },
           { phone: identifier.startsWith('+') ? identifier : `+${identifier}` }
         ]
+      },
+      include: {
+        attorneyProfile: true,
+        clientProfile: true,
       }
     });
 
@@ -131,7 +135,9 @@ export class LoginService {
         phone: user.phone,
         role: user.role,
         emailVerified: user.emailVerified,
-        phoneVerified: user.phoneVerified
+        phoneVerified: user.phoneVerified,
+        attorneyProfile: user.attorneyProfile,
+        clientProfile: user.clientProfile,
       }
     };
   }

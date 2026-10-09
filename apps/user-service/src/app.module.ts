@@ -29,7 +29,7 @@ import { UserEventsModule } from './modules/events/user-events.module';
 
 @Module({
   imports: [
-    AuthModule.forRoot({ auth }),
+    AuthModule.forRoot({ auth, disableGlobalAuthGuard: true }),
     SharedAuthModule,
     AppConfigModule,
     AppLoggerModule,

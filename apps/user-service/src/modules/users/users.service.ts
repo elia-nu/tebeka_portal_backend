@@ -159,7 +159,7 @@ export class UsersService {
   async getMyProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { attorneyProfile: true, userPreference: true },
+      include: { attorneyProfile: true, clientProfile: true, userPreference: true },
     });
     if (!user) throw new NotFoundException('User profile not found');
     return sanitizeUser(user);

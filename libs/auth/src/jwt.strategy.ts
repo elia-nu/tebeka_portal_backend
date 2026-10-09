@@ -12,10 +12,14 @@ export interface JwtPayload {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: AppConfigService) {
+    const secret =
+      configService?.jwtSecret ||
+      process.env.JWT_SECRET ||
+      'super-secret-jwt-key-change-in-production';
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.jwtSecret,
+      secretOrKey: secret,
     });
   }
 
