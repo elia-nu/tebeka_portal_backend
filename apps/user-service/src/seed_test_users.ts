@@ -616,9 +616,133 @@ async function seedCompleteTestData() {
           stripeAccountStatus: 'active'
         }
       });
-      console.log('   Attorney financial wallet seeded successfully.');
+      // Seed Comprehensive Transaction History for Dr. Beza Eshetu (Cases & Consultations)
+      console.log('   Seeding Consultation & Case Transaction History in Financial DB...');
+      const sampleTxRefs = [
+        'TX-CONS-2026-001',
+        'TX-CONS-2026-002',
+        'TX-CASE-2026-M1',
+        'TX-CASE-2026-M2',
+        'TX-CASE-2026-S1'
+      ];
+      await financialPrisma.payment.deleteMany({
+        where: { transactionReference: { in: sampleTxRefs } }
+      });
+
+      const samplePayments = [
+        {
+          transactionReference: 'TX-CONS-2026-001',
+          bookingId: 'bkg-cons-2026-001',
+          payerId: clientUser?.id || 'client-test-id',
+          payeeId: attorney1.id,
+          paymentType: 'CONSULTATION_ONE_TIME' as const,
+          amount: 1500.00,
+          currency: 'ETB',
+          commission: 225.00,
+          provider: 'CHAPA' as const,
+          status: 'COMPLETED' as const,
+          splitPercentage: 15.0,
+          description: 'Initial Legal Consultation: Corporate Structuring & Compliance',
+          paidAt: new Date('2026-02-10T14:30:00Z'),
+          createdAt: new Date('2026-02-10T14:25:00Z')
+        },
+        {
+          transactionReference: 'TX-CONS-2026-002',
+          bookingId: 'bkg-cons-2026-002',
+          payerId: clientUser?.id || 'client-test-id',
+          payeeId: attorney1.id,
+          paymentType: 'CONSULTATION_ONE_TIME' as const,
+          amount: 1500.00,
+          currency: 'ETB',
+          commission: 225.00,
+          provider: 'TELEBIRR' as const,
+          status: 'COMPLETED' as const,
+          splitPercentage: 15.0,
+          description: 'Follow-up Legal Consultation: Commercial Contract Review',
+          paidAt: new Date('2026-02-18T10:15:00Z'),
+          createdAt: new Date('2026-02-18T10:10:00Z')
+        },
+        {
+          transactionReference: 'TX-CASE-2026-M1',
+          caseId: 'case-corporate-2026-001',
+          payerId: clientUser?.id || 'client-test-id',
+          payeeId: attorney1.id,
+          paymentType: 'CASE_MILESTONE' as const,
+          milestoneName: 'Phase 1: Statement of Claim & Corporate Evidence Filing',
+          amount: 15000.00,
+          currency: 'ETB',
+          commission: 2250.00,
+          provider: 'CHAPA' as const,
+          status: 'COMPLETED' as const,
+          splitPercentage: 15.0,
+          description: 'Phase 1 Milestone Payment: Commercial Court Pleadings',
+          paidAt: new Date('2026-02-25T11:00:00Z'),
+          createdAt: new Date('2026-02-25T10:50:00Z')
+        },
+        {
+          transactionReference: 'TX-CASE-2026-M2',
+          caseId: 'case-corporate-2026-001',
+          payerId: clientUser?.id || 'client-test-id',
+          payeeId: attorney1.id,
+          paymentType: 'CASE_MILESTONE' as const,
+          milestoneName: 'Phase 2: Witness Hearings & Final Commercial Arbitration Award',
+          amount: 25000.00,
+          currency: 'ETB',
+          commission: 3750.00,
+          provider: 'CHAPA' as const,
+          status: 'COMPLETED' as const,
+          splitPercentage: 15.0,
+          description: 'Phase 2 Milestone Payment: Commercial Arbitration Representation',
+          paidAt: new Date('2026-03-02T16:20:00Z'),
+          createdAt: new Date('2026-03-02T16:10:00Z')
+        },
+        {
+          transactionReference: 'TX-CASE-2026-S1',
+          caseId: 'case-ip-2026-002',
+          payerId: clientUser?.id || 'client-test-id',
+          payeeId: attorney1.id,
+          paymentType: 'CASE_STAGE' as const,
+          stage: 'Stage 1: Trademark Opposition & IP Registration',
+          amount: 10000.00,
+          currency: 'ETB',
+          commission: 1500.00,
+          provider: 'CHAPA' as const,
+          status: 'PENDING' as const,
+          splitPercentage: 15.0,
+          description: 'Stage 1 Escrow Deposit: Ethiopian Intellectual Property Authority Proceeding',
+          requestedAt: new Date('2026-03-05T09:00:00Z'),
+          createdAt: new Date('2026-03-05T09:00:00Z')
+        }
+      ];
+
+      for (const p of samplePayments) {
+        const createdPayment = await financialPrisma.payment.create({
+          data: p
+        });
+
+        if (p.status === 'COMPLETED') {
+          // Add double-entry ledger entries
+          await financialPrisma.ledgerEntry.createMany({
+            data: [
+              {
+                paymentId: createdPayment.id,
+                entryType: 'CREDIT',
+                amount: p.amount,
+                balanceAfter: p.amount,
+              },
+              {
+                paymentId: createdPayment.id,
+                entryType: 'COMMISSION',
+                amount: p.commission,
+                balanceAfter: p.amount - p.commission,
+              }
+            ]
+          });
+        }
+      }
+      console.log('   Attorney consultation & case transactions successfully seeded in Financial DB.');
     } catch (e: any) {
-      console.warn('   Could not seed attorney wallet in financial DB:', e.message);
+      console.warn('   Could not seed attorney transactions in financial DB:', e.message);
     }
   }
 

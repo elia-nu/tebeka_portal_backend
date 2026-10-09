@@ -87,15 +87,30 @@ export class PaymentController {
   }
 
   /**
-   * Attorney Transaction Ledger & Incoming Client Payments
+   * Attorney Transaction Ledger & Incoming Client Payments (Consultations & Case Milestones)
    */
-  @Get('attorney/transactions')
+  @Get(['attorney/transactions', 'attorney/history'])
   async getAttorneyTransactions(@Query() query: any, @Req() req: any) {
     const attorneyId =
       req.user?.role === 'ADMIN' || req.user?.role === 'SUPER_ADMIN'
         ? (query.attorneyId || req.user?.id)
         : req.user?.id;
     return this.transactionService.getAttorneyTransactions(attorneyId, query);
+  }
+
+  /**
+   * Adaptive My-Transactions / Payment History Endpoint for Any Authenticated Role
+   */
+  @Get(['my-transactions', 'history'])
+  async getMyTransactions(@Query() query: any, @Req() req: any) {
+    const role = req.user?.role || 'CLIENT';
+    const userId = req.user?.id;
+    if (role === 'ATTORNEY') {
+      return this.transactionService.getAttorneyTransactions(userId, query);
+    } else if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+      return this.transactionService.getAdminTransactions(query);
+    }
+    return this.transactionService.getClientTransactions(userId, query);
   }
 
   /**
@@ -113,7 +128,7 @@ export class PaymentController {
   /**
    * Client Transaction Flow & Outflow History
    */
-  @Get('client/transactions')
+  @Get(['client/transactions', 'client/history'])
   async getClientTransactions(@Query() query: any, @Req() req: any) {
     const clientId =
       req.user?.role === 'ADMIN' || req.user?.role === 'SUPER_ADMIN'

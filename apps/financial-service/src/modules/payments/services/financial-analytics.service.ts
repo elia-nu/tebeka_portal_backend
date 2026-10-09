@@ -6,6 +6,9 @@ export interface AnalyticsPeriodQuery {
   period?: '7d' | '30d' | '90d' | '12m' | 'all';
   startDate?: string;
   endDate?: string;
+  attorneyProfileId?: string;
+  attorneyId?: string;
+  userId?: string;
 }
 
 @Injectable()
@@ -241,9 +244,19 @@ export class FinancialAnalyticsService {
     }
 
     const dateRange = this.resolveDateRange(query);
+    const candidateIds = Array.from(
+      new Set(
+        [attorneyId, query.attorneyProfileId, query.userId, query.attorneyId]
+          .filter(Boolean)
+          .map((id) => String(id).trim())
+      )
+    );
 
     const where: any = {
-      OR: [{ payeeId: attorneyId }, { requestedBy: attorneyId }],
+      OR: [
+        { payeeId: { in: candidateIds } },
+        { requestedBy: { in: candidateIds } },
+      ],
     };
 
     if (dateRange.startDate || dateRange.endDate) {
@@ -270,7 +283,9 @@ export class FinancialAnalyticsService {
           paidAt: true,
         },
       }),
-      this.prisma.wallet.findUnique({ where: { userId: attorneyId } }),
+      this.prisma.wallet.findFirst({
+        where: { userId: { in: candidateIds } },
+      }),
     ]);
 
     let totalGrossETB = 0;

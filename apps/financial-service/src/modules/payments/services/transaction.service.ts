@@ -7,7 +7,12 @@ export interface TransactionFilterQuery {
   limit?: number | string;
   status?: PaymentStatus;
   provider?: PaymentProvider;
-  paymentType?: PaymentType;
+  paymentType?: PaymentType | string;
+  category?: 'CASE' | 'CONSULTATION' | 'ALL' | string;
+  type?: string;
+  attorneyProfileId?: string;
+  attorneyId?: string;
+  userId?: string;
   currency?: string;
   payerId?: string;
   payeeId?: string;
@@ -25,6 +30,7 @@ export interface TransactionFilterQuery {
 export interface UserContext {
   userId: string;
   role?: 'ADMIN' | 'SUPER_ADMIN' | 'ATTORNEY' | 'CLIENT' | string;
+  attorneyProfileId?: string;
 }
 
 @Injectable()
@@ -169,7 +175,8 @@ export class TransactionService {
   // =========================================================================
 
   /**
-   * Retrieves an attorney's incoming client payments, fee splits, and net wallet balance.
+   * Retrieves an attorney's incoming client payments, fee splits, and net wallet balance
+   * with full support for case milestones, percentages, stages, and consultations.
    */
   async getAttorneyTransactions(attorneyId: string, query: TransactionFilterQuery = {}) {
     if (!attorneyId) {
@@ -180,8 +187,19 @@ export class TransactionService {
     const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
     const skip = (page - 1) * limit;
 
+    const candidateIds = Array.from(
+      new Set(
+        [attorneyId, query.attorneyProfileId, query.userId, query.payeeId, query.attorneyId]
+          .filter(Boolean)
+          .map((id) => String(id).trim())
+      )
+    );
+
     const where: any = {
-      OR: [{ payeeId: attorneyId }, { requestedBy: attorneyId }],
+      OR: [
+        { payeeId: { in: candidateIds } },
+        { requestedBy: { in: candidateIds } },
+      ],
       ...this.buildWhereClause(query, true),
     };
 
@@ -201,10 +219,12 @@ export class TransactionService {
         },
       }),
       this.prisma.payment.count({ where }),
-      this.prisma.wallet.findUnique({ where: { userId: attorneyId } }),
+      this.prisma.wallet.findFirst({
+        where: { userId: { in: candidateIds } },
+      }),
     ]);
 
-    // Aggregate Attorney specific metrics
+    // Aggregate Attorney specific metrics and Case vs Consultation breakdown
     const allAttorneyTxs = await this.prisma.payment.findMany({
       where,
       select: {
@@ -212,6 +232,7 @@ export class TransactionService {
         commission: true,
         currency: true,
         status: true,
+        paymentType: true,
       },
     });
 
@@ -219,6 +240,18 @@ export class TransactionService {
     let totalGrossEarnedUSD = 0;
     let totalCommissionDeductedETB = 0;
     let totalCommissionDeductedUSD = 0;
+
+    let casesCount = 0;
+    let caseGrossETB = 0;
+    let caseCommETB = 0;
+    let caseGrossUSD = 0;
+    let caseCommUSD = 0;
+
+    let consultationsCount = 0;
+    let consultGrossETB = 0;
+    let consultCommETB = 0;
+    let consultGrossUSD = 0;
+    let consultCommUSD = 0;
 
     const statusCounts: Record<string, number> = {
       COMPLETED: 0,
@@ -235,13 +268,39 @@ export class TransactionService {
 
       statusCounts[tx.status] = (statusCounts[tx.status] || 0) + 1;
 
+      const isCase =
+        tx.paymentType === PaymentType.CASE_MILESTONE ||
+        tx.paymentType === PaymentType.CASE_PERCENTAGE ||
+        tx.paymentType === PaymentType.CASE_STAGE ||
+        tx.paymentType === PaymentType.CASE_SERVICE_REQUEST;
+
+      if (isCase) {
+        casesCount++;
+      } else {
+        consultationsCount++;
+      }
+
       if (tx.status === 'COMPLETED') {
         if (curr === 'USD') {
           totalGrossEarnedUSD += amt;
           totalCommissionDeductedUSD += comm;
+          if (isCase) {
+            caseGrossUSD += amt;
+            caseCommUSD += comm;
+          } else {
+            consultGrossUSD += amt;
+            consultCommUSD += comm;
+          }
         } else {
           totalGrossEarnedETB += amt;
           totalCommissionDeductedETB += comm;
+          if (isCase) {
+            caseGrossETB += amt;
+            caseCommETB += comm;
+          } else {
+            consultGrossETB += amt;
+            consultCommETB += comm;
+          }
         }
       }
     }
@@ -277,6 +336,24 @@ export class TransactionService {
             gross: totalGrossEarnedUSD,
             commissionDeducted: totalCommissionDeductedUSD,
             netEarned: Math.max(0, totalGrossEarnedUSD - totalCommissionDeductedUSD),
+          },
+        },
+        breakdownByCategory: {
+          cases: {
+            totalTransactions: casesCount,
+            grossETB: caseGrossETB,
+            commissionETB: caseCommETB,
+            netEarnedETB: Math.max(0, caseGrossETB - caseCommETB),
+            grossUSD: caseGrossUSD,
+            netEarnedUSD: Math.max(0, caseGrossUSD - caseCommUSD),
+          },
+          consultations: {
+            totalTransactions: consultationsCount,
+            grossETB: consultGrossETB,
+            commissionETB: consultCommETB,
+            netEarnedETB: Math.max(0, consultGrossETB - consultCommETB),
+            grossUSD: consultGrossUSD,
+            netEarnedUSD: Math.max(0, consultGrossUSD - consultCommUSD),
           },
         },
         statusCounts,
@@ -439,10 +516,11 @@ export class TransactionService {
 
     // Role check if user context is provided
     if (user && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+      const allowedIds = [user.userId, user.attorneyProfileId].filter(Boolean);
       const isOwner =
-        transaction.payerId === user.userId ||
-        transaction.payeeId === user.userId ||
-        transaction.requestedBy === user.userId;
+        allowedIds.includes(transaction.payerId) ||
+        allowedIds.includes(transaction.payeeId) ||
+        (transaction.requestedBy && allowedIds.includes(transaction.requestedBy));
       if (!isOwner) {
         throw new ForbiddenException('You do not have permission to view this transaction');
       }
@@ -512,7 +590,26 @@ export class TransactionService {
 
     if (query.status) where.status = query.status;
     if (query.provider) where.provider = query.provider;
-    if (query.paymentType) where.paymentType = query.paymentType;
+
+    const typeFilter = (query.category || query.type || query.paymentType || '').toString().toUpperCase();
+    if (typeFilter === 'CASE') {
+      where.paymentType = {
+        in: [
+          PaymentType.CASE_MILESTONE,
+          PaymentType.CASE_PERCENTAGE,
+          PaymentType.CASE_STAGE,
+          PaymentType.CASE_SERVICE_REQUEST,
+        ],
+      };
+    } else if (typeFilter === 'CONSULTATION') {
+      where.paymentType = PaymentType.CONSULTATION_ONE_TIME;
+    } else if (query.paymentType) {
+      const validEnums = Object.values(PaymentType) as string[];
+      if (validEnums.includes(String(query.paymentType))) {
+        where.paymentType = query.paymentType;
+      }
+    }
+
     if (query.currency) where.currency = query.currency.toUpperCase();
     if (query.caseId) where.caseId = query.caseId;
     if (query.bookingId) where.bookingId = query.bookingId;
