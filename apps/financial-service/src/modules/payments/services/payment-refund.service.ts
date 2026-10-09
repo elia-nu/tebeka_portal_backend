@@ -11,13 +11,27 @@ export class PaymentRefundService {
     paymentId?: string;
     page?: number | string;
     limit?: number | string;
+    pageSize?: number | string;
+    perPage?: number | string;
     startDate?: string;
     endDate?: string;
     search?: string;
+    q?: string;
+    query?: string;
+    sortBy?: 'createdAt' | 'amount' | 'status' | 'processedAt' | 'rejectedAt' | 'updatedAt' | string;
+    orderBy?: string;
+    sort?: string;
+    sortOrder?: 'asc' | 'desc' | 'ASC' | 'DESC';
+    order?: 'asc' | 'desc' | 'ASC' | 'DESC';
   }) {
     const page = Math.max(1, Number(query?.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(query?.limit) || 20));
+    const limit = Math.min(100, Math.max(1, Number(query?.limit || query?.pageSize || query?.perPage) || 20));
     const skip = (page - 1) * limit;
+
+    const sortField = (query?.sortBy || query?.orderBy || query?.sort || 'createdAt').toString();
+    const validSortFields = ['createdAt', 'amount', 'status', 'processedAt', 'rejectedAt', 'updatedAt'];
+    const sortBy = validSortFields.includes(sortField) ? sortField : 'createdAt';
+    const sortOrder = (query?.sortOrder || query?.order || 'desc').toString().toLowerCase() === 'asc' ? 'asc' : 'desc';
 
     const where: any = {
       ...(query?.status && { status: query.status }),
@@ -32,11 +46,16 @@ export class PaymentRefundService {
       if (query.endDate) where.createdAt.lte = new Date(query.endDate);
     }
 
-    if (query?.search) {
-      const term = query.search.trim();
+    const searchTerm = (query?.search || query?.q || query?.query || '').toString().trim();
+    if (searchTerm) {
       where.OR = [
-        { reason: { contains: term, mode: 'insensitive' } },
-        { payment: { transactionReference: { contains: term, mode: 'insensitive' } } },
+        { reason: { contains: searchTerm, mode: 'insensitive' } },
+        { notes: { contains: searchTerm, mode: 'insensitive' } },
+        { paymentId: { contains: searchTerm, mode: 'insensitive' } },
+        { processedBy: { contains: searchTerm, mode: 'insensitive' } },
+        { payment: { transactionReference: { contains: searchTerm, mode: 'insensitive' } } },
+        { payment: { payerId: { contains: searchTerm, mode: 'insensitive' } } },
+        { payment: { payeeId: { contains: searchTerm, mode: 'insensitive' } } },
       ];
     }
 
@@ -48,7 +67,7 @@ export class PaymentRefundService {
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortBy]: sortOrder },
       }),
       this.prisma.refund.count({ where }),
     ]);

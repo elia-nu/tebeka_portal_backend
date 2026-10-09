@@ -222,21 +222,44 @@ export class PayoutWalletService {
     };
   }
 
-  async getBanks(query?: { page?: number | string; limit?: number | string; pageSize?: number | string; search?: string; q?: string }) {
-    const banks = await this.chapaStrategy.getBanks();
-    const searchTerm = (query?.search || query?.q || '').toString().trim().toLowerCase();
-    const filtered = searchTerm
-      ? banks.filter((b: any) =>
+  async getBanks(query?: {
+    page?: number | string;
+    limit?: number | string;
+    pageSize?: number | string;
+    perPage?: number | string;
+    search?: string;
+    q?: string;
+    query?: string;
+    sortBy?: 'name' | 'code' | 'id' | string;
+    orderBy?: string;
+    sort?: string;
+    sortOrder?: 'asc' | 'desc' | 'ASC' | 'DESC';
+    order?: 'asc' | 'desc' | 'ASC' | 'DESC';
+  }) {
+    const rawBanks = await this.chapaStrategy.getBanks();
+    const searchTerm = (query?.search || query?.q || query?.query || '').toString().trim().toLowerCase();
+    let filtered = searchTerm
+      ? rawBanks.filter((b: any) =>
           (b.name && String(b.name).toLowerCase().includes(searchTerm)) ||
           (b.code && String(b.code).toLowerCase().includes(searchTerm)) ||
           (b.id && String(b.id).toLowerCase().includes(searchTerm))
         )
-      : banks;
+      : [...rawBanks];
+
+    const sortField = (query?.sortBy || query?.orderBy || query?.sort || '').toString();
+    const sortOrder = (query?.sortOrder || query?.order || 'asc').toString().toLowerCase() === 'desc' ? 'desc' : 'asc';
+    if (sortField === 'name' || sortField === 'code' || sortField === 'id') {
+      filtered.sort((a: any, b: any) => {
+        const valA = String(a[sortField] || '').toLowerCase();
+        const valB = String(b[sortField] || '').toLowerCase();
+        return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      });
+    }
 
     const total = filtered.length;
-    if (query?.page || query?.limit || query?.pageSize || query?.search || query?.q) {
+    if (query?.page || query?.limit || query?.pageSize || query?.perPage || query?.search || query?.q || query?.sortBy) {
       const page = Math.max(1, Number(query?.page) || 1);
-      const limit = Math.min(100, Math.max(1, Number(query?.limit || query?.pageSize) || 20));
+      const limit = Math.min(100, Math.max(1, Number(query?.limit || query?.pageSize || query?.perPage) || 20));
       const skip = (page - 1) * limit;
       const paginated = filtered.slice(skip, skip + limit);
       return {
