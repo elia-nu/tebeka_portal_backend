@@ -1,4 +1,7 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { auth } from './auth';
 
 const prisma = new PrismaClient();
@@ -7,6 +10,7 @@ async function seedCompleteTestData() {
   console.log('--- Seeding Comprehensive Test Data Across All Models ---');
 
   const password = 'Password@123';
+  const hashedPassword = await bcrypt.hash(password, 10);
   const testEmails = [
     'admin@tebeka.et',
     'regional.admin@tebeka.et',
@@ -36,12 +40,13 @@ async function seedCompleteTestData() {
       where: { id: superAdmin.id },
       data: {
         role: 'SUPER_ADMIN',
+        passwordHash: hashedPassword,
         phone: '+251911000001',
         phoneVerified: true,
         emailVerified: true,
         status: 'ACTIVE',
-        is2faEnabled: true,
-        twoFactorEnabled: true
+        is2faEnabled: false,
+        twoFactorEnabled: false
       }
     });
 
@@ -70,12 +75,13 @@ async function seedCompleteTestData() {
       where: { id: regionalAdmin.id },
       data: {
         role: 'ADMIN',
+        passwordHash: hashedPassword,
         phone: '+251911000002',
         phoneVerified: true,
         emailVerified: true,
         status: 'ACTIVE',
-        is2faEnabled: true,
-        twoFactorEnabled: true
+        is2faEnabled: false,
+        twoFactorEnabled: false
       }
     });
 
@@ -102,6 +108,7 @@ async function seedCompleteTestData() {
       where: { id: supportUser.id },
       data: {
         role: 'SUPPORT',
+        passwordHash: hashedPassword,
         phone: '+251911000003',
         phoneVerified: true,
         emailVerified: true,
@@ -130,10 +137,27 @@ async function seedCompleteTestData() {
       where: { id: clientUser.id },
       data: {
         role: 'CLIENT',
+        passwordHash: hashedPassword,
         phone: '+251911556677',
         phoneVerified: true,
         emailVerified: true,
         status: 'ACTIVE'
+      }
+    });
+
+    await prisma.clientProfile.create({
+      data: {
+        userId: clientUser.id,
+        firstName: 'Abebe',
+        lastName: 'Bikila',
+        address: 'Bole Subcity, Woreda 03',
+        city: 'Addis Ababa',
+        country: 'Ethiopia',
+        nationalIdNumber: 'ETH-NID-1988-5542',
+        preferredLanguage: 'am',
+        communicationPreference: 'EMAIL',
+        notificationEmailOptIn: true,
+        notificationSmsOptIn: true
       }
     });
 
@@ -158,6 +182,7 @@ async function seedCompleteTestData() {
       where: { id: attorney1.id },
       data: {
         role: 'ATTORNEY',
+        passwordHash: hashedPassword,
         phone: '+251911223344',
         phoneVerified: true,
         emailVerified: true,
@@ -283,6 +308,7 @@ async function seedCompleteTestData() {
       where: { id: attorney2.id },
       data: {
         role: 'ATTORNEY',
+        passwordHash: hashedPassword,
         phone: '+251911998877',
         phoneVerified: true,
         emailVerified: true,
