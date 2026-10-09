@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Headers, HttpCode, HttpStatus, Logger, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Headers, HttpCode, HttpStatus, Logger, Req } from '@nestjs/common';
 import { Public } from '@workspace/auth';
 import { PaymentService } from './payment.service';
 import { ChapaStrategy } from './strategies/chapa.strategy';
@@ -16,46 +16,110 @@ export class PaymentWebhookController {
   ) {}
 
   /**
-   * Chapa Payment Webhook Handler
-   * Handles payment status callbacks (success, failed, pending) from Chapa.
+   * Webhook Configuration & Health Status
+   */
+  @Get('health')
+  @HttpCode(HttpStatus.OK)
+  async getWebhookHealth() {
+    return {
+      status: 'ok',
+      service: 'financial-service',
+      webhooks: {
+        chapa: {
+          endpoint: '/api/v1/payments/webhooks/chapa',
+          methods: ['GET', 'POST'],
+          configured: !!(process.env.CHAPA_SECRET || process.env.CHAPA_SECRET_KEY),
+        },
+        stripe: {
+          endpoint: '/api/v1/payments/webhooks/stripe',
+          methods: ['POST'],
+          configured: !!(process.env.STRIPE_SECRET || process.env.STRIPE_SECRET_KEY),
+        },
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Chapa Payment Webhook Handler (POST)
+   * Handles payment status callbacks (success, failed, pending) from Chapa webhook server events.
    */
   @Post('chapa')
   @HttpCode(HttpStatus.OK)
-  async handleChapaWebhook(
+  async handleChapaWebhookPost(
     @Body() body: any,
     @Headers('x-chapa-signature') rawSig: string,
     @Req() req: any
   ) {
-    this.logger.log(`📥 Received Chapa Webhook: ${JSON.stringify(body)}`);
+    return this.processChapaWebhookOrCallback(body, rawSig, req);
+  }
+
+  /**
+   * Chapa Payment Callback / Redirect Handler (GET)
+   * Handles browser redirects, query callbacks, and JSONP from Chapa.
+   */
+  @Get('chapa')
+  @HttpCode(HttpStatus.OK)
+  async handleChapaWebhookGet(
+    @Headers('x-chapa-signature') rawSig: string,
+    @Req() req: any
+  ) {
+    return this.processChapaWebhookOrCallback(null, rawSig, req);
+  }
+
+  private async processChapaWebhookOrCallback(
+    body: any,
+    rawSig: string,
+    req: any
+  ) {
+    const query = req?.query || {};
+    const mergedData = { ...query, ...(body || {}) };
+    this.logger.log(`📥 Received Chapa Webhook/Callback [${req?.method}]: ${JSON.stringify(mergedData)}`);
 
     const signature = rawSig || req?.headers?.['x-chapa-signature'] || req?.headers?.['chapa-signature'] || req?.headers?.['x-signature'];
     const rawBody = req?.rawBody;
-    const isValid = this.chapaStrategy.verifyWebhookSignature(signature, body, rawBody);
-    if (!isValid && process.env.NODE_ENV === 'production') {
-      this.logger.warn(`Invalid Chapa webhook signature: [${signature}]`);
-      return { status: 'ignored', reason: 'Invalid signature' };
+
+    // Extract transaction reference from multiple possible Chapa payload & query formats
+    const txRef =
+      mergedData?.tx_ref ||
+      mergedData?.trx_ref ||
+      mergedData?.reference ||
+      mergedData?.ref_id ||
+      mergedData?.data?.tx_ref ||
+      mergedData?.data?.trx_ref ||
+      mergedData?.data?.reference;
+
+    let rawStatus = (mergedData?.status || mergedData?.data?.status || mergedData?.event || '').toString().toLowerCase();
+
+    // Verify webhook signature if present or in production for POST
+    if (signature) {
+      const isValid = this.chapaStrategy.verifyWebhookSignature(signature, body || mergedData, rawBody);
+      if (!isValid && process.env.NODE_ENV === 'production') {
+        this.logger.warn(`Invalid Chapa webhook signature: [${signature}]`);
+        return { status: 'ignored', reason: 'Invalid signature' };
+      }
+    } else if (req?.method === 'GET' && txRef && rawStatus === 'success') {
+      // For GET browser redirect/callbacks without webhook header, verify directly against Chapa's verify API
+      try {
+        const verifyRes = await this.chapaStrategy.verifyPayment(txRef);
+        if (verifyRes.status !== 'COMPLETED') {
+          this.logger.warn(`Chapa verifyPayment check returned ${verifyRes.status} for [${txRef}]`);
+          rawStatus = verifyRes.status.toLowerCase();
+        }
+      } catch (err: any) {
+        this.logger.warn(`Chapa direct verification note for [${txRef}]: ${err.message}`);
+      }
     }
 
-    // Extract transaction reference from multiple possible Chapa payload formats
-    const txRef =
-      body?.tx_ref ||
-      body?.trx_ref ||
-      body?.reference ||
-      body?.data?.tx_ref ||
-      body?.data?.trx_ref ||
-      body?.data?.reference;
-
-    const rawStatus = (body?.status || body?.data?.status || body?.event || '').toString().toLowerCase();
-
     if (!txRef) {
-      this.logger.warn(`Chapa webhook received without a valid transaction reference: ${JSON.stringify(body)}`);
+      this.logger.warn(`Chapa webhook received without a valid transaction reference: ${JSON.stringify(mergedData)}`);
       return { status: 'acknowledged', message: 'No transaction reference found' };
     }
 
     // 1. Success event
     if (rawStatus === 'success' || rawStatus === 'charge.success' || rawStatus === 'completed') {
       this.logger.log(`Processing Chapa successful payment for reference: ${txRef}`);
-      const updated = await this.paymentService.markPaymentCompletedByReference(txRef, body);
+      const updated = await this.paymentService.markPaymentCompletedByReference(txRef, mergedData);
       if (!updated) {
         this.logger.warn(`Chapa payment reference not found in database: ${txRef}`);
         return { status: 'acknowledged', message: `Reference ${txRef} not found` };
@@ -71,8 +135,8 @@ export class PaymentWebhookController {
     // 2. Failure event
     if (rawStatus === 'failed' || rawStatus === 'charge.failed' || rawStatus === 'cancelled') {
       this.logger.warn(`Processing Chapa payment failure for reference: ${txRef}`);
-      const failureReason = body?.message || body?.data?.message || 'Chapa payment failed';
-      const updated = await this.paymentService.markPaymentFailedByReference(txRef, failureReason, body);
+      const failureReason = mergedData?.message || mergedData?.data?.message || 'Chapa payment failed';
+      const updated = await this.paymentService.markPaymentFailedByReference(txRef, failureReason, mergedData);
       return {
         status: 'failed',
         message: 'Payment marked as FAILED',

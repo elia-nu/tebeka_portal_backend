@@ -4,7 +4,7 @@ import { AppConfigService } from '@workspace/config';
 import { GlobalHttpExceptionFilter } from '@workspace/common';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 
@@ -37,10 +37,10 @@ async function bootstrap() {
   const logger = app.get(AppLoggerService);
   app.useLogger(logger);
 
-  const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3001';
-  const marketplaceServiceUrl = process.env.MARKETPLACE_SERVICE_URL || 'http://localhost:3002';
-  const financialServiceUrl = process.env.FINANCIAL_SERVICE_URL || 'http://localhost:3003';
-  const communicationServiceUrl = process.env.COMMUNICATION_SERVICE_URL || 'http://localhost:3004';
+  const userServiceUrl = process.env.USER_SERVICE_URL || 'http://127.0.0.1:7001';
+  const marketplaceServiceUrl = process.env.MARKETPLACE_SERVICE_URL || 'http://127.0.0.1:7002';
+  const financialServiceUrl = process.env.FINANCIAL_SERVICE_URL || 'http://127.0.0.1:7003';
+  const communicationServiceUrl = process.env.COMMUNICATION_SERVICE_URL || 'http://127.0.0.1:7004';
 
   // Live Winston HTTP Traffic Logging Middleware
   app.use((req: any, res: any, next: any) => {
@@ -72,9 +72,7 @@ async function bootstrap() {
 
   // Security/CORS/rate-limit middleware must be registered before the proxy
   // middlewares below: http-proxy-middleware intercepts and responds to matching
-  // requests directly via app.use(), bypassing Nest's routing/guards entirely, so
-  // anything meant to also cover proxied traffic has to run ahead of it in the
-  // Express middleware chain rather than as a NestJS global pipe/guard.
+  // requests directly via app.use(), bypassing Nest's routing/guards entirely.
   app.use(helmet());
   app.enableCors({
     origin: config.corsAllowedOrigins,
@@ -83,9 +81,10 @@ async function bootstrap() {
   app.use(
     rateLimit({
       windowMs: 60 * 1000,
-      limit: 100,
+      limit: 200,
       standardHeaders: true,
       legacyHeaders: false,
+      validate: { xForwardedForHeader: false },
     }),
   );
 
@@ -124,10 +123,13 @@ async function bootstrap() {
       pathRewrite: {
         '^/api/v1/marketplace': '/api/v1',
       },
+      on: {
+        proxyReq: fixRequestBody,
+      },
     })
   );
 
-  // Reverse Proxy Routing for Financial Service
+  // Reverse Proxy Routing for Financial Service (Payments, Webhooks, Wallets, Escrow, Subscriptions, Refunds)
   app.use(
     createProxyMiddleware({
       target: financialServiceUrl,
@@ -142,6 +144,9 @@ async function bootstrap() {
       ],
       pathRewrite: {
         '^/api/v1/financial': '/api/v1',
+      },
+      on: {
+        proxyReq: fixRequestBody,
       },
     })
   );
@@ -163,6 +168,9 @@ async function bootstrap() {
         '/chat',
         '/notifications',
       ],
+      on: {
+        proxyReq: fixRequestBody,
+      },
     })
   );
 
@@ -191,6 +199,9 @@ async function bootstrap() {
         '/api/v1/search',
         '/api/v1/practice-areas',
       ],
+      on: {
+        proxyReq: fixRequestBody,
+      },
     })
   );
 
