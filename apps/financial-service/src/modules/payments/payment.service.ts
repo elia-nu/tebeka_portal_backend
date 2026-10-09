@@ -479,8 +479,8 @@ export class PaymentService {
     return this.walletService.setupAttorneyStripeAccount(attorneyId, data);
   }
 
-  getBanks() {
-    return this.walletService.getBanks();
+  getBanks(query?: any) {
+    return this.walletService.getBanks(query);
   }
 
   getAttorneyWallet(attorneyId: string) {

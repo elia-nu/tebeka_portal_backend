@@ -222,8 +222,38 @@ export class PayoutWalletService {
     };
   }
 
-  async getBanks() {
-    return this.chapaStrategy.getBanks();
+  async getBanks(query?: { page?: number | string; limit?: number | string; pageSize?: number | string; search?: string; q?: string }) {
+    const banks = await this.chapaStrategy.getBanks();
+    const searchTerm = (query?.search || query?.q || '').toString().trim().toLowerCase();
+    const filtered = searchTerm
+      ? banks.filter((b: any) =>
+          (b.name && String(b.name).toLowerCase().includes(searchTerm)) ||
+          (b.code && String(b.code).toLowerCase().includes(searchTerm)) ||
+          (b.id && String(b.id).toLowerCase().includes(searchTerm))
+        )
+      : banks;
+
+    const total = filtered.length;
+    if (query?.page || query?.limit || query?.pageSize || query?.search || query?.q) {
+      const page = Math.max(1, Number(query?.page) || 1);
+      const limit = Math.min(100, Math.max(1, Number(query?.limit || query?.pageSize) || 20));
+      const skip = (page - 1) * limit;
+      const paginated = filtered.slice(skip, skip + limit);
+      return {
+        success: true,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1,
+        },
+        data: paginated,
+      };
+    }
+
+    return filtered;
   }
 
   async getAttorneyWallet(attorneyId: string) {

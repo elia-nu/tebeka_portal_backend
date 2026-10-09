@@ -221,8 +221,8 @@ export class PaymentController {
 
   @Public()
   @Get('banks')
-  async getBanks() {
-    return this.paymentService.getBanks();
+  async getBanks(@Query() query: any) {
+    return this.paymentService.getBanks(query);
   }
 
   @Get('wallet')
