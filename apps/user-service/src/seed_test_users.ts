@@ -17,7 +17,9 @@ async function seedCompleteTestData() {
     'support.agent@tebeka.et',
     'dawit.solomon@tebekalaw.et',
     'bethlem.tadesse@tebekalaw.et',
-    'client.user@tebeka.et'
+    'client.user@tebeka.et',
+    'bezaeshetu46@gmail.com',
+    'bezaaa85@gmail.com'
   ];
 
   // 1. Clean existing test users and related records
@@ -125,11 +127,11 @@ async function seedCompleteTestData() {
     });
   }
 
-  // 5. Seed Client (`CLIENT`)
-  const clientEmail = 'client.user@tebeka.et';
+  // 5. Seed Client (`CLIENT` - Beza Eshetu)
+  const clientEmail = 'bezaaa85@gmail.com';
   console.log('Seeding Client User:', clientEmail);
   await auth.api.signUpEmail({
-    body: { email: clientEmail, password: password, name: 'Abebe Bikila' }
+    body: { email: clientEmail, password: password, name: 'Beza Eshetu' }
   });
   const clientUser = await prisma.user.findUnique({ where: { email: clientEmail } });
   if (clientUser) {
@@ -148,12 +150,12 @@ async function seedCompleteTestData() {
     await prisma.clientProfile.create({
       data: {
         userId: clientUser.id,
-        firstName: 'Abebe',
-        lastName: 'Bikila',
+        firstName: 'Beza',
+        lastName: 'Eshetu',
         address: 'Bole Subcity, Woreda 03',
         city: 'Addis Ababa',
         country: 'Ethiopia',
-        nationalIdNumber: 'ETH-NID-1988-5542',
+        nationalIdNumber: 'ETH-NID-1992-8871',
         preferredLanguage: 'am',
         communicationPreference: 'EMAIL',
         notificationEmailOptIn: true,
@@ -170,11 +172,11 @@ async function seedCompleteTestData() {
     });
   }
 
-  // 6. Seed Attorney 1 (Verified Attorney - Dr. Dawit Solomon)
-  const attorney1Email = 'dawit.solomon@tebekalaw.et';
+  // 6. Seed Attorney 1 (Verified Attorney - Dr. Beza Eshetu)
+  const attorney1Email = 'bezaeshetu46@gmail.com';
   console.log('Seeding Verified Attorney:', attorney1Email);
   await auth.api.signUpEmail({
-    body: { email: attorney1Email, password: password, name: 'Dr. Dawit Solomon' }
+    body: { email: attorney1Email, password: password, name: 'Dr. Beza Eshetu' }
   });
   const attorney1 = await prisma.user.findUnique({ where: { email: attorney1Email } });
   if (attorney1) {
@@ -194,7 +196,7 @@ async function seedCompleteTestData() {
     const profile1 = await prisma.attorneyProfile.create({
       data: {
         userId: attorney1.id,
-        slug: 'dr-dawit-solomon',
+        slug: 'dr-beza-eshetu',
         barRegistrationNumber: 'ETH-BAR-2015-884',
         barAdmissionYear: 2015,
         verificationStatus: 'APPROVED',
@@ -202,7 +204,7 @@ async function seedCompleteTestData() {
         hasVerifiedBadge: true,
         credentialClaimsMatch: true,
         profileCompleteness: 100,
-        bioEn: 'Senior Corporate and Intellectual Property Law Specialist with 11+ years of experience in commercial litigation, M&A, and cross-border trade law.',
+        bioEn: 'Senior Corporate, Commercial, and Intellectual Property Law Specialist with 11+ years of experience in commercial litigation, M&A, and cross-border transactions.',
         bioAm: 'በንግድ እና የንብረት ህግ ዙሪያ የ11 አመታት የስራ ልምድ ያላቸው ከፍተኛ የህግ ባለሙያ።',
         city: 'Addis Ababa',
         region: 'Addis Ababa',
