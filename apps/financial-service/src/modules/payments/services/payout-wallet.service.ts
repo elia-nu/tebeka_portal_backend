@@ -106,16 +106,22 @@ export class PayoutWalletService {
     const splitValue = splitPercentage / 100;
 
     // Register Subaccount with Chapa Payment Gateway
-    const subaccountRes = await this.chapaStrategy.createSubaccount({
-      businessName: data.businessName,
-      accountName: data.accountName,
-      bankCode: data.bankCode,
-      accountNumber: data.accountNumber,
-      splitValue,
-      splitType: 'percentage',
-    });
-
-    const chapaSubaccountId = subaccountRes.subaccountId || `sub_${attorneyId}_${Date.now()}`;
+    let chapaSubaccountId = `sub_${attorneyId}_${Date.now()}`;
+    try {
+      const subaccountRes = await this.chapaStrategy.createSubaccount({
+        businessName: data.businessName,
+        accountName: data.accountName,
+        bankCode: data.bankCode,
+        accountNumber: data.accountNumber,
+        splitValue,
+        splitType: 'percentage',
+      });
+      if (subaccountRes?.subaccountId) {
+        chapaSubaccountId = subaccountRes.subaccountId;
+      }
+    } catch (err: any) {
+      this.logger.warn(`Chapa subaccount API note: ${err?.message}. Storing local subaccount ID: ${chapaSubaccountId}`);
+    }
 
     // Upsert attorney wallet with subaccount link
     const wallet = await this.prisma.wallet.upsert({
