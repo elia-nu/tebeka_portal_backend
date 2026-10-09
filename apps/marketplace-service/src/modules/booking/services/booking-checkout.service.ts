@@ -25,6 +25,7 @@ export class BookingCheckoutService {
     bookingId: string,
     clientId: string,
     jwtEmail?: string,
+    jwtPhone?: string,
     dto: BookingCheckoutDto = {},
     correlationId?: string,
   ) {
@@ -61,7 +62,8 @@ export class BookingCheckoutService {
     }
 
     if (attorneyProfile) {
-      consultationFee = Number(attorneyProfile.consultationFee || attorneyProfile.consultationFees || 0);
+      const rawFee = attorneyProfile.consultationFee ?? attorneyProfile.consultationFees;
+      consultationFee = rawFee !== null && rawFee !== undefined ? Number(rawFee) : 0;
     }
 
     if (consultationFee <= 0) {
@@ -70,7 +72,7 @@ export class BookingCheckoutService {
 
     // 5. Contact Info Resolution (DTO > JWT > User Profile)
     let email = dto.email || jwtEmail;
-    let phone = dto.phone;
+    let phone = dto.phone || jwtPhone;
 
     if (!phone || !email) {
       try {

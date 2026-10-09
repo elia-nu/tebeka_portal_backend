@@ -61,16 +61,17 @@ export class BookingController {
   }
 
   @Post(':id/checkout')
-  @UsePipes(new JoiValidationPipe(BookingCheckoutSchema))
   async checkoutBooking(
     @Param('id') id: string,
-    @Body() body: BookingCheckoutDto,
+    @Body() rawBody: BookingCheckoutDto,
     @Req() req: any,
     @Headers('x-correlation-id') correlationId?: string,
   ) {
-    const clientId = req.user?.id || req.user?.userId || (body as any)?.clientId;
-    const jwtEmail = req.user?.email || (body as any)?.email;
-    return this.bookingCheckoutService.initiateCheckout(id, clientId, jwtEmail, body, correlationId);
+    const body: BookingCheckoutDto = rawBody ? new JoiValidationPipe(BookingCheckoutSchema).transform(rawBody, { type: 'body' }) : {};
+    const clientId = req.user?.id || req.user?.userId || req.user?.sub || body?.clientId;
+    const jwtEmail = req.user?.email || body?.email;
+    const jwtPhone = req.user?.phone || req.user?.phoneNumber || body?.phone;
+    return this.bookingCheckoutService.initiateCheckout(id, clientId, jwtEmail, jwtPhone, body, correlationId);
   }
 
   @Patch(':id/decline')

@@ -76,7 +76,8 @@ describe('BookingCheckoutService', () => {
       'bk-123',
       'client-abc',
       'client@example.com',
-      {}, // Empty body
+      '+251911223344',
+      {}, // Empty optional body
     );
 
     expect(result.success).toBe(true);
@@ -107,7 +108,7 @@ describe('BookingCheckoutService', () => {
     });
 
     await expect(
-      service.initiateCheckout('bk-123', 'intruder-client', 'intruder@test.com', {}),
+      service.initiateCheckout('bk-123', 'intruder-client', 'intruder@test.com', undefined, {}),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -121,7 +122,7 @@ describe('BookingCheckoutService', () => {
     });
 
     await expect(
-      service.initiateCheckout('bk-123', 'client-abc', 'client@example.com', {}),
+      service.initiateCheckout('bk-123', 'client-abc', 'client@example.com', undefined, {}),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -135,7 +136,7 @@ describe('BookingCheckoutService', () => {
     });
 
     await expect(
-      service.initiateCheckout('bk-123', 'client-abc', 'client@example.com', {}),
+      service.initiateCheckout('bk-123', 'client-abc', 'client@example.com', undefined, {}),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -154,7 +155,7 @@ describe('BookingCheckoutService', () => {
     });
 
     await expect(
-      service.initiateCheckout('bk-123', 'client-abc', 'client@example.com', {}),
+      service.initiateCheckout('bk-123', 'client-abc', 'client@example.com', undefined, {}),
     ).rejects.toThrow(BadRequestException);
   });
 });
