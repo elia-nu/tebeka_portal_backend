@@ -34,6 +34,17 @@ export class FinancialAnalyticsService {
       if (dateRange.endDate) where.createdAt.lte = dateRange.endDate;
     }
 
+    const candidatePayees = [query.attorneyId, query.attorneyProfileId, query.userId]
+      .filter(Boolean)
+      .map((id) => String(id).trim());
+
+    if (candidatePayees.length > 0) {
+      where.OR = [
+        { payeeId: { in: candidatePayees } },
+        { requestedBy: { in: candidatePayees } },
+      ];
+    }
+
     const [payments, refunds, walletsCount] = await Promise.all([
       this.prisma.payment.findMany({
         where,
@@ -88,16 +99,35 @@ export class FinancialAnalyticsService {
     const uniquePayers = new Set<string>();
     const uniquePayees = new Set<string>();
 
-    const byPaymentType: Record<string, { count: number; volumeETB: number; volumeUSD: number }> = {};
-    const byProvider: Record<string, { count: number; volumeETB: number; volumeUSD: number }> = {};
+    const byPaymentType: Record<string, { count: number; volumeETB: number; volumeUSD: number; commissionETB: number; commissionUSD: number }> = {};
+    const byProvider: Record<string, {
+      count: number;
+      completedCount: number;
+      grossVolumeETB: number;
+      platformCommissionETB: number;
+      netPayoutETB: number;
+      grossVolumeUSD: number;
+      platformCommissionUSD: number;
+      netPayoutUSD: number;
+      marketSharePercentage: number;
+    }> = {};
     const attorneyRevenueMap: Record<string, { totalVolume: number; totalCommission: number; count: number }> = {};
 
     // Grouping by Date for Trend chart
     const timelineMap: Record<string, { date: string; grossETB: number; grossUSD: number; commissionETB: number; commissionUSD: number; txCount: number }> = {};
 
+    let caseGrossETB = 0;
+    let caseCommissionETB = 0;
+    let caseCount = 0;
+
+    let consultGrossETB = 0;
+    let consultCommissionETB = 0;
+    let consultCount = 0;
+
     for (const p of payments) {
       const amt = Number(p.amount || 0);
       const comm = Number(p.commission || 0);
+      const net = Math.max(0, amt - comm);
       const curr = (p.currency || 'ETB').toUpperCase();
       const pType = p.paymentType || 'CONSULTATION_ONE_TIME';
       const provider = p.provider || 'CHAPA';
@@ -107,27 +137,64 @@ export class FinancialAnalyticsService {
 
       // Payment Type Breakdown
       if (!byPaymentType[pType]) {
-        byPaymentType[pType] = { count: 0, volumeETB: 0, volumeUSD: 0 };
+        byPaymentType[pType] = { count: 0, volumeETB: 0, volumeUSD: 0, commissionETB: 0, commissionUSD: 0 };
       }
       byPaymentType[pType].count++;
 
       // Provider Breakdown
       if (!byProvider[provider]) {
-        byProvider[provider] = { count: 0, volumeETB: 0, volumeUSD: 0 };
+        byProvider[provider] = {
+          count: 0,
+          completedCount: 0,
+          grossVolumeETB: 0,
+          platformCommissionETB: 0,
+          netPayoutETB: 0,
+          grossVolumeUSD: 0,
+          platformCommissionUSD: 0,
+          netPayoutUSD: 0,
+          marketSharePercentage: 0,
+        };
       }
       byProvider[provider].count++;
 
+      const isCase =
+        p.paymentType === PaymentType.CASE_MILESTONE ||
+        p.paymentType === PaymentType.CASE_PERCENTAGE ||
+        p.paymentType === PaymentType.CASE_STAGE ||
+        p.paymentType === PaymentType.CASE_SERVICE_REQUEST;
+
+      if (isCase) caseCount++;
+      else consultCount++;
+
       if (p.status === PaymentStatus.COMPLETED || p.status === PaymentStatus.REFUNDED) {
+        if (p.status === PaymentStatus.COMPLETED) {
+          byProvider[provider].completedCount++;
+        }
+
         if (curr === 'USD') {
           totalGrossUSD += amt;
           totalCommissionUSD += comm;
           byPaymentType[pType].volumeUSD += amt;
-          byProvider[provider].volumeUSD += amt;
+          byPaymentType[pType].commissionUSD += comm;
+          byProvider[provider].grossVolumeUSD += amt;
+          byProvider[provider].platformCommissionUSD += comm;
+          byProvider[provider].netPayoutUSD += net;
         } else {
           totalGrossETB += amt;
           totalCommissionETB += comm;
           byPaymentType[pType].volumeETB += amt;
-          byProvider[provider].volumeETB += amt;
+          byPaymentType[pType].commissionETB += comm;
+          byProvider[provider].grossVolumeETB += amt;
+          byProvider[provider].platformCommissionETB += comm;
+          byProvider[provider].netPayoutETB += net;
+
+          if (isCase) {
+            caseGrossETB += amt;
+            caseCommissionETB += comm;
+          } else {
+            consultGrossETB += amt;
+            consultCommissionETB += comm;
+          }
         }
 
         if (p.payeeId) {
@@ -167,7 +234,16 @@ export class FinancialAnalyticsService {
       else totalRefundedETB += refAmt;
     }
 
-    // Top 5 Attorneys by Platform Volume
+    // Calculate provider market shares
+    const totalTransactionsAll = payments.length;
+    for (const prov of Object.keys(byProvider)) {
+      byProvider[prov].marketSharePercentage =
+        totalTransactionsAll > 0
+          ? Number(((byProvider[prov].count / totalTransactionsAll) * 100).toFixed(1))
+          : 0;
+    }
+
+    // Top 10 Attorneys by Platform Volume
     const topAttorneys = Object.entries(attorneyRevenueMap)
       .map(([attorneyId, stats]) => ({
         attorneyId,
@@ -205,6 +281,28 @@ export class FinancialAnalyticsService {
             platformRevenue: totalCommissionUSD,
             netAttorneyPayouts: Math.max(0, totalGrossUSD - totalCommissionUSD),
             refunded: totalRefundedUSD,
+          },
+        },
+        commission: {
+          totalPlatformCommissionETB: totalCommissionETB,
+          totalPlatformCommissionUSD: totalCommissionUSD,
+          effectiveCommissionRatePercentage:
+            totalGrossETB > 0
+              ? Number(((totalCommissionETB / totalGrossETB) * 100).toFixed(2))
+              : 0,
+          byCategory: {
+            cases: {
+              totalTransactions: caseCount,
+              grossVolumeETB: caseGrossETB,
+              platformCommissionETB: caseCommissionETB,
+              netPayoutETB: Math.max(0, caseGrossETB - caseCommissionETB),
+            },
+            consultations: {
+              totalTransactions: consultCount,
+              grossVolumeETB: consultGrossETB,
+              platformCommissionETB: consultCommissionETB,
+              netPayoutETB: Math.max(0, consultGrossETB - consultCommissionETB),
+            },
           },
         },
         transactions: {

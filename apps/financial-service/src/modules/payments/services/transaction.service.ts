@@ -81,6 +81,7 @@ export class TransactionService {
         currency: true,
         status: true,
         provider: true,
+        paymentType: true,
         refunds: {
           select: { amount: true, status: true },
         },
@@ -102,23 +103,98 @@ export class TransactionService {
       REFUNDED: 0,
     };
 
-    const providerCounts: Record<string, number> = {};
+    const providerBreakdown: Record<string, {
+      totalTransactions: number;
+      completedCount: number;
+      grossVolumeETB: number;
+      platformCommissionETB: number;
+      netPayoutETB: number;
+      grossVolumeUSD: number;
+      platformCommissionUSD: number;
+      netPayoutUSD: number;
+      refundedETB: number;
+      refundedUSD: number;
+    }> = {};
+
+    let casesCount = 0;
+    let caseGrossETB = 0;
+    let caseCommissionETB = 0;
+    let caseGrossUSD = 0;
+    let caseCommissionUSD = 0;
+
+    let consultationsCount = 0;
+    let consultGrossETB = 0;
+    let consultCommissionETB = 0;
+    let consultGrossUSD = 0;
+    let consultCommissionUSD = 0;
 
     for (const tx of allMatching) {
       const amt = Number(tx.amount || 0);
       const comm = Number(tx.commission || 0);
       const curr = (tx.currency || 'ETB').toUpperCase();
+      const provider = tx.provider || 'CHAPA';
 
       statusCounts[tx.status] = (statusCounts[tx.status] || 0) + 1;
-      providerCounts[tx.provider] = (providerCounts[tx.provider] || 0) + 1;
+
+      if (!providerBreakdown[provider]) {
+        providerBreakdown[provider] = {
+          totalTransactions: 0,
+          completedCount: 0,
+          grossVolumeETB: 0,
+          platformCommissionETB: 0,
+          netPayoutETB: 0,
+          grossVolumeUSD: 0,
+          platformCommissionUSD: 0,
+          netPayoutUSD: 0,
+          refundedETB: 0,
+          refundedUSD: 0,
+        };
+      }
+      providerBreakdown[provider].totalTransactions += 1;
+
+      const isCase =
+        tx.paymentType === PaymentType.CASE_MILESTONE ||
+        tx.paymentType === PaymentType.CASE_PERCENTAGE ||
+        tx.paymentType === PaymentType.CASE_STAGE ||
+        tx.paymentType === PaymentType.CASE_SERVICE_REQUEST;
+
+      if (isCase) {
+        casesCount++;
+      } else {
+        consultationsCount++;
+      }
 
       if (tx.status === 'COMPLETED' || tx.status === 'REFUNDED') {
+        if (tx.status === 'COMPLETED') {
+          providerBreakdown[provider].completedCount += 1;
+        }
+
         if (curr === 'USD') {
           totalVolumeUSD += amt;
           totalCommissionUSD += comm;
+          providerBreakdown[provider].grossVolumeUSD += amt;
+          providerBreakdown[provider].platformCommissionUSD += comm;
+          providerBreakdown[provider].netPayoutUSD += Math.max(0, amt - comm);
+          if (isCase) {
+            caseGrossUSD += amt;
+            caseCommissionUSD += comm;
+          } else {
+            consultGrossUSD += amt;
+            consultCommissionUSD += comm;
+          }
         } else {
           totalVolumeETB += amt;
           totalCommissionETB += comm;
+          providerBreakdown[provider].grossVolumeETB += amt;
+          providerBreakdown[provider].platformCommissionETB += comm;
+          providerBreakdown[provider].netPayoutETB += Math.max(0, amt - comm);
+          if (isCase) {
+            caseGrossETB += amt;
+            caseCommissionETB += comm;
+          } else {
+            consultGrossETB += amt;
+            consultCommissionETB += comm;
+          }
         }
       }
 
@@ -128,8 +204,10 @@ export class TransactionService {
             const refAmt = Number(ref.amount || 0);
             if (curr === 'USD') {
               totalRefundedUSD += refAmt;
+              providerBreakdown[provider].refundedUSD += refAmt;
             } else {
               totalRefundedETB += refAmt;
+              providerBreakdown[provider].refundedETB += refAmt;
             }
           }
         }
@@ -156,8 +234,36 @@ export class TransactionService {
             refunded: totalRefundedUSD,
           },
         },
+        commissionStats: {
+          totalCommissionETB,
+          totalCommissionUSD,
+          effectiveCommissionRatePercentage:
+            totalVolumeETB > 0
+              ? Number(((totalCommissionETB / totalVolumeETB) * 100).toFixed(2))
+              : 0,
+        },
+        breakdownByProvider: providerBreakdown,
+        breakdownByCategory: {
+          cases: {
+            totalTransactions: casesCount,
+            grossVolumeETB: caseGrossETB,
+            platformCommissionETB: caseCommissionETB,
+            netPayoutETB: Math.max(0, caseGrossETB - caseCommissionETB),
+            grossVolumeUSD: caseGrossUSD,
+            platformCommissionUSD: caseCommissionUSD,
+            netPayoutUSD: Math.max(0, caseGrossUSD - caseCommissionUSD),
+          },
+          consultations: {
+            totalTransactions: consultationsCount,
+            grossVolumeETB: consultGrossETB,
+            platformCommissionETB: consultCommissionETB,
+            netPayoutETB: Math.max(0, consultGrossETB - consultCommissionETB),
+            grossVolumeUSD: consultGrossUSD,
+            platformCommissionUSD: consultCommissionUSD,
+            netPayoutUSD: Math.max(0, consultGrossUSD - consultCommissionUSD),
+          },
+        },
         statusCounts,
-        providerCounts,
       },
       pagination: {
         total,
@@ -641,14 +747,39 @@ export class TransactionService {
 
   private buildWhereClause(query: TransactionFilterQuery, skipPayerPayee = false) {
     const where: any = {};
+    const andConditions: any[] = [];
 
     if (!skipPayerPayee) {
       if (query.payerId) where.payerId = query.payerId;
-      if (query.payeeId) where.payeeId = query.payeeId;
+      const candidatePayees = [query.payeeId, query.attorneyId, query.attorneyProfileId]
+        .filter(Boolean)
+        .map((id) => String(id).trim());
+
+      if (candidatePayees.length === 1) {
+        andConditions.push({
+          OR: [
+            { payeeId: candidatePayees[0] },
+            { requestedBy: candidatePayees[0] },
+          ],
+        });
+      } else if (candidatePayees.length > 1) {
+        andConditions.push({
+          OR: [
+            { payeeId: { in: candidatePayees } },
+            { requestedBy: { in: candidatePayees } },
+          ],
+        });
+      }
     }
 
     if (query.status) where.status = query.status;
-    if (query.provider) where.provider = query.provider;
+    if (query.provider) {
+      const providerUpper = String(query.provider).toUpperCase();
+      const validProviders = Object.values(PaymentProvider) as string[];
+      if (validProviders.includes(providerUpper)) {
+        where.provider = providerUpper;
+      }
+    }
 
     const typeFilter = (query.category || query.type || query.paymentType || '').toString().toUpperCase();
     if (typeFilter === 'CASE') {
@@ -688,15 +819,23 @@ export class TransactionService {
 
     if (query.search) {
       const term = query.search.trim();
-      where.OR = [
-        { transactionReference: { contains: term, mode: 'insensitive' } },
-        { description: { contains: term, mode: 'insensitive' } },
-        { milestoneName: { contains: term, mode: 'insensitive' } },
-        { payerId: { contains: term, mode: 'insensitive' } },
-        { payeeId: { contains: term, mode: 'insensitive' } },
-        { caseId: { contains: term, mode: 'insensitive' } },
-        { bookingId: { contains: term, mode: 'insensitive' } },
-      ];
+      andConditions.push({
+        OR: [
+          { transactionReference: { contains: term, mode: 'insensitive' } },
+          { description: { contains: term, mode: 'insensitive' } },
+          { milestoneName: { contains: term, mode: 'insensitive' } },
+          { payerId: { contains: term, mode: 'insensitive' } },
+          { payeeId: { contains: term, mode: 'insensitive' } },
+          { caseId: { contains: term, mode: 'insensitive' } },
+          { bookingId: { contains: term, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (andConditions.length === 1) {
+      where.OR = andConditions[0].OR;
+    } else if (andConditions.length > 1) {
+      where.AND = andConditions;
     }
 
     return where;

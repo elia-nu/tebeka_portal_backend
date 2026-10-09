@@ -87,6 +87,36 @@ export class PaymentController {
   }
 
   /**
+   * Admin View Specific Attorney Transactions with Detailed Commission & Provider Stats
+   */
+  @Get('admin/attorney/:attorneyId/transactions')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async getAdminAttorneyTransactions(
+    @Param('attorneyId') attorneyId: string,
+    @Query() query: any
+  ) {
+    return this.transactionService.getAttorneyTransactions(attorneyId, {
+      ...query,
+      attorneyId,
+    });
+  }
+
+  /**
+   * Admin View Specific Attorney Analytics & Commission Stats
+   */
+  @Get('admin/attorney/:attorneyId/analytics')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async getAdminAttorneyAnalytics(
+    @Param('attorneyId') attorneyId: string,
+    @Query() query: any
+  ) {
+    return this.analyticsService.getAttorneyAnalytics(attorneyId, {
+      ...query,
+      attorneyId,
+    });
+  }
+
+  /**
    * Attorney Transaction Ledger & Incoming Client Payments (Consultations & Case Milestones)
    */
   @Get(['attorney/transactions', 'attorney/history'])
