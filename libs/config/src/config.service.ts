@@ -14,11 +14,26 @@ export class AppConfigService {
   }
 
   get corsAllowedOrigins(): string[] {
-    return this.configService
-      .get<string>('CORS_ALLOWED_ORIGINS', 'http://localhost:3000')
-      .split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean);
+    const raw = this.configService.get<string>('CORS_ALLOWED_ORIGINS', '');
+    const configured = raw
+      ? raw.split(',').map((origin) => origin.trim()).filter(Boolean)
+      : [];
+
+    const defaultOrigins = [
+      'https://tebeka.alikohub.com',
+      'http://localhost:3009',
+      'http://127.0.0.1:3000',
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://localhost:8080',
+      'http://127.0.0.1:8080',
+      'http://localhost:4200',
+      'http://127.0.0.1:4200',
+      'http://localhost:7000',
+      'http://127.0.0.1:7000',
+    ];
+
+    return Array.from(new Set([...defaultOrigins, ...configured]));
   }
 
   get userServicePort(): number {

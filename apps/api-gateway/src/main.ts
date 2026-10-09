@@ -75,8 +75,33 @@ async function bootstrap() {
   // requests directly via app.use(), bypassing Nest's routing/guards entirely.
   app.use(helmet());
   app.enableCors({
-    origin: config.corsAllowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const isAllowed =
+        config.corsAllowedOrigins.includes(origin) ||
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:') ||
+        origin.endsWith('.alikohub.com') ||
+        origin === 'https://tebeka.alikohub.com';
+      callback(null, isAllowed ? true : false);
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'X-Requested-With',
+      'x-custom-locale',
+      'ngrok-skip-browser-warning',
+      'x-correlation-id',
+      'x-chapa-signature',
+      'chapa-signature',
+      'x-signature',
+      'stripe-signature',
+      'Origin',
+    ],
+    exposedHeaders: ['X-Correlation-ID', 'Content-Range', 'X-Total-Count', 'Authorization'],
   });
   app.use(
     rateLimit({
