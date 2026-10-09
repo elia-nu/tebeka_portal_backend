@@ -19,7 +19,7 @@ export interface DispatchNotificationDto {
 }
 
 export const DispatchNotificationSchema = Joi.object({
-  recipientId: Joi.string().uuid().required(),
+  recipientId: Joi.string().required(),
   recipientEmail: Joi.string().email().optional(),
   recipientPhone: Joi.string().optional(),
   deviceToken: Joi.string().optional(),

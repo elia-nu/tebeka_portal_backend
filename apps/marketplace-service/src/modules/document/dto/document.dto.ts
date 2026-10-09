@@ -13,7 +13,7 @@ export const UploadCaseDocumentSchema = Joi.object({
   fileKey: Joi.string().trim().optional(),
   mimeType: Joi.string().trim().default('application/pdf'),
   size: Joi.number().integer().min(1).default(1024),
-  uploadedBy: Joi.string().uuid().optional(),
+  uploadedBy: Joi.string().optional(),
 });
 
 export interface QueryCaseDocumentDto {
@@ -30,7 +30,7 @@ export interface QueryCaseDocumentDto {
 export const QueryCaseDocumentSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
-  uploadedBy: Joi.string().uuid().optional(),
+  uploadedBy: Joi.string().optional(),
   mimeType: Joi.string().trim().optional(),
   q: Joi.string().trim().allow('').optional(),
   search: Joi.string().trim().allow('').optional(),

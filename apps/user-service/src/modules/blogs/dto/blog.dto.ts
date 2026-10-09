@@ -23,7 +23,7 @@ export const CreateBlogSchema = Joi.object({
     'string.min': 'Blog content must be at least 20 characters long',
   }),
   excerpt: Joi.string().max(500).allow(null, '').optional(),
-  categoryId: Joi.string().uuid().allow(null, '').optional(),
+  categoryId: Joi.string().allow(null, '').optional(),
   caseCategory: Joi.string().max(100).allow(null, '').optional(),
   tags: Joi.alternatives().try(
     Joi.array().items(Joi.string().trim()),
@@ -56,7 +56,7 @@ export const UpdateBlogSchema = Joi.object({
   title: Joi.string().min(5).max(255).optional(),
   content: Joi.string().min(20).optional(),
   excerpt: Joi.string().max(500).allow(null, '').optional(),
-  categoryId: Joi.string().uuid().allow(null, '').optional(),
+  categoryId: Joi.string().allow(null, '').optional(),
   caseCategory: Joi.string().max(100).allow(null, '').optional(),
   tags: Joi.alternatives().try(
     Joi.array().items(Joi.string().trim()),
@@ -93,7 +93,7 @@ export const CreateCommentSchema = Joi.object({
   content: Joi.string().min(2).max(2000).required().messages({
     'string.empty': 'Comment content is required',
   }),
-  parentId: Joi.string().uuid().allow(null, '').optional(),
+  parentId: Joi.string().allow(null, '').optional(),
 });
 
 export interface ShareBlogDto {

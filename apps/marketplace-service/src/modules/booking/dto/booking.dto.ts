@@ -133,10 +133,10 @@ export interface QueryBookingDto {
 export const QueryBookingSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
-  userId: Joi.string().uuid().optional(),
+  userId: Joi.string().optional(),
   role: Joi.string().valid('CLIENT', 'ATTORNEY', 'ADMIN', 'SUPER_ADMIN').optional(),
-  clientId: Joi.string().uuid().optional(),
-  attorneyId: Joi.string().uuid().optional(),
+  clientId: Joi.string().optional(),
+  attorneyId: Joi.string().optional(),
   status: Joi.string()
     .valid(
       'REQUESTED',

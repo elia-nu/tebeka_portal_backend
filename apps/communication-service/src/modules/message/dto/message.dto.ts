@@ -18,7 +18,7 @@ export interface SendMessageDto {
 export const SendMessageSchema = Joi.object({
   content: Joi.string().trim().min(1).max(5000).required(),
   messageType: Joi.string().valid('TEXT', 'FILE', 'IMAGE', 'SYSTEM', 'BOOKING_UPDATE', 'CASE_UPDATE', 'PAYMENT_UPDATE').default('TEXT'),
-  replyToId: Joi.string().uuid().optional(),
+  replyToId: Joi.string().optional(),
   attachments: Joi.array().items(
     Joi.object({
       fileName: Joi.string().required(),
@@ -92,8 +92,8 @@ export const QueryMessageReportSchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
   status: Joi.string().valid('PENDING', 'REVIEWED', 'DISMISSED', 'ACTIONED').optional(),
   category: Joi.string().optional(),
-  messageId: Joi.string().uuid().optional(),
-  reporterId: Joi.string().uuid().optional(),
+  messageId: Joi.string().optional(),
+  reporterId: Joi.string().optional(),
   sortBy: Joi.string().valid('createdAt', 'status').default('createdAt'),
   sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
 });

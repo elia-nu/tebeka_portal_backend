@@ -13,7 +13,7 @@ export const CreateReviewSchema = Joi.object({
     'number.max': 'rating must be an integer between 1 and 5',
   }),
   comment: Joi.string().trim().max(1000).optional(),
-  clientId: Joi.string().uuid().optional(),
+  clientId: Joi.string().optional(),
 });
 
 export interface QueryReviewDto {
@@ -30,7 +30,7 @@ export interface QueryReviewDto {
 export const QueryReviewSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
-  clientId: Joi.string().uuid().optional(),
+  clientId: Joi.string().optional(),
   status: Joi.string().valid('PENDING', 'PUBLISHED', 'FLAGGED', 'HIDDEN').default('PUBLISHED'),
   rating: Joi.number().integer().min(1).max(5).optional(),
   minRating: Joi.number().integer().min(1).max(5).optional(),
@@ -52,8 +52,8 @@ export const QueryReviewReportSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
   status: Joi.string().valid('PENDING', 'REVIEWED', 'DISMISSED', 'ACTIONED').optional(),
-  reviewId: Joi.string().uuid().optional(),
-  reportedBy: Joi.string().uuid().optional(),
+  reviewId: Joi.string().optional(),
+  reportedBy: Joi.string().optional(),
   sortBy: Joi.string().valid('createdAt', 'status').default('createdAt'),
   sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
 });

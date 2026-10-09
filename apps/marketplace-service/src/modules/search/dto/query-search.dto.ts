@@ -22,7 +22,7 @@ export const QuerySearchSchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
   city: Joi.string().trim().optional(),
   feeBand: Joi.string().trim().optional(),
-  practiceAreaId: Joi.string().uuid().optional(),
+  practiceAreaId: Joi.string().optional(),
   language: Joi.string().trim().optional(),
   rating: Joi.number().min(0).max(5).optional(),
   minRating: Joi.number().min(0).max(5).optional(),

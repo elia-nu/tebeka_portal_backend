@@ -13,9 +13,9 @@ export interface CreateConversationDto {
 export const CreateConversationSchema = Joi.object({
   title: Joi.string().trim().max(150).optional(),
   type: Joi.string().valid('DIRECT', 'CASE_DISCUSSION', 'BOOKING_CONSULTATION', 'SUPPORT', 'SYSTEM').default('DIRECT'),
-  bookingId: Joi.string().uuid().optional(),
-  caseId: Joi.string().uuid().optional(),
-  participantIds: Joi.array().items(Joi.string().uuid()).min(1).required(),
+  bookingId: Joi.string().optional(),
+  caseId: Joi.string().optional(),
+  participantIds: Joi.array().items(Joi.string()).min(1).required(),
   role: Joi.string().valid('CLIENT', 'ATTORNEY', 'ADMIN', 'SUPPORT').optional(),
 });
 
@@ -44,7 +44,7 @@ export const QueryConversationSchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
   type: Joi.string().valid('DIRECT', 'CASE_DISCUSSION', 'BOOKING_CONSULTATION', 'SUPPORT', 'SYSTEM').optional(),
   status: Joi.string().valid('ACTIVE', 'ARCHIVED', 'CLOSED', 'BLOCKED').default('ACTIVE'),
-  bookingId: Joi.string().uuid().optional(),
-  caseId: Joi.string().uuid().optional(),
+  bookingId: Joi.string().optional(),
+  caseId: Joi.string().optional(),
   q: Joi.string().trim().allow('').optional(),
 });

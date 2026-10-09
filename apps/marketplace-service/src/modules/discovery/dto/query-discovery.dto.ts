@@ -26,7 +26,7 @@ export const QueryDiscoverySchema = Joi.object({
   city: Joi.string().trim().allow('').optional(),
   region: Joi.string().trim().allow('').optional(),
   feeBand: Joi.string().trim().allow('').optional(),
-  practiceAreaId: Joi.string().uuid().optional(),
+  practiceAreaId: Joi.string().optional(),
   practiceArea: Joi.string().trim().allow('').optional(),
   language: Joi.string().trim().allow('').optional(),
   rating: Joi.number().min(0).max(5).optional(),

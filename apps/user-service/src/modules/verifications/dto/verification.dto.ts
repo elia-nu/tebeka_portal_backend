@@ -61,7 +61,7 @@ export const QueryVerificationSchema = Joi.object({
   caseType: Joi.string().valid('NEW_ATTORNEY', 'GUARDED_CHANGE', 'ANNUAL', 'FRAUD_REVIEW').optional(),
   status: Joi.string().trim().optional(),
   fraudStatus: Joi.string().trim().optional(),
-  assignedReviewerId: Joi.string().uuid().optional(),
+  assignedReviewerId: Joi.string().optional(),
   sortBy: Joi.string().valid('submittedAt', 'slaDueDate', 'status').default('submittedAt'),
   sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
 });
