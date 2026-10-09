@@ -46,7 +46,23 @@ export class SessionTokenService {
   }
 
   async logout(headers: any) {
-    return auth.api.signOut({ headers });
+    try {
+      const authHeader = headers?.['authorization'] || headers?.['Authorization'];
+      if (authHeader && typeof authHeader === 'string') {
+        const parts = authHeader.split(' ');
+        const token = parts.length === 2 ? parts[1] : authHeader;
+        if (token) {
+          await this.prisma.session.updateMany({
+            where: { token },
+            data: { revokedAt: new Date() },
+          }).catch(() => null);
+        }
+      }
+      await auth.api.signOut({ headers }).catch(() => null);
+    } catch {
+      // Silently succeed so client logout is always clean
+    }
+    return { success: true, status: 'success', message: 'Signed out successfully' };
   }
 
   async logoutAll(headers: any) {

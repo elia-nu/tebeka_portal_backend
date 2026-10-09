@@ -180,115 +180,98 @@ export class AuthController {
 
   @AllowAnonymous()
   @HttpCode(HttpStatus.OK)
-  @Post('login')
-  @Post('sign-in')
+  @Post(['login', 'sign-in', 'signin'])
   async login(@Body() body: any) {
     return this.loginService.login(body);
   }
 
+  @AllowAnonymous()
   @HttpCode(HttpStatus.OK)
-  @Post('logout')
-  @Post('sign-out')
+  @Post(['logout', 'sign-out', 'signout'])
   async logout(@Req() req: any) {
     return this.sessionTokenService.logout(req.headers);
   }
 
   @AllowAnonymous()
   @HttpCode(HttpStatus.OK)
-  @Post('refresh-token')
-  @Post('refresh')
-  @Post('token/refresh')
+  @Post(['refresh-token', 'refresh', 'token/refresh'])
   async refreshToken(@Req() req: any, @Body() body?: any) {
     return this.sessionTokenService.refreshToken(body, req.headers);
   }
 
   @AllowAnonymous()
-  @Post('otp/request')
-  @Post('request-otp')
+  @Post(['otp/request', 'request-otp', 'otp-request'])
   @UsePipes(new JoiValidationPipe(SendPhoneOtpSchema))
   async requestOtp(@Body() body: SendPhoneOtpDto) {
     return this.otpService.requestOtp(body);
   }
 
   @AllowAnonymous()
-  @Post('otp/verify')
-  @Post('verify-otp')
+  @Post(['otp/verify', 'verify-otp', 'otp-verify'])
   @UsePipes(new JoiValidationPipe(VerifyPhoneOtpSchema))
   async verifyOtp(@Body() body: VerifyPhoneOtpDto) {
     return this.otpService.verifyOtp(body);
   }
 
   @AllowAnonymous()
-  @Post('otp/resend')
+  @Post(['otp/resend', 'resend-otp', 'otp-resend'])
   async resendOtp(@Body() body: any) {
     return this.otpService.resendOtp(body);
   }
 
   @AllowAnonymous()
-  @Post('otp/cancel')
+  @Post(['otp/cancel', 'cancel-otp', 'otp-cancel'])
   async cancelOtp(@Body() body: any) {
     return this.otpService.cancelOtp(body);
   }
 
   @AllowAnonymous()
-  @Get('email/status')
-  @Get('check-email')
-  @Get('email-status')
+  @Get(['email/status', 'check-email', 'email-status'])
   async checkEmailStatusGet(@Query('email') email: string) {
     return this.emailVerificationService.checkEmailStatus(email);
   }
 
   @AllowAnonymous()
-  @Post('email/status')
-  @Post('check-email')
-  @Post('email-status')
+  @Post(['email/status', 'check-email', 'email-status'])
   async checkEmailStatusPost(@Body() body: { email: string }) {
     return this.emailVerificationService.checkEmailStatus(body?.email);
   }
 
   @AllowAnonymous()
-  @Post('email/request-otp')
-  @Post('request-email-otp')
-  @Post('email-otp/request')
+  @Post(['email/request-otp', 'request-email-otp', 'email-otp/request'])
   @UsePipes(new JoiValidationPipe(SendEmailOtpSchema))
   async requestEmailOtp(@Body() body: SendEmailOtpDto) {
     return this.emailVerificationService.sendEmailVerification(body);
   }
 
   @AllowAnonymous()
-  @Post('email/verify-otp')
-  @Post('verify-email-otp')
-  @Post('email-otp/verify')
+  @Post(['email/verify-otp', 'verify-email-otp', 'email-otp/verify'])
   @UsePipes(new JoiValidationPipe(VerifyEmailOtpSchema))
   async verifyEmailOtp(@Body() body: VerifyEmailOtpDto) {
     return this.emailVerificationService.verifyEmail(body);
   }
 
   @AllowAnonymous()
-  @Post('email/resend-otp')
-  @Post('resend-email-otp')
-  @Post('email-otp/resend')
+  @Post(['email/resend-otp', 'resend-email-otp', 'email-otp/resend'])
   async resendEmailOtp(@Body() body: SendEmailOtpDto) {
     return this.emailVerificationService.resendEmailVerification(body);
   }
 
   @AllowAnonymous()
-  @Post('password/forgot')
-  @Post('forgot-password')
+  @Post(['password/forgot', 'forgot-password'])
   @UsePipes(new JoiValidationPipe(ForgotPasswordSchema))
   async forgotPassword(@Body() body: ForgotPasswordDto) {
     return this.passwordService.forgotPassword(body);
   }
 
   @AllowAnonymous()
-  @Post('password/reset')
-  @Post('reset-password')
+  @Post(['password/reset', 'reset-password'])
   @UsePipes(new JoiValidationPipe(ResetPasswordSchema))
   async resetPassword(@Body() body: ResetPasswordDto) {
     return this.passwordService.resetPassword(body);
   }
 
-  @Post('password/change')
+  @Post(['password/change', 'change-password'])
   async changePassword(@Body() body: any, @Req() req: any) {
     return this.passwordService.changePassword(body, req.headers);
   }
