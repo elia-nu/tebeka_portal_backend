@@ -5,27 +5,92 @@ import { PrismaService } from '../../../database/prisma.service';
 export interface TransactionFilterQuery {
   page?: number | string;
   limit?: number | string;
-  status?: PaymentStatus;
-  provider?: PaymentProvider;
+  pageSize?: number | string;
+  perPage?: number | string;
+
+  // Status filters
+  status?: PaymentStatus | string;
+  statuses?: string[] | string;
+
+  // Provider filters
+  provider?: PaymentProvider | string;
+  providers?: string[] | string;
+  paymentProvider?: PaymentProvider | string;
+
+  // Type & category
   paymentType?: PaymentType | string;
+  paymentTypes?: string[] | string;
   category?: 'CASE' | 'CONSULTATION' | 'ALL' | string;
   type?: string;
+
+  // User / Party filters
   attorneyProfileId?: string;
   attorneyId?: string;
   clientId?: string;
   userId?: string;
-  currency?: string;
   payerId?: string;
   payeeId?: string;
+  requestedBy?: string;
+  approvedBy?: string;
+
+  // Entity association filters
   caseId?: string;
+  caseIds?: string[] | string;
   bookingId?: string;
+  bookingIds?: string[] | string;
+  stage?: string;
+  milestoneName?: string;
+
+  // Reference & Gateway IDs
+  transactionReference?: string;
+  reference?: string;
+  txRef?: string;
+  stripePaymentId?: string;
+  subaccountId?: string;
+
+  // Amounts & Commission
+  currency?: string;
+  currencies?: string[] | string;
   minAmount?: number | string;
   maxAmount?: number | string;
+  amount?: number | string;
+  minCommission?: number | string;
+  maxCommission?: number | string;
+  commission?: number | string;
+
+  // Date ranges
   startDate?: string;
   endDate?: string;
+  from?: string;
+  to?: string;
+  createdStartDate?: string;
+  createdEndDate?: string;
+  paidStartDate?: string;
+  paidEndDate?: string;
+  paidFrom?: string;
+  paidTo?: string;
+  requestedStartDate?: string;
+  requestedEndDate?: string;
+  approvedStartDate?: string;
+  approvedEndDate?: string;
+  escrowReleasedStartDate?: string;
+  escrowReleasedEndDate?: string;
+
+  // Escrow & Refund status
+  isEscrowReleased?: boolean | string;
+  escrowReleased?: boolean | string;
+  hasRefund?: boolean | string;
+  refundStatus?: 'PENDING' | 'PROCESSED' | 'REJECTED' | string;
+
+  // Search & Sorting
   search?: string;
-  sortBy?: 'createdAt' | 'paidAt' | 'amount' | 'commission';
-  sortOrder?: 'asc' | 'desc';
+  q?: string;
+  query?: string;
+  sortBy?: 'createdAt' | 'paidAt' | 'amount' | 'commission' | 'requestedAt' | 'approvedAt' | 'status' | 'provider' | 'paymentType' | 'updatedAt' | string;
+  orderBy?: string;
+  sort?: string;
+  sortOrder?: 'asc' | 'desc' | 'ASC' | 'DESC';
+  order?: 'asc' | 'desc' | 'ASC' | 'DESC';
 }
 
 export interface UserContext {
@@ -49,8 +114,11 @@ export class TransactionService {
    */
   async getAdminTransactions(query: TransactionFilterQuery = {}) {
     const page = Math.max(1, Number(query.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
+    const limit = Math.min(100, Math.max(1, Number(query.limit || query.pageSize || query.perPage) || 20));
     const skip = (page - 1) * limit;
+
+    const sortBy = this.getSortBy(query);
+    const sortOrder = this.getSortOrder(query);
 
     const where = this.buildWhereClause(query);
 
@@ -66,7 +134,7 @@ export class TransactionService {
         skip,
         take: limit,
         orderBy: {
-          [query.sortBy || 'createdAt']: query.sortOrder || 'desc',
+          [sortBy]: sortOrder,
         },
       }),
       this.prisma.payment.count({ where }),
@@ -745,16 +813,76 @@ export class TransactionService {
   // HELPER FUNCTIONS
   // =========================================================================
 
-  private buildWhereClause(query: TransactionFilterQuery, skipPayerPayee = false) {
+  private parseList(value?: string[] | string): string[] {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.map((v) => String(v).trim()).filter(Boolean);
+    }
+    return String(value)
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean);
+  }
+
+  private parseBoolean(value?: boolean | string): boolean | undefined {
+    if (value === undefined || value === null || value === '') return undefined;
+    if (typeof value === 'boolean') return value;
+    const str = String(value).trim().toLowerCase();
+    if (['true', '1', 'yes'].includes(str)) return true;
+    if (['false', '0', 'no'].includes(str)) return false;
+    return undefined;
+  }
+
+  getSortBy(query: TransactionFilterQuery): string {
+    const sort = (query.sortBy || query.orderBy || query.sort || 'createdAt').toString();
+    const validSortFields = [
+      'createdAt',
+      'paidAt',
+      'updatedAt',
+      'amount',
+      'commission',
+      'status',
+      'provider',
+      'paymentType',
+      'requestedAt',
+      'approvedAt',
+      'escrowReleasedAt',
+      'transactionReference',
+    ];
+    return validSortFields.includes(sort) ? sort : 'createdAt';
+  }
+
+  getSortOrder(query: TransactionFilterQuery): 'asc' | 'desc' {
+    const order = (query.sortOrder || query.order || 'desc').toString().toLowerCase();
+    return order === 'asc' ? 'asc' : 'desc';
+  }
+
+  buildWhereClause(query: TransactionFilterQuery = {}, skipPayerPayee = false) {
     const where: any = {};
     const andConditions: any[] = [];
 
+    // 1. User / Parties Filter
     if (!skipPayerPayee) {
-      if (query.payerId) where.payerId = query.payerId;
-      const candidatePayees = [query.payeeId, query.attorneyId, query.attorneyProfileId]
-        .filter(Boolean)
-        .map((id) => String(id).trim());
+      if (query.userId) {
+        const uId = String(query.userId).trim();
+        andConditions.push({
+          OR: [
+            { payerId: uId },
+            { payeeId: uId },
+            { requestedBy: uId },
+            { approvedBy: uId },
+          ],
+        });
+      }
 
+      // Attorney / Payee candidates
+      const candidatePayees = Array.from(
+        new Set([
+          ...this.parseList(query.payeeId),
+          ...this.parseList(query.attorneyId),
+          ...this.parseList(query.attorneyProfileId),
+        ])
+      );
       if (candidatePayees.length === 1) {
         andConditions.push({
           OR: [
@@ -770,71 +898,273 @@ export class TransactionService {
           ],
         });
       }
+
+      // Client / Payer candidates
+      const candidatePayers = Array.from(
+        new Set([
+          ...this.parseList(query.payerId),
+          ...this.parseList(query.clientId),
+        ])
+      );
+      if (candidatePayers.length === 1) {
+        andConditions.push({
+          OR: [
+            { payerId: candidatePayers[0] },
+            { approvedBy: candidatePayers[0] },
+          ],
+        });
+      } else if (candidatePayers.length > 1) {
+        andConditions.push({
+          OR: [
+            { payerId: { in: candidatePayers } },
+            { approvedBy: { in: candidatePayers } },
+          ],
+        });
+      }
+
+      if (query.requestedBy) {
+        const reqList = this.parseList(query.requestedBy);
+        if (reqList.length === 1) where.requestedBy = reqList[0];
+        else if (reqList.length > 1) where.requestedBy = { in: reqList };
+      }
+
+      if (query.approvedBy) {
+        const appList = this.parseList(query.approvedBy);
+        if (appList.length === 1) where.approvedBy = appList[0];
+        else if (appList.length > 1) where.approvedBy = { in: appList };
+      }
     }
 
-    if (query.status) where.status = query.status;
-    if (query.provider) {
-      const providerUpper = String(query.provider).toUpperCase();
+    // 2. Status Filter
+    const rawStatuses = [
+      ...this.parseList(query.statuses),
+      ...this.parseList(query.status as string),
+    ];
+    if (rawStatuses.length > 0) {
+      const validStatuses = Object.values(PaymentStatus) as string[];
+      const matchedStatuses = rawStatuses
+        .map((s) => s.toUpperCase())
+        .filter((s) => validStatuses.includes(s)) as PaymentStatus[];
+
+      if (matchedStatuses.length === 1) {
+        where.status = matchedStatuses[0];
+      } else if (matchedStatuses.length > 1) {
+        where.status = { in: matchedStatuses };
+      }
+    }
+
+    // 3. Provider Filter
+    const rawProviders = [
+      ...this.parseList(query.providers),
+      ...this.parseList(query.provider as string),
+      ...this.parseList(query.paymentProvider as string),
+    ];
+    if (rawProviders.length > 0) {
       const validProviders = Object.values(PaymentProvider) as string[];
-      if (validProviders.includes(providerUpper)) {
-        where.provider = providerUpper;
+      const matchedProviders = rawProviders
+        .map((p) => p.toUpperCase())
+        .filter((p) => validProviders.includes(p)) as PaymentProvider[];
+
+      if (matchedProviders.length === 1) {
+        where.provider = matchedProviders[0];
+      } else if (matchedProviders.length > 1) {
+        where.provider = { in: matchedProviders };
       }
     }
 
-    const typeFilter = (query.category || query.type || query.paymentType || '').toString().toUpperCase();
-    if (typeFilter === 'CASE') {
-      where.paymentType = {
-        in: [
-          PaymentType.CASE_MILESTONE,
-          PaymentType.CASE_PERCENTAGE,
-          PaymentType.CASE_STAGE,
-          PaymentType.CASE_SERVICE_REQUEST,
-        ],
-      };
-    } else if (typeFilter === 'CONSULTATION') {
-      where.paymentType = PaymentType.CONSULTATION_ONE_TIME;
-    } else if (query.paymentType) {
-      const validEnums = Object.values(PaymentType) as string[];
-      if (validEnums.includes(String(query.paymentType))) {
-        where.paymentType = query.paymentType;
+    // 4. Payment Type & Category Filter
+    const catUpper = (query.category || '').toString().trim().toUpperCase();
+    const rawTypes = [
+      ...this.parseList(query.paymentTypes),
+      ...this.parseList(query.paymentType as string),
+      ...this.parseList(query.type as string),
+    ];
+
+    const typeSet = new Set<PaymentType>();
+    if (catUpper === 'CASE') {
+      typeSet.add(PaymentType.CASE_MILESTONE);
+      typeSet.add(PaymentType.CASE_PERCENTAGE);
+      typeSet.add(PaymentType.CASE_STAGE);
+      typeSet.add(PaymentType.CASE_SERVICE_REQUEST);
+    } else if (catUpper === 'CONSULTATION') {
+      typeSet.add(PaymentType.CONSULTATION_ONE_TIME);
+    }
+
+    const validPaymentTypes = Object.values(PaymentType) as string[];
+    for (const t of rawTypes) {
+      const tu = t.toUpperCase();
+      if (tu === 'CASE') {
+        typeSet.add(PaymentType.CASE_MILESTONE);
+        typeSet.add(PaymentType.CASE_PERCENTAGE);
+        typeSet.add(PaymentType.CASE_STAGE);
+        typeSet.add(PaymentType.CASE_SERVICE_REQUEST);
+      } else if (tu === 'CONSULTATION') {
+        typeSet.add(PaymentType.CONSULTATION_ONE_TIME);
+      } else if (validPaymentTypes.includes(tu)) {
+        typeSet.add(tu as PaymentType);
       }
     }
 
-    if (query.currency) where.currency = query.currency.toUpperCase();
-    if (query.caseId) where.caseId = query.caseId;
-    if (query.bookingId) where.bookingId = query.bookingId;
-
-    if (query.minAmount !== undefined && query.minAmount !== null && query.minAmount !== '') {
-      where.amount = { ...(where.amount || {}), gte: Number(query.minAmount) };
-    }
-    if (query.maxAmount !== undefined && query.maxAmount !== null && query.maxAmount !== '') {
-      where.amount = { ...(where.amount || {}), lte: Number(query.maxAmount) };
+    if (typeSet.size === 1) {
+      where.paymentType = Array.from(typeSet)[0];
+    } else if (typeSet.size > 1) {
+      where.paymentType = { in: Array.from(typeSet) };
     }
 
-    if (query.startDate || query.endDate) {
+    // 5. Currency Filter
+    const rawCurrencies = [
+      ...this.parseList(query.currencies),
+      ...this.parseList(query.currency),
+    ];
+    if (rawCurrencies.length === 1) {
+      where.currency = rawCurrencies[0].toUpperCase();
+    } else if (rawCurrencies.length > 1) {
+      where.currency = { in: rawCurrencies.map((c) => c.toUpperCase()) };
+    }
+
+    // 6. Entity association (caseId, bookingId, stage, milestoneName)
+    const caseIds = [
+      ...this.parseList(query.caseIds),
+      ...this.parseList(query.caseId),
+    ];
+    if (caseIds.length === 1) where.caseId = caseIds[0];
+    else if (caseIds.length > 1) where.caseId = { in: caseIds };
+
+    const bookingIds = [
+      ...this.parseList(query.bookingIds),
+      ...this.parseList(query.bookingId),
+    ];
+    if (bookingIds.length === 1) where.bookingId = bookingIds[0];
+    else if (bookingIds.length > 1) where.bookingId = { in: bookingIds };
+
+    if (query.stage) {
+      where.stage = { contains: String(query.stage).trim(), mode: 'insensitive' };
+    }
+    if (query.milestoneName) {
+      where.milestoneName = { contains: String(query.milestoneName).trim(), mode: 'insensitive' };
+    }
+
+    // 7. References & Gateway IDs
+    const ref = query.transactionReference || query.reference || query.txRef;
+    if (ref) {
+      where.transactionReference = { contains: String(ref).trim(), mode: 'insensitive' };
+    }
+    if (query.stripePaymentId) {
+      where.stripePaymentId = { contains: String(query.stripePaymentId).trim(), mode: 'insensitive' };
+    }
+    if (query.subaccountId) {
+      where.subaccountId = { contains: String(query.subaccountId).trim(), mode: 'insensitive' };
+    }
+
+    // 8. Amount & Commission Filters
+    if (query.amount !== undefined && query.amount !== null && query.amount !== '') {
+      where.amount = Number(query.amount);
+    } else {
+      if (query.minAmount !== undefined && query.minAmount !== null && query.minAmount !== '') {
+        where.amount = { ...(where.amount || {}), gte: Number(query.minAmount) };
+      }
+      if (query.maxAmount !== undefined && query.maxAmount !== null && query.maxAmount !== '') {
+        where.amount = { ...(where.amount || {}), lte: Number(query.maxAmount) };
+      }
+    }
+
+    if (query.commission !== undefined && query.commission !== null && query.commission !== '') {
+      where.commission = Number(query.commission);
+    } else {
+      if (query.minCommission !== undefined && query.minCommission !== null && query.minCommission !== '') {
+        where.commission = { ...(where.commission || {}), gte: Number(query.minCommission) };
+      }
+      if (query.maxCommission !== undefined && query.maxCommission !== null && query.maxCommission !== '') {
+        where.commission = { ...(where.commission || {}), lte: Number(query.maxCommission) };
+      }
+    }
+
+    // 9. Timestamps / Date Ranges
+    // createdAt
+    const startCreated = query.startDate || query.from || query.createdStartDate;
+    const endCreated = query.endDate || query.to || query.createdEndDate;
+    if (startCreated || endCreated) {
       where.createdAt = {};
-      if (query.startDate) where.createdAt.gte = new Date(query.startDate);
-      if (query.endDate) where.createdAt.lte = new Date(query.endDate);
+      if (startCreated) where.createdAt.gte = new Date(startCreated);
+      if (endCreated) where.createdAt.lte = new Date(endCreated);
     }
 
-    if (query.search) {
-      const term = query.search.trim();
+    // paidAt
+    const startPaid = query.paidStartDate || query.paidFrom;
+    const endPaid = query.paidEndDate || query.paidTo;
+    if (startPaid || endPaid) {
+      where.paidAt = {};
+      if (startPaid) where.paidAt.gte = new Date(startPaid);
+      if (endPaid) where.paidAt.lte = new Date(endPaid);
+    }
+
+    // requestedAt
+    if (query.requestedStartDate || query.requestedEndDate) {
+      where.requestedAt = {};
+      if (query.requestedStartDate) where.requestedAt.gte = new Date(query.requestedStartDate);
+      if (query.requestedEndDate) where.requestedAt.lte = new Date(query.requestedEndDate);
+    }
+
+    // approvedAt
+    if (query.approvedStartDate || query.approvedEndDate) {
+      where.approvedAt = {};
+      if (query.approvedStartDate) where.approvedAt.gte = new Date(query.approvedStartDate);
+      if (query.approvedEndDate) where.approvedAt.lte = new Date(query.approvedEndDate);
+    }
+
+    // escrowReleasedAt
+    if (query.escrowReleasedStartDate || query.escrowReleasedEndDate) {
+      where.escrowReleasedAt = {};
+      if (query.escrowReleasedStartDate) where.escrowReleasedAt.gte = new Date(query.escrowReleasedStartDate);
+      if (query.escrowReleasedEndDate) where.escrowReleasedAt.lte = new Date(query.escrowReleasedEndDate);
+    }
+
+    // 10. Escrow & Refund status
+    const escrowReleasedBool = this.parseBoolean(query.isEscrowReleased ?? query.escrowReleased);
+    if (escrowReleasedBool !== undefined) {
+      if (escrowReleasedBool) {
+        where.escrowReleasedAt = { not: null };
+      } else {
+        where.escrowReleasedAt = null;
+      }
+    }
+
+    const hasRefundBool = this.parseBoolean(query.hasRefund);
+    if (hasRefundBool !== undefined) {
+      if (hasRefundBool) {
+        where.refunds = { some: {} };
+      } else {
+        where.refunds = { none: {} };
+      }
+    }
+
+    if (query.refundStatus) {
+      const refStatusUpper = String(query.refundStatus).trim().toUpperCase();
+      where.refunds = { some: { status: refStatusUpper } };
+    }
+
+    // 11. Fuzzy / Global Search
+    const searchTerm = (query.search || query.q || query.query || '').toString().trim();
+    if (searchTerm) {
       andConditions.push({
         OR: [
-          { transactionReference: { contains: term, mode: 'insensitive' } },
-          { description: { contains: term, mode: 'insensitive' } },
-          { milestoneName: { contains: term, mode: 'insensitive' } },
-          { payerId: { contains: term, mode: 'insensitive' } },
-          { payeeId: { contains: term, mode: 'insensitive' } },
-          { caseId: { contains: term, mode: 'insensitive' } },
-          { bookingId: { contains: term, mode: 'insensitive' } },
+          { transactionReference: { contains: searchTerm, mode: 'insensitive' } },
+          { description: { contains: searchTerm, mode: 'insensitive' } },
+          { milestoneName: { contains: searchTerm, mode: 'insensitive' } },
+          { stage: { contains: searchTerm, mode: 'insensitive' } },
+          { payerId: { contains: searchTerm, mode: 'insensitive' } },
+          { payeeId: { contains: searchTerm, mode: 'insensitive' } },
+          { requestedBy: { contains: searchTerm, mode: 'insensitive' } },
+          { approvedBy: { contains: searchTerm, mode: 'insensitive' } },
+          { caseId: { contains: searchTerm, mode: 'insensitive' } },
+          { bookingId: { contains: searchTerm, mode: 'insensitive' } },
+          { stripePaymentId: { contains: searchTerm, mode: 'insensitive' } },
+          { subaccountId: { contains: searchTerm, mode: 'insensitive' } },
         ],
       });
     }
 
-    if (andConditions.length === 1) {
-      where.OR = andConditions[0].OR;
-    } else if (andConditions.length > 1) {
+    if (andConditions.length > 0) {
       where.AND = andConditions;
     }
 

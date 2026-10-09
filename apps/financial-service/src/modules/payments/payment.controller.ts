@@ -61,7 +61,7 @@ export class PaymentController {
   @Get()
   @Roles('ADMIN', 'SUPER_ADMIN')
   async getPayments(@Query() query: any) {
-    return this.paymentService.getPayments(query);
+    return this.transactionService.getAdminTransactions(query);
   }
 
   // =========================================================================
