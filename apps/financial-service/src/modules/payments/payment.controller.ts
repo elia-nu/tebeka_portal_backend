@@ -32,7 +32,7 @@ export class PaymentController {
 
   @Post()
   async createPayment(@Body() body: any, @Req() req: any) {
-    const userId = req.user?.id || body.payerId;
+    const userId = req.user?.id && req.user.id !== 'internal-service' ? req.user.id : (body.payerId || req.user?.id);
     if (!userId) {
       throw new UnauthorizedException('Authenticated user ID is required to create a payment');
     }

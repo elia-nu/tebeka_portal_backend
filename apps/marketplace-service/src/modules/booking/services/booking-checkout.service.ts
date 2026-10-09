@@ -101,8 +101,13 @@ export class BookingCheckoutService {
       correlationId,
     );
 
+    if (!paymentResponse) {
+      this.logger.error(`Financial Service failed to create payment session for booking [${booking.id}]`);
+      throw new BadRequestException('Failed to initiate payment gateway session. Please verify payment service is available and try again.');
+    }
+
     this.logger.log(
-      `Checkout session created for booking [${booking.id}]. Reference: ${paymentResponse?.transactionReference}, Provider: ${paymentResponse?.provider}`
+      `Checkout session created for booking [${booking.id}]. Reference: ${paymentResponse.transactionReference}, Provider: ${paymentResponse.provider}`
     );
 
     return {
@@ -110,11 +115,11 @@ export class BookingCheckoutService {
       bookingId: booking.id,
       referenceNumber: booking.referenceNumber,
       consultationFee,
-      currency: paymentResponse?.currency || 'ETB',
-      provider: paymentResponse?.provider || dto.provider || 'CHAPA',
-      transactionReference: paymentResponse?.transactionReference,
-      checkoutUrl: paymentResponse?.checkoutUrl || null,
-      status: paymentResponse?.status || 'PENDING',
+      currency: paymentResponse.currency || 'ETB',
+      provider: paymentResponse.provider || dto.provider || 'CHAPA',
+      transactionReference: paymentResponse.transactionReference,
+      checkoutUrl: paymentResponse.checkoutUrl || `https://checkout.chapa.co/checkout/payment/${paymentResponse.transactionReference}`,
+      status: paymentResponse.status || 'PENDING',
     };
   }
 }

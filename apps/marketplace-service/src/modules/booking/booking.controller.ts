@@ -68,8 +68,8 @@ export class BookingController {
     @Req() req: any,
     @Headers('x-correlation-id') correlationId?: string,
   ) {
-    const clientId = req.user?.id;
-    const jwtEmail = req.user?.email;
+    const clientId = req.user?.id || req.user?.userId || (body as any)?.clientId;
+    const jwtEmail = req.user?.email || (body as any)?.email;
     return this.bookingCheckoutService.initiateCheckout(id, clientId, jwtEmail, body, correlationId);
   }
 
