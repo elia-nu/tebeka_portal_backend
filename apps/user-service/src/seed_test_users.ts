@@ -72,8 +72,18 @@ async function seedCompleteTestData() {
         phoneVerified: true,
         emailVerified: true,
         status: 'ACTIVE',
-        is2faEnabled: false,
-        twoFactorEnabled: false
+        is2faEnabled: true,
+        twoFactorEnabled: true
+      }
+    });
+
+    await prisma.twoFactor.create({
+      data: {
+        userId: superAdmin.id,
+        secret: 'JBSWY3DPEHPK3PXP',
+        backupCodes: '12345678,87654321,11223344',
+        enabled: true,
+        verified: true
       }
     });
 
@@ -110,8 +120,18 @@ async function seedCompleteTestData() {
         phoneVerified: true,
         emailVerified: true,
         status: 'ACTIVE',
-        is2faEnabled: false,
-        twoFactorEnabled: false
+        is2faEnabled: true,
+        twoFactorEnabled: true
+      }
+    });
+
+    await prisma.twoFactor.create({
+      data: {
+        userId: regionalAdmin.id,
+        secret: 'JBSWY3DPEHPK3PXP',
+        backupCodes: '12345678,87654321,11223344',
+        enabled: true,
+        verified: true
       }
     });
 
