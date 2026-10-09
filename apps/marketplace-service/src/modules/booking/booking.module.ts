@@ -10,10 +10,15 @@ import { CommunicationServiceClient } from '../../integrations/communication-ser
 import { UserServiceClient } from '../../integrations/user-service.client';
 import { FinancialServiceClient } from '../../integrations/financial-service.client';
 
+import { BookingAvailabilityService } from './services/booking-availability.service';
+import { BookingCreationService } from './services/booking-creation.service';
+
 @Module({
   controllers: [BookingController],
   providers: [
     BookingService,
+    BookingCreationService,
+    BookingAvailabilityService,
     BookingCancellationService,
     BookingRescheduleService,
     BookingDisputeService,
@@ -25,6 +30,8 @@ import { FinancialServiceClient } from '../../integrations/financial-service.cli
   ],
   exports: [
     BookingService,
+    BookingCreationService,
+    BookingAvailabilityService,
     BookingCancellationService,
     BookingRescheduleService,
     BookingDisputeService,
@@ -32,3 +39,4 @@ import { FinancialServiceClient } from '../../integrations/financial-service.cli
   ],
 })
 export class BookingModule {}
+

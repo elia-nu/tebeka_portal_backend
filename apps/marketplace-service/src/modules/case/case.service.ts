@@ -3,35 +3,22 @@ import { CaseStatus, Priority, AgreementStatus, AgreementType } from '@prisma/cl
 import { PrismaService } from '../../database/prisma.service';
 import { CommunicationServiceClient } from '../../integrations/communication-service.client';
 import { SignAgreementDto, DeclineAgreementDto } from './dto/agreement.dto';
+import { DEFAULT_AGREEMENT_TERMS } from './constants/agreement-terms.constant';
+import { CaseAgreementService } from './services/case-agreement.service';
 
-export const DEFAULT_AGREEMENT_TERMS = `
-# Tebeka Legal Portal — Tri-Party Engagement & Non-Circumvention Agreement
-Version: 1.0 | Applicable to: Client, Attorney, Tebeka Platform
-
-## 1. Scope & Tri-Party Commitment
-This Agreement is entered into between the Client, the Assigned Attorney, and the Tebeka Legal Portal Platform ("Tebeka"). By signing below, all parties agree to adhere strictly to the terms of engagement, fee protections, and ethical legal conduct.
-
-## 2. Non-Circumvention & Off-Platform Communication Ban
-- Both Client and Attorney strictly agree not to solicit, communicate, or facilitate legal consultations, document exchange, or case management outside of the Tebeka Portal.
-- Sharing private contact details (phone numbers, WhatsApp, external email, Telegram) for the purpose of circumventing platform fees or escrow is strictly prohibited.
-- Violation of this clause constitutes a material breach resulting in immediate suspension, account termination, and forfeiture of platform escrow dispute rights.
-
-## 3. Escrow Payment & Milestone Billing Binding
-- All fees, retaining costs, and milestone payments associated with this legal matter must be processed exclusively through the Tebeka Escrow system.
-- The platform retains a 15% service commission, and 85% is held safely in escrow and disbursed to the attorney upon confirmed delivery of agreed milestones.
-- Off-platform cash or direct bank transfers are void of all platform guarantees, refund eligibility, and malpractice protections.
-
-## 4. Professional Conduct, Exclusivity & Confidentiality
-- Attorney affirms no conflict of interest with the opposing party and agrees to uphold the highest standard of Ethiopian legal ethics.
-- All documents, case strategy notes, and communications exchanged within the Tebeka workspace are confidential and protected by attorney-client privilege.
-`;
+export { DEFAULT_AGREEMENT_TERMS };
 
 @Injectable()
 export class CaseService {
+  private readonly agreementService: CaseAgreementService;
+
   constructor(
     private readonly prisma: PrismaService,
-    @Optional() private readonly communicationServiceClient?: CommunicationServiceClient
-  ) {}
+    @Optional() private readonly communicationServiceClient?: CommunicationServiceClient,
+    @Optional() caseAgreementService?: CaseAgreementService
+  ) {
+    this.agreementService = caseAgreementService || new CaseAgreementService(this.prisma, this.communicationServiceClient);
+  }
 
   async createCase(data: any, clientId: string) {
     if (!data.title) throw new BadRequestException('Case title is required');
@@ -255,260 +242,19 @@ export class CaseService {
   }
 
   async getCaseAgreement(caseId: string, userId: string) {
-    const caseItem = await this.prisma.case.findUnique({
-      where: { id: caseId },
-      include: { agreement: true },
-    });
-    if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
-
-    let agreement = caseItem.agreement;
-    if (!agreement) {
-      agreement = await this.prisma.caseAgreement.create({
-        data: {
-          caseId,
-          termsContent: DEFAULT_AGREEMENT_TERMS,
-          status: AgreementStatus.PENDING_SIGNATURES,
-        },
-      });
-    }
-
-    const isClient = caseItem.clientId === userId;
-    const isAttorney = caseItem.attorneyId === userId;
-    const userRole = isClient ? 'CLIENT' : isAttorney ? 'ATTORNEY' : 'OBSERVER';
-
-    return {
-      ...agreement,
-      caseId: caseItem.id,
-      caseReference: caseItem.referenceNumber,
-      caseTitle: caseItem.title,
-      clientId: caseItem.clientId,
-      attorneyId: caseItem.attorneyId,
-      currentUserRole: userRole,
-      canSign: (isClient && !agreement.clientSigned) || (isAttorney && !agreement.attorneySigned),
-      isFullyExecuted: agreement.status === AgreementStatus.FULLY_EXECUTED,
-      chatRoomUnlocked: agreement.status === AgreementStatus.FULLY_EXECUTED,
-    };
+    return this.agreementService.getCaseAgreement(caseId, userId);
   }
 
   async signCaseAgreement(caseId: string, data: SignAgreementDto, userId: string, ipAddress: string = '127.0.0.1') {
-    return this.prisma.$transaction(async (tx) => {
-      const caseItem = await tx.case.findUnique({
-        where: { id: caseId },
-        include: { agreement: true },
-      });
-      if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
-
-      let agreement = caseItem.agreement;
-      if (!agreement) {
-        agreement = await tx.caseAgreement.create({
-          data: {
-            caseId,
-            termsContent: DEFAULT_AGREEMENT_TERMS,
-            status: AgreementStatus.PENDING_SIGNATURES,
-          },
-        });
-      }
-
-      if (agreement.status === AgreementStatus.FULLY_EXECUTED) {
-        return {
-          ...agreement,
-          message: 'Agreement has already been fully executed by both parties.',
-          chatRoomUnlocked: true,
-        };
-      }
-
-      const isClient = caseItem.clientId === userId;
-      const isAttorney = caseItem.attorneyId === userId;
-
-      if (!isClient && !isAttorney) {
-        throw new ForbiddenException('Only the assigned client or attorney can sign this agreement.');
-      }
-
-      const updateData: any = {};
-      const now = new Date();
-
-      if (isClient) {
-        if (agreement.clientSigned) {
-          throw new BadRequestException('Client has already signed this agreement.');
-        }
-        updateData.clientSigned = true;
-        updateData.clientSignedAt = now;
-        updateData.clientSignerIp = ipAddress;
-        updateData.clientSignerName = data.signerName;
-        updateData.nonCircumventionAck = true;
-        updateData.platformFeeAck = true;
-        updateData.confidentialityAck = true;
-      }
-
-      if (isAttorney) {
-        if (agreement.attorneySigned) {
-          throw new BadRequestException('Attorney has already signed this agreement.');
-        }
-        updateData.attorneySigned = true;
-        updateData.attorneySignedAt = now;
-        updateData.attorneySignerIp = ipAddress;
-        updateData.attorneySignerName = data.signerName;
-        updateData.nonCircumventionAck = true;
-        updateData.platformFeeAck = true;
-        updateData.confidentialityAck = true;
-      }
-
-      const willBeFullyExecuted =
-        (isClient && agreement.attorneySigned) ||
-        (isAttorney && agreement.clientSigned);
-
-      if (willBeFullyExecuted) {
-        updateData.status = AgreementStatus.FULLY_EXECUTED;
-        updateData.fullyExecutedAt = now;
-      }
-
-      const updatedAgreement = await tx.caseAgreement.update({
-        where: { id: agreement.id },
-        data: updateData,
-      });
-
-      // If fully executed, log timeline and dispatch outbox event
-      if (willBeFullyExecuted) {
-        await tx.caseTimeline.create({
-          data: {
-            caseId,
-            title: 'Tri-Party Non-Circumvention Agreement Executed',
-            description: `Agreement signed by Client (${updatedAgreement.clientSignerName || data.signerName}) and Attorney (${updatedAgreement.attorneySignerName || data.signerName}). Workspace and communication unlocked.`,
-            eventDate: now,
-          },
-        });
-
-        await tx.outboxEvent.create({
-          data: {
-            aggregateType: 'CaseAgreement',
-            aggregateId: agreement.id,
-            eventType: 'AGREEMENT_EXECUTED',
-            payload: {
-              caseId,
-              agreementId: agreement.id,
-              clientId: caseItem.clientId,
-              attorneyId: caseItem.attorneyId,
-              executedAt: now,
-            },
-          },
-        });
-      }
-
-      return {
-        ...updatedAgreement,
-        chatRoomUnlocked: willBeFullyExecuted,
-        message: willBeFullyExecuted
-          ? 'Agreement fully executed! Direct communication and case workspace unlocked.'
-          : `Agreement signed successfully. Waiting for ${isClient ? 'Attorney' : 'Client'} signature.`,
-      };
-    });
+    return this.agreementService.signCaseAgreement(caseId, data, userId, ipAddress);
   }
 
   async declineCaseAgreement(caseId: string, data: DeclineAgreementDto, userId: string) {
-    return this.prisma.$transaction(async (tx) => {
-      const caseItem = await tx.case.findUnique({
-        where: { id: caseId },
-        include: { agreement: true },
-      });
-      if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
-
-      const isClient = caseItem.clientId === userId;
-      const isAttorney = caseItem.attorneyId === userId;
-      if (!isClient && !isAttorney) {
-        throw new ForbiddenException('Only the assigned client or attorney can decline this agreement.');
-      }
-
-      let agreement = caseItem.agreement;
-      if (!agreement) {
-        agreement = await tx.caseAgreement.create({
-          data: {
-            caseId,
-            termsContent: DEFAULT_AGREEMENT_TERMS,
-            status: AgreementStatus.PENDING_SIGNATURES,
-          },
-        });
-      }
-
-      const updatedAgreement = await tx.caseAgreement.update({
-        where: { id: agreement.id },
-        data: {
-          status: AgreementStatus.DECLINED,
-          declinedBy: userId,
-          declineReason: data.reason,
-        },
-      });
-
-      await tx.case.update({
-        where: { id: caseId },
-        data: { status: CaseStatus.CANCELLED },
-      });
-
-      await tx.caseTimeline.create({
-        data: {
-          caseId,
-          title: 'Engagement Agreement Declined',
-          description: `Agreement terms were declined by ${isClient ? 'Client' : 'Attorney'}. Reason: ${data.reason}`,
-          eventDate: new Date(),
-        },
-      });
-
-      await tx.outboxEvent.create({
-        data: {
-          aggregateType: 'CaseAgreement',
-          aggregateId: updatedAgreement.id,
-          eventType: 'AGREEMENT_DECLINED',
-          payload: {
-            caseId,
-            agreementId: updatedAgreement.id,
-            declinedBy: userId,
-            reason: data.reason,
-          },
-        },
-      });
-
-      return {
-        ...updatedAgreement,
-        message: 'Agreement declined. Case engagement cancelled.',
-      };
-    });
+    return this.agreementService.declineCaseAgreement(caseId, data, userId);
   }
 
   async getOrCreateCaseChat(caseId: string, userId?: string) {
-    const caseItem = await this.prisma.case.findUnique({
-      where: { id: caseId },
-      include: { agreement: true },
-    });
-    if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
-
-    const isAgreementExecuted = caseItem.agreement?.status === AgreementStatus.FULLY_EXECUTED;
-
-    let chatResult: any = null;
-    if (this.communicationServiceClient) {
-      chatResult = await this.communicationServiceClient.getOrCreateCaseChat(
-        caseItem.id,
-        caseItem.clientId,
-        caseItem.attorneyId,
-        `Case: ${caseItem.title || caseItem.referenceNumber || caseItem.id}`
-      );
-    } else {
-      chatResult = {
-        status: 'pending',
-        caseId: caseItem.id,
-        clientId: caseItem.clientId,
-        attorneyId: caseItem.attorneyId,
-        message: 'Chat conversation created/linked with legal case',
-      };
-    }
-
-    return {
-      ...chatResult,
-      isAgreementExecuted,
-      agreementStatus: caseItem.agreement?.status || AgreementStatus.PENDING_SIGNATURES,
-      chatRoomUnlocked: isAgreementExecuted,
-      notice: isAgreementExecuted
-        ? 'Communication room is open and active.'
-        : 'Agreement pending execution. Both client and attorney must sign the Non-Circumvention Agreement to unlock direct messaging.',
-    };
+    return this.agreementService.getOrCreateCaseChat(caseId, userId);
   }
 
   // Conflict of Interest Gate & Case Acceptance Decision (BR-CASE-01 / TC-CASE-01)
@@ -574,3 +320,4 @@ export class CaseService {
     });
   }
 }
+

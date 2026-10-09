@@ -59,29 +59,30 @@ export class BlogsController {
   }
 
   // =========================================================================
-  // PUBLIC ENDPOINTS
+  // PUBLIC & SHARED ENDPOINTS
   // =========================================================================
 
   @AllowAnonymous()
-  @Get('public/blogs')
+  @Get(['blogs', 'public/blogs'])
   async getPublicBlogs(@Query() query: QueryBlogDto) {
     return this.blogsService.getPublicBlogs(query);
   }
 
   @AllowAnonymous()
-  @Get('public/blogs/categories')
+  @Get(['blogs/categories', 'public/blogs/categories', 'public/blog-categories', 'blog-categories'])
   async getPublicBlogsCategories() {
     return this.blogsService.getAllCategories(false);
   }
 
   @AllowAnonymous()
-  @Get('public/blog-categories')
-  async getPublicBlogCategories() {
-    return this.blogsService.getAllCategories(false);
+  @Get(['blogs/my-blogs', 'public/blogs/my-blogs'])
+  async getMyBlogs(@Req() req: any, @Query() query: QueryBlogDto) {
+    const authorId = await this.resolveUserId(req);
+    return this.blogsService.getMyBlogs(authorId, query);
   }
 
   @AllowAnonymous()
-  @Get('public/blogs/:slugOrId')
+  @Get(['blogs/:slugOrId', 'public/blogs/:slugOrId'])
   async getPublicBlogBySlugOrId(@Param('slugOrId') slugOrId: string, @Req() req: any) {
     let currentUserId: string | undefined;
     try {
@@ -91,7 +92,7 @@ export class BlogsController {
   }
 
   @AllowAnonymous()
-  @Get('public/blogs/:id/comments')
+  @Get(['blogs/:id/comments', 'public/blogs/:id/comments'])
   async getPublicBlogComments(
     @Param('id') id: string,
     @Query('page') page?: number,
@@ -99,6 +100,7 @@ export class BlogsController {
   ) {
     return this.blogsService.getBlogComments(id, Number(page) || 1, Number(limit) || 20);
   }
+
 
   // =========================================================================
   // AUTHOR / ATTORNEY ENDPOINTS
@@ -198,15 +200,9 @@ export class BlogsController {
   }
 
   @AllowAnonymous()
-  @Get('blogs/my-blogs')
-  async getMyBlogs(@Req() req: any, @Query() query: QueryBlogDto) {
-    const authorId = await this.resolveUserId(req);
-    return this.blogsService.getMyBlogs(authorId, query);
-  }
-
-  @AllowAnonymous()
   @Delete('blogs/:id')
   async deleteBlog(@Param('id') id: string, @Req() req: any) {
+
     const authorId = await this.resolveUserId(req);
     const role = await this.resolveUserRole(req);
     return this.blogsService.deleteBlog(id, authorId, role);

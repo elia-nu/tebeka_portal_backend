@@ -1,26 +1,22 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { CaseStatus, BookingStatus, DisputeStatus, Priority } from '@prisma/client/marketplace';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateDisputeDto, QueryDisputeDto, ResolveDisputeDto } from './dto/dispute.dto';
+import { calculateBusinessDaysSla, computeDisputeSlaMeta } from './utils/dispute-sla.util';
+import { DisputeResolutionService } from './services/dispute-resolution.service';
 
-// Helper to compute 5 business days SLA deadline
-export function calculateBusinessDaysSla(startDate: Date, businessDays: number = 5): Date {
-  const result = new Date(startDate);
-  let daysAdded = 0;
-  while (daysAdded < businessDays) {
-    result.setDate(result.getDate() + 1);
-    const dayOfWeek = result.getDay();
-    // Skip Saturday (6) and Sunday (0)
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      daysAdded++;
-    }
-  }
-  return result;
-}
+export { calculateBusinessDaysSla };
 
 @Injectable()
 export class DisputeService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly disputeResolutionService: DisputeResolutionService;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() disputeResolutionService?: DisputeResolutionService
+  ) {
+    this.disputeResolutionService = disputeResolutionService || new DisputeResolutionService(this.prisma);
+  }
 
   async openCaseDispute(caseId: string, data: CreateDisputeDto, userId: string) {
     if (!data.reason || !data.reason.trim()) {
@@ -279,23 +275,10 @@ export class DisputeService {
       this.prisma.dispute.count({ where }),
     ]);
 
-    const now = Date.now();
-    const formattedItems = items.map((item) => {
-      const slaDeadlineMs = new Date(item.slaDeadline).getTime();
-      const isOpenOrUnderReview = item.status === DisputeStatus.OPEN || item.status === DisputeStatus.UNDER_REVIEW;
-      const isBreached = isOpenOrUnderReview && now > slaDeadlineMs;
-      const remainingMs = Math.max(0, slaDeadlineMs - now);
-
-      return {
-        ...item,
-        sla: {
-          targetBusinessDays: 5,
-          slaDeadline: item.slaDeadline,
-          isBreached,
-          remainingHours: isOpenOrUnderReview ? Math.round(remainingMs / (1000 * 60 * 60)) : 0,
-        },
-      };
-    });
+    const formattedItems = items.map((item) => ({
+      ...item,
+      sla: computeDisputeSlaMeta(item),
+    }));
 
     const [openCount, underReviewCount, resolvedCount, dismissedCount] = await Promise.all([
       this.prisma.dispute.count({ where: { status: DisputeStatus.OPEN } }),
@@ -345,127 +328,14 @@ export class DisputeService {
       throw new NotFoundException(`Dispute ${id} not found`);
     }
 
-    const now = Date.now();
-    const slaDeadlineMs = new Date(dispute.slaDeadline).getTime();
-    const isOpenOrUnderReview = dispute.status === DisputeStatus.OPEN || dispute.status === DisputeStatus.UNDER_REVIEW;
-    const isBreached = isOpenOrUnderReview && now > slaDeadlineMs;
-
     return {
       ...dispute,
-      sla: {
-        targetBusinessDays: 5,
-        slaDeadline: dispute.slaDeadline,
-        isBreached,
-        remainingHours: isOpenOrUnderReview ? Math.round(Math.max(0, slaDeadlineMs - now) / (1000 * 60 * 60)) : 0,
-      },
+      sla: computeDisputeSlaMeta(dispute),
     };
   }
 
   async resolveDispute(id: string, data: ResolveDisputeDto, adminId: string) {
-    if (!data.resolutionOutcome || !data.resolutionOutcome.trim()) {
-      throw new BadRequestException('Resolution outcome is required');
-    }
-    if (!data.resolutionNotes || !data.resolutionNotes.trim()) {
-      throw new BadRequestException('Resolution notes and reason are required');
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      const dispute = await tx.dispute.findUnique({
-        where: { id },
-        include: { case: true, booking: true },
-      });
-
-      if (!dispute) {
-        throw new NotFoundException(`Dispute ${id} not found`);
-      }
-
-      const targetStatus = data.status || DisputeStatus.RESOLVED;
-
-      const updatedDispute = await tx.dispute.update({
-        where: { id },
-        data: {
-          status: targetStatus,
-          resolutionOutcome: data.resolutionOutcome.trim(),
-          resolutionNotes: data.resolutionNotes.trim(),
-          resolvedBy: adminId,
-          resolvedAt: new Date(),
-        },
-      });
-
-      // Update Case status if applicable
-      if (dispute.caseId) {
-        const newCaseStatus = data.caseStatusAction
-          ? (data.caseStatusAction as CaseStatus)
-          : targetStatus === DisputeStatus.RESOLVED
-          ? CaseStatus.RESOLVED
-          : CaseStatus.IN_PROGRESS;
-
-        await tx.case.update({
-          where: { id: dispute.caseId },
-          data: {
-            status: newCaseStatus,
-            ...(newCaseStatus === CaseStatus.CLOSED && { closedAt: new Date() }),
-          },
-        });
-
-        await tx.caseTimeline.create({
-          data: {
-            caseId: dispute.caseId,
-            title: `Dispute ${targetStatus} (${dispute.referenceNumber})`,
-            description: `Admin Resolution: ${data.resolutionOutcome}. Notes: ${data.resolutionNotes}`,
-            eventDate: new Date(),
-          },
-        });
-      }
-
-      // Update Booking status if applicable
-      if (dispute.bookingId) {
-        const newBookingStatus = data.bookingStatusAction
-          ? (data.bookingStatusAction as BookingStatus)
-          : targetStatus === DisputeStatus.RESOLVED
-          ? BookingStatus.COMPLETED
-          : BookingStatus.CONFIRMED;
-
-        await tx.booking.update({
-          where: { id: dispute.bookingId },
-          data: { status: newBookingStatus },
-        });
-
-        await tx.bookingEvent.create({
-          data: {
-            bookingId: dispute.bookingId,
-            event: 'DISPUTE_RESOLVED',
-            description: `Dispute ${targetStatus}: ${data.resolutionOutcome}. Status set to ${newBookingStatus}.`,
-            createdBy: adminId,
-          },
-        });
-      }
-
-      // Emitted OutboxEvent
-      await tx.outboxEvent.create({
-        data: {
-          aggregateType: 'Dispute',
-          aggregateId: id,
-          eventType: 'DISPUTE_RESOLVED',
-          payload: {
-            disputeId: id,
-            referenceNumber: dispute.referenceNumber,
-            targetType: dispute.targetType,
-            caseId: dispute.caseId,
-            bookingId: dispute.bookingId,
-            status: targetStatus,
-            resolutionOutcome: data.resolutionOutcome,
-            resolutionNotes: data.resolutionNotes,
-            resolvedBy: adminId,
-          },
-        },
-      });
-
-      return {
-        success: true,
-        message: `Dispute ${dispute.referenceNumber} resolved successfully.`,
-        dispute: updatedDispute,
-      };
-    });
+    return this.disputeResolutionService.resolveDispute(id, data, adminId);
   }
 }
+

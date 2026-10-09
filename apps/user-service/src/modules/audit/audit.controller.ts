@@ -3,7 +3,7 @@ import { AuditService } from './audit.service';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
 @AllowAnonymous()
-@Controller('audit-logs')
+@Controller(['audit-logs', 'admin/audit-logs'])
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 

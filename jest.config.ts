@@ -40,7 +40,7 @@ const config: Config = {
     '^@prisma/client/user$': '<rootDir>/node_modules/@prisma/client/user',
     '^@prisma/client/marketplace$': '<rootDir>/node_modules/@prisma/client/marketplace',
     '^@prisma/client/communication$': '<rootDir>/node_modules/@prisma/client/communication',
-    '^@thallesp/nestjs-better-auth$': '<rootDir>/scratch/mock_better_auth.ts',
+    '^@thallesp/nestjs-better-auth$': '<rootDir>/libs/auth/src/better-auth-mock.ts',
   },
   collectCoverageFrom: ['apps/**/*.ts', 'libs/**/*.ts', '!**/*.spec.ts', '!**/node_modules/**'],
 };

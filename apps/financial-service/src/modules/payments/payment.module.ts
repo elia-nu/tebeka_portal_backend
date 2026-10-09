@@ -11,6 +11,7 @@ import { StripeStrategy } from './strategies/stripe.strategy';
 import { GeoPaymentService } from './services/geo-payment.service';
 import { TransactionService } from './services/transaction.service';
 import { FinancialAnalyticsService } from './services/financial-analytics.service';
+import { PaymentCompletionService } from './services/payment-completion.service';
 
 import { AuthModule } from '@workspace/auth';
 
@@ -21,6 +22,7 @@ import { AuthModule } from '@workspace/auth';
     PaymentService,
     PaymentRefundService,
     PayoutWalletService,
+    PaymentCompletionService,
     GeoPaymentService,
     TransactionService,
     FinancialAnalyticsService,
@@ -31,6 +33,7 @@ import { AuthModule } from '@workspace/auth';
     PaymentService,
     PaymentRefundService,
     PayoutWalletService,
+    PaymentCompletionService,
     GeoPaymentService,
     TransactionService,
     FinancialAnalyticsService,
@@ -39,3 +42,4 @@ import { AuthModule } from '@workspace/auth';
   ],
 })
 export class PaymentModule {}
+

@@ -73,13 +73,14 @@ export class LocalizationController {
   }
 
   /**
-   * Section 6.7: GET /api/v1/admin/i18n/coverage
+   * Section 6.7: GET /api/v1/admin/i18n & /api/v1/admin/i18n/coverage
    * Coverage metrics and missing keys backlog (FR-LOC-05).
    */
-  @Get(['admin/i18n/coverage', 'api/v1/admin/i18n/coverage', 'localization/dashboard'])
+  @Get(['admin/i18n', 'api/v1/admin/i18n', 'admin/i18n/coverage', 'api/v1/admin/i18n/coverage', 'i18n/coverage', 'localization/dashboard'])
   async getCoverage() {
     return this.catalogPublishingService.getCoverageMetrics();
   }
+
 
   /**
    * FR-LOC-04: User preference locale sync.
