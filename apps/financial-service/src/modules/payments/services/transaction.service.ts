@@ -12,6 +12,7 @@ export interface TransactionFilterQuery {
   type?: string;
   attorneyProfileId?: string;
   attorneyId?: string;
+  clientId?: string;
   userId?: string;
   currency?: string;
   payerId?: string;
@@ -386,16 +387,27 @@ export class TransactionService {
     const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
     const skip = (page - 1) * limit;
 
+    const candidateIds = Array.from(
+      new Set(
+        [clientId, query.clientId, query.userId, query.payerId]
+          .filter(Boolean)
+          .map((id) => String(id).trim())
+      )
+    );
+
     const where: any = {
-      payerId: clientId,
+      payerId: { in: candidateIds },
       ...this.buildWhereClause(query, true),
     };
 
-    const [transactions, total] = await Promise.all([
+    const [transactions, total, wallet] = await Promise.all([
       this.prisma.payment.findMany({
         where,
         include: {
           refunds: true,
+          ledgerEntries: {
+            orderBy: { createdAt: 'desc' },
+          },
         },
         skip,
         take: limit,
@@ -404,6 +416,9 @@ export class TransactionService {
         },
       }),
       this.prisma.payment.count({ where }),
+      this.prisma.wallet.findFirst({
+        where: { userId: { in: candidateIds } },
+      }),
     ]);
 
     const allClientTxs = await this.prisma.payment.findMany({
@@ -412,6 +427,7 @@ export class TransactionService {
         amount: true,
         currency: true,
         status: true,
+        paymentType: true,
         refunds: { select: { amount: true, status: true } },
       },
     });
@@ -420,6 +436,14 @@ export class TransactionService {
     let totalSpentUSD = 0;
     let totalRefundedETB = 0;
     let totalRefundedUSD = 0;
+
+    let casesCount = 0;
+    let caseSpentETB = 0;
+    let caseSpentUSD = 0;
+
+    let consultationsCount = 0;
+    let consultSpentETB = 0;
+    let consultSpentUSD = 0;
 
     const statusCounts: Record<string, number> = {
       COMPLETED: 0,
@@ -435,11 +459,27 @@ export class TransactionService {
 
       statusCounts[tx.status] = (statusCounts[tx.status] || 0) + 1;
 
+      const isCase =
+        tx.paymentType === PaymentType.CASE_MILESTONE ||
+        tx.paymentType === PaymentType.CASE_PERCENTAGE ||
+        tx.paymentType === PaymentType.CASE_STAGE ||
+        tx.paymentType === PaymentType.CASE_SERVICE_REQUEST;
+
+      if (isCase) {
+        casesCount++;
+      } else {
+        consultationsCount++;
+      }
+
       if (tx.status === 'COMPLETED' || tx.status === 'REFUNDED') {
         if (curr === 'USD') {
           totalSpentUSD += amt;
+          if (isCase) caseSpentUSD += amt;
+          else consultSpentUSD += amt;
         } else {
           totalSpentETB += amt;
+          if (isCase) caseSpentETB += amt;
+          else consultSpentETB += amt;
         }
       }
 
@@ -462,6 +502,13 @@ export class TransactionService {
     return {
       success: true,
       clientId,
+      wallet: {
+        availableBalance: Number(wallet?.availableBalance || 0),
+        pendingBalance: Number(wallet?.pendingBalance || 0),
+        currency: wallet?.currency || 'ETB',
+        bankName: wallet?.bankName,
+        accountNumber: wallet?.accountNumber,
+      },
       summary: {
         totalTransactions: total,
         spent: {
@@ -474,6 +521,18 @@ export class TransactionService {
             totalSpent: totalSpentUSD,
             refunded: totalRefundedUSD,
             netPaid: Math.max(0, totalSpentUSD - totalRefundedUSD),
+          },
+        },
+        breakdownByCategory: {
+          cases: {
+            totalTransactions: casesCount,
+            totalSpentETB: caseSpentETB,
+            totalSpentUSD: caseSpentUSD,
+          },
+          consultations: {
+            totalTransactions: consultationsCount,
+            totalSpentETB: consultSpentETB,
+            totalSpentUSD: consultSpentUSD,
           },
         },
         statusCounts,
