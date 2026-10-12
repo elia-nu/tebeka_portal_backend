@@ -30,6 +30,7 @@ env:
   REDIS_PORT: 6379
   RABBITMQ_URI: amqp://guest:guest@localhost:5672
   MONGODB_URI: mongodb://localhost:27017/tebeka_communication
+  INTERNAL_SERVICE_SECRET: tebeka-internal-secret-change-in-production
 
 jobs:
   build-and-test:
