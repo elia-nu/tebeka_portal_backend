@@ -6,6 +6,7 @@ on:
       - main
       - master
       - develop
+      - User-service-localization
       - 'feat/**'
       - 'fix/**'
   pull_request:
@@ -108,3 +109,42 @@ jobs:
 
       - name: Validate Docker Compose Build
         run: docker compose -f docker-compose.prod.yml build
+
+  deploy:
+    name: Deploy to Production
+    needs: [build-and-test, docker-build]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/User-service-localization' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH to Production Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST || secrets.SSH_HOST || '116.203.122.210' }}
+          username: ${{ secrets.SERVER_USER || secrets.SSH_USER || 'root' }}
+          key: ${{ secrets.SERVER_SSH_KEY || secrets.SSH_PRIVATE_KEY || secrets.SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            echo "=== [CI/CD Deploy] Connecting to Production Server ==="
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH || '/root/tebeka_portal_backend' }}"
+            if [ ! -d "$DEPLOY_PATH" ]; then
+              echo "Deployment directory $DEPLOY_PATH not found, cloning..."
+              mkdir -p "$DEPLOY_PATH"
+              git clone git@github.com:elia-nu/tebeka_portal_backend.git "$DEPLOY_PATH"
+            fi
+            cd "$DEPLOY_PATH"
+            echo "--> Deployment directory: $(pwd)"
+            echo "--> Fetching latest git commits..."
+            git fetch origin
+            BRANCH="${{ github.ref_name }}"
+            echo "--> Checking out branch: $BRANCH"
+            git checkout "$BRANCH" || git checkout -b "$BRANCH" "origin/$BRANCH"
+            git pull origin "$BRANCH"
+            echo "--> Running deploy script..."
+            chmod +x scripts/deploy.sh
+            bash scripts/deploy.sh
+            echo "=== [CI/CD Deploy] Production Deployment Succeeded! ==="

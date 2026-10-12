@@ -99,7 +99,7 @@ export class VerificationDecisionService {
       });
     }
 
-    return this.prisma.verificationCase.update({
+    const updated = await this.prisma.verificationCase.update({
       where: { id },
       data: {
         status: 'REJECTED',
@@ -107,6 +107,13 @@ export class VerificationDecisionService {
         assignedReviewerId: reviewerId
       },
     });
+
+    await this.eventBus.publish('ATTORNEY_UNVERIFIED', {
+      attorneyId: vCase.attorneyId,
+      reason,
+    });
+
+    return updated;
   }
 
   // Request Amendment from Attorney (Admin Action)

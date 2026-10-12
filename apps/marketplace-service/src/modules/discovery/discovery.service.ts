@@ -285,6 +285,18 @@ export class DiscoveryService {
 
     const userServiceProfile = await this.userServiceClient.getAttorneyProfile(attorneyId);
 
+    // Self-healing safety invariant: If live user service profile is unapproved, suspended, or inactive, evict and 404
+    if (
+      userServiceProfile &&
+      (userServiceProfile.status === 'SUSPENDED' ||
+        userServiceProfile.status === 'INACTIVE' ||
+        (userServiceProfile.verificationStatus && userServiceProfile.verificationStatus !== 'APPROVED'))
+    ) {
+      await this.prisma.discoveryIndex.deleteMany({ where: { attorneyId } });
+      this.clearDiscoveryCache(attorneyId);
+      throw new NotFoundException(`Attorney profile ${attorneyId} is no longer approved or active`);
+    }
+
     const availability = await this.prisma.availabilityWindow.findMany({
       where: { attorneyId, isAvailable: true },
     });

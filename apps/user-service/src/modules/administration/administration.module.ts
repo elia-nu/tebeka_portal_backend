@@ -3,11 +3,12 @@ import { AuthModule } from '@workspace/auth';
 import { AdministrationController } from './administration.controller';
 import { AdministrationService } from './administration.service';
 import { AttorneysModule } from '../attorneys/attorneys.module';
+import { EventBusModule } from '@workspace/event-bus';
 
 @Module({
   // AuthModule registers the 'jwt' Passport strategy that this controller's
   // class-level @UseGuards(JwtAuthGuard, RolesGuard) depends on.
-  imports: [AuthModule, AttorneysModule],
+  imports: [AuthModule, AttorneysModule, EventBusModule],
   controllers: [AdministrationController],
   providers: [AdministrationService],
   exports: [AdministrationService],

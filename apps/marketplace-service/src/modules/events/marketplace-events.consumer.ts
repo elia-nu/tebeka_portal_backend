@@ -45,22 +45,35 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
       const attorneyId = data.attorneyId || data.aggregateId;
       if (!attorneyId) return;
 
-      await this.prisma.discoveryIndex.upsert({
-        where: { attorneyId },
-        update: {
-          ...(data.city && { city: data.city }),
-          ...(data.feeBand && { feeBand: data.feeBand }),
-          ...(data.languages && { languages: data.languages }),
-          ...(data.practiceAreaIds && { practiceAreaIds: data.practiceAreaIds }),
-        },
-        create: {
-          attorneyId,
-          city: data.city || 'Addis Ababa',
-          feeBand: data.feeBand || 'TIER_1',
-          languages: data.languages || ['en', 'am'],
-          practiceAreaIds: data.practiceAreaIds || [],
-        },
-      });
+      if (data.verificationStatus && data.verificationStatus !== 'APPROVED') {
+        await this.prisma.discoveryIndex.deleteMany({ where: { attorneyId } });
+        this.discoveryService?.clearDiscoveryCache(attorneyId);
+        return;
+      }
+
+      const existing = await this.prisma.discoveryIndex.findUnique({ where: { attorneyId } });
+      if (existing) {
+        await this.prisma.discoveryIndex.update({
+          where: { attorneyId },
+          data: {
+            ...(data.city && { city: data.city }),
+            ...(data.feeBand && { feeBand: data.feeBand }),
+            ...(data.languages && { languages: data.languages }),
+            ...(data.practiceAreaIds && { practiceAreaIds: data.practiceAreaIds }),
+          },
+        });
+      } else if (data.verifiedAt || data.verificationStatus === 'APPROVED') {
+        await this.prisma.discoveryIndex.create({
+          data: {
+            attorneyId,
+            verifiedAt: data.verifiedAt ? new Date(data.verifiedAt) : new Date(),
+            city: data.city || 'Addis Ababa',
+            feeBand: data.feeBand || 'TIER_1',
+            languages: data.languages || ['en', 'am'],
+            practiceAreaIds: data.practiceAreaIds || [],
+          },
+        });
+      }
     });
 
     this.eventBus.subscribe('ATTORNEY_SUSPENDED', async (data: any) => {

@@ -9,9 +9,10 @@ import { AttorneyScheduleService } from './services/attorney-schedule.service';
 import { AttorneyGoogleCalendarService } from './services/google-calendar.service';
 import { AttorneyModerationService } from './services/attorney-moderation.service';
 import { UsersModule } from '../users/users.module';
+import { EventBusModule } from '@workspace/event-bus';
 
 @Module({
-  imports: [UsersModule, AuthModule],
+  imports: [UsersModule, AuthModule, EventBusModule],
   controllers: [AttorneysController],
   providers: [
     AttorneyProfileService,

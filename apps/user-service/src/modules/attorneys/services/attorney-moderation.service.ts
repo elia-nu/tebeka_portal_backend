@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { PrismaService } from '@workspace/database';
+import { EventBusService } from '@workspace/event-bus';
 import { sanitizeUser } from '../../users/users.service';
 
 @Injectable()
 export class AttorneyModerationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly eventBus?: EventBusService
+  ) {}
 
   async publishProfile(id: string) {
     const attorney = await this.prisma.attorneyProfile.findUnique({ where: { id } });
@@ -29,14 +33,30 @@ export class AttorneyModerationService {
       );
     }
 
-    return this.prisma.attorneyProfile.update({
+    const updated = await this.prisma.attorneyProfile.update({
       where: { id },
       data: { status: 'ACTIVE' },
     });
+
+    if (this.eventBus) {
+      await this.eventBus.publish('ATTORNEY_VERIFIED', {
+        attorneyId: id,
+        verifiedAt: updated.verifiedAt || new Date(),
+      });
+    }
+
+    return updated;
   }
 
   async hideProfile(id: string) {
-    return this.prisma.attorneyProfile.update({ where: { id }, data: { status: 'INACTIVE' } });
+    const updated = await this.prisma.attorneyProfile.update({ where: { id }, data: { status: 'INACTIVE' } });
+    if (this.eventBus) {
+      await this.eventBus.publish('ATTORNEY_SUSPENDED', {
+        attorneyId: id,
+        reason: 'PROFILE_HIDDEN',
+      });
+    }
+    return updated;
   }
 
   async moderateProfile(
@@ -60,6 +80,20 @@ export class AttorneyModerationService {
       where: { id: attorney.id },
       data: { status: newStatus },
     });
+
+    if (this.eventBus) {
+      if (actionData.action === 'SUSPEND') {
+        await this.eventBus.publish('ATTORNEY_SUSPENDED', {
+          attorneyId: attorney.id,
+          reason: actionData.reasonCode,
+        });
+      } else if (actionData.action === 'RESTORE' && attorney.verificationStatus === 'APPROVED') {
+        await this.eventBus.publish('ATTORNEY_VERIFIED', {
+          attorneyId: attorney.id,
+          verifiedAt: attorney.verifiedAt || new Date(),
+        });
+      }
+    }
 
     return {
       status: 'success',

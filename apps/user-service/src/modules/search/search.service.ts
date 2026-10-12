@@ -20,15 +20,23 @@ export class SearchService {
   }
 
   async searchAttorneys(query: any) {
-    const q = query.q || '';
+    const q = (query.q || '').trim();
+    const where: any = {
+      status: 'ACTIVE',
+      verificationStatus: 'APPROVED',
+      hasVerifiedBadge: true,
+    };
+
+    if (q) {
+      where.OR = [
+        { city: { contains: q, mode: 'insensitive' } },
+        { barRegistrationNumber: { contains: q, mode: 'insensitive' } },
+        { user: { name: { contains: q, mode: 'insensitive' } } },
+      ];
+    }
+
     const attorneys = await this.prisma.attorneyProfile.findMany({
-      where: {
-        OR: [
-          { city: { contains: q, mode: 'insensitive' } },
-          { barRegistrationNumber: { contains: q, mode: 'insensitive' } },
-          { user: { name: { contains: q, mode: 'insensitive' } } },
-        ],
-      },
+      where,
       include: { user: true },
       take: 20,
     });

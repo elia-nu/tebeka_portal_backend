@@ -1,9 +1,13 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
 import { PrismaService } from '@workspace/database';
+import { EventBusService } from '@workspace/event-bus';
 
 @Injectable()
 export class AdministrationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly eventBus?: EventBusService
+  ) {}
   async getAdminUsers(query: any) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 20;
@@ -57,10 +61,28 @@ export class AdministrationService {
     });
 
     // Cascade suspension to attorney profile if applicable
+    const attorneys = await this.prisma.attorneyProfile.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+
     await this.prisma.attorneyProfile.updateMany({
       where: { userId },
       data: { status: 'SUSPENDED', verificationStatus: 'SUSPENDED' }
     });
+
+    if (this.eventBus) {
+      await this.eventBus.publish('USER_SUSPENDED', {
+        userId,
+        reason: actionData.reasonCode,
+      });
+      for (const att of attorneys) {
+        await this.eventBus.publish('ATTORNEY_SUSPENDED', {
+          attorneyId: att.id,
+          reason: actionData.reasonCode,
+        });
+      }
+    }
 
     // 3. Log AdminAction record with reasonCode, adminNote, beforeState, and afterState
     await this.prisma.adminAction.create({
@@ -165,17 +187,31 @@ export class AdministrationService {
   }
 
   async adminVerifyAttorney(id: string) {
-    return this.prisma.attorneyProfile.update({
+    const updated = await this.prisma.attorneyProfile.update({
       where: { id },
-      data: { verificationStatus: 'APPROVED', status: 'ACTIVE', hasVerifiedBadge: true },
+      data: { verificationStatus: 'APPROVED', status: 'ACTIVE', hasVerifiedBadge: true, verifiedAt: new Date() },
     });
+    if (this.eventBus) {
+      await this.eventBus.publish('ATTORNEY_VERIFIED', {
+        attorneyId: id,
+        verifiedAt: updated.verifiedAt,
+      });
+    }
+    return updated;
   }
 
   async adminRejectAttorney(id: string, reason: string) {
-    return this.prisma.attorneyProfile.update({
+    const updated = await this.prisma.attorneyProfile.update({
       where: { id },
       data: { verificationStatus: 'REJECTED' },
     });
+    if (this.eventBus) {
+      await this.eventBus.publish('ATTORNEY_UNVERIFIED', {
+        attorneyId: id,
+        reason,
+      });
+    }
+    return updated;
   }
 
   async adminSuspendAttorney(id: string, actionData?: any) {
@@ -189,10 +225,17 @@ export class AdministrationService {
         where: { userId: profile.userId },
       });
     }
-    return this.prisma.attorneyProfile.update({
+    const updated = await this.prisma.attorneyProfile.update({
       where: { id },
       data: { status: 'SUSPENDED', verificationStatus: 'SUSPENDED' },
     });
+    if (this.eventBus) {
+      await this.eventBus.publish('ATTORNEY_SUSPENDED', {
+        attorneyId: id,
+        reason: actionData?.reasonCode || 'ADMIN_SUSPENDED',
+      });
+    }
+    return updated;
   }
 
   // ==========================================

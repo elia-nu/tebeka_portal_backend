@@ -30,19 +30,35 @@ export class AttorneyProfileService {
     return profile;
   }
 
-  async findAll(query: any) {
+  async findAll(query: any = {}) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 20;
     const skip = (page - 1) * limit;
 
+    const where: any = {
+      status: 'ACTIVE',
+      verificationStatus: 'APPROVED',
+    };
+
+    if (query.city) {
+      where.city = { contains: query.city, mode: 'insensitive' };
+    }
+    if (query.feeBand) {
+      where.feeBand = query.feeBand;
+    }
+    if (query.practiceArea) {
+      where.practiceAreas = { has: query.practiceArea };
+    }
+
     const [items, total] = await Promise.all([
       this.prisma.attorneyProfile.findMany({
+        where,
         skip,
         take: limit,
         include: { user: true, educations: true, credentials: { include: { documents: true } } },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.attorneyProfile.count(),
+      this.prisma.attorneyProfile.count({ where }),
     ]);
 
     return {
