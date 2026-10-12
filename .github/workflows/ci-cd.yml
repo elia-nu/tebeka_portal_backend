@@ -20,6 +20,16 @@ env:
   NX_DAEMON: 'false'
   NX_TUI: 'false'
   CI: 'true'
+  NODE_ENV: test
+  JWT_SECRET: super-secret-jwt-key-change-in-production
+  DATABASE_URL_USER: postgresql://postgres:postgres@localhost:5432/user_db?schema=public
+  DATABASE_URL_MARKETPLACE: postgresql://postgres:postgres@localhost:5432/marketplace_db?schema=public
+  DATABASE_URL_FINANCIAL: postgresql://postgres:postgres@localhost:5432/financial_db?schema=public
+  DATABASE_URL_COMMUNICATION: postgresql://postgres:postgres@localhost:5432/communication_db?schema=public
+  REDIS_HOST: localhost
+  REDIS_PORT: 6379
+  RABBITMQ_URI: amqp://guest:guest@localhost:5672
+  MONGODB_URI: mongodb://localhost:27017/tebeka_communication
 
 jobs:
   build-and-test:
@@ -66,6 +76,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Environment File
+        run: cp .env.example .env
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -83,7 +96,7 @@ jobs:
           npx prisma generate --schema=apps/communication-service/prisma/schema.prisma
 
       - name: Run Tests
-        run: npm test
+        run: npm test -- --runInBand
 
       - name: Build All Services
         run: npx nx run-many --target=build --all
