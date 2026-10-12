@@ -140,6 +140,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST || secrets.SSH_HOST || '116.203.122.210' }}
           username: ${{ secrets.SERVER_USER || secrets.SSH_USER || 'root' }}
           key: ${{ secrets.SERVER_SSH_KEY || secrets.SSH_PRIVATE_KEY || secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SERVER_SSH_PASSPHRASE || '' }}
           port: ${{ secrets.SERVER_PORT || secrets.SSH_PORT || 22 }}
           script: |
             set -e
