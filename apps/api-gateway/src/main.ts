@@ -208,6 +208,7 @@ async function bootstrap() {
         '/api/v1/auth',
         '/api/v1/users',
         '/api/v1/attorneys',
+        '/api/v1/attorney',
         '/api/v1/verifications',
         '/api/v1/settings',
         '/api/v1/admin',

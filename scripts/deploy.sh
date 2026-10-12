@@ -30,11 +30,11 @@ npx prisma generate --schema=apps/financial-service/prisma/schema.prisma
 npx prisma generate --schema=apps/communication-service/prisma/schema.prisma
 
 echo "--> Building production microservices..."
-npx nx build api-gateway
-npx nx build user-service
-npx nx build marketplace-service
-npx nx build financial-service
-npx nx build communication-service
+npx nx build api-gateway --skip-nx-cache
+npx nx build user-service --skip-nx-cache
+npx nx build marketplace-service --skip-nx-cache
+npx nx build financial-service --skip-nx-cache
+npx nx build communication-service --skip-nx-cache
 
 echo "--> Syncing database schemas..."
 ./node_modules/.bin/prisma db push --schema=./apps/user-service/prisma/schema.prisma --accept-data-loss

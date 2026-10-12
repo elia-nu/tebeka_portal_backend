@@ -38,6 +38,11 @@ export class AttorneyProfileService {
     const where: any = {
       status: 'ACTIVE',
       verificationStatus: 'APPROVED',
+      hasVerifiedBadge: true,
+      user: {
+        status: 'ACTIVE',
+        isArchived: false,
+      },
     };
 
     if (query.city) {
@@ -101,6 +106,13 @@ export class AttorneyProfileService {
 
   // Public Credential Vault Projection (Delegated to AttorneyVaultService)
   async getPublicCredentials(attorneyId: string) {
+    const attorney = await this.prisma.attorneyProfile.findUnique({
+      where: { id: attorneyId },
+    });
+    if (!attorney || attorney.status !== 'ACTIVE' || attorney.verificationStatus !== 'APPROVED') {
+      throw new NotFoundException(`Verified attorney profile with ID ${attorneyId} not found`);
+    }
+
     if (this.vaultService) {
       return this.vaultService.getPublicCredentials(attorneyId);
     }

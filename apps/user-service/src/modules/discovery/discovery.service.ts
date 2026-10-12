@@ -57,6 +57,11 @@ export class DiscoveryService {
     const where: any = {
       status: 'ACTIVE',
       verificationStatus: 'APPROVED',
+      hasVerifiedBadge: true,
+      user: {
+        status: 'ACTIVE',
+        isArchived: false,
+      },
     };
 
     if (query.city) where.city = { contains: query.city, mode: 'insensitive' };

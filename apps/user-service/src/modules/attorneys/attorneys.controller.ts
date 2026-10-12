@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Delete, Body, Param, Query, Req, UsePipes, UseInterceptors, UploadedFiles, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Body, Param, Query, Req, UsePipes, UseInterceptors, UploadedFiles, UseGuards, NotFoundException } from '@nestjs/common';
 import { JwtAuthGuard, RolesGuard, Roles } from '@workspace/auth';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { createMulterOptions } from '@workspace/storage';
@@ -294,20 +294,29 @@ export class AttorneysController {
   }
 
   @AllowAnonymous()
-  @Get('attorneys')
+  @Get(['attorneys', 'attorney'])
   @UsePipes(new JoiValidationPipe(QueryAttorneySchema))
   async getAttorneys(@Query() query: QueryAttorneyDto) {
     return this.attorneyProfileService.findAll(query);
   }
 
   @AllowAnonymous()
-  @Get('attorneys/:id')
-  async getAttorneyById(@Param('id') id: string) {
-    return this.attorneyProfileService.findOne(id);
+  @Get(['attorneys/:id', 'attorney/:id'])
+  async getAttorneyById(@Param('id') id: string, @Req() req: any) {
+    const profile = await this.attorneyProfileService.findOne(id);
+    const user = req?.user;
+    const isPrivileged = user && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN');
+    const isOwner = user && (user.id === profile.userId || user.sub === profile.userId);
+    if (!isPrivileged && !isOwner) {
+      if (profile.status !== 'ACTIVE' || profile.verificationStatus !== 'APPROVED') {
+        throw new NotFoundException('Attorney profile not found or pending verification');
+      }
+    }
+    return profile;
   }
 
   @AllowAnonymous()
-  @Get('attorneys/:id/credentials-public')
+  @Get(['attorneys/:id/credentials-public', 'attorney/:id/credentials-public'])
   async getPublicCredentials(@Param('id') id: string) {
     return this.attorneyProfileService.getPublicCredentials(id);
   }
