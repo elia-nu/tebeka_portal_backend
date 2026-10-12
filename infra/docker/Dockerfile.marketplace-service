@@ -7,7 +7,7 @@ RUN apk add --no-cache openssl python3 make g++
 
 COPY package*.json nx.json tsconfig*.json ./
 
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 COPY apps apps/
 COPY libs libs/

@@ -73,7 +73,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma Clients
         run: |
@@ -83,7 +83,7 @@ jobs:
           npx prisma generate --schema=apps/communication-service/prisma/schema.prisma
 
       - name: Run Tests
-        run: npx nx run-many --target=test --all --passWithNoTests
+        run: npm test
 
       - name: Build All Services
         run: npx nx run-many --target=build --all
