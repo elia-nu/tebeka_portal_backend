@@ -116,6 +116,10 @@ async function bootstrap() {
   // Automatically normalize paths without /api/v1 prefix (e.g., /admin/queues/disputes -> /api/v1/admin/queues/disputes)
   app.use((req, res, next) => {
     const rawUrl = req.url || '';
+    if (rawUrl === '/favicon.ico' || rawUrl === '/api/v1/favicon.ico') {
+      res.status(204).end();
+      return;
+    }
     if (
       !rawUrl.startsWith('/api/v1') &&
       !rawUrl.startsWith('/health') &&

@@ -96,6 +96,7 @@ export class BookingCheckoutService {
         amount: consultationFee,
         currency: 'ETB',
         provider: dto.provider,
+        returnUrl: dto.returnUrl,
         email: email || undefined,
         phone: phone || undefined,
         description: `Consultation Booking: ${booking.referenceNumber || booking.id}`,

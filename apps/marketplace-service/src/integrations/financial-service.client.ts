@@ -37,6 +37,7 @@ export class FinancialServiceClient {
     amount: number;
     currency?: string;
     provider?: string;
+    returnUrl?: string;
     email?: string;
     phone?: string;
     description?: string;
