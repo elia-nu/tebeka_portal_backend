@@ -295,6 +295,12 @@ export class BookingService {
       const client = clientMap.get(booking.clientId);
       return {
         ...booking,
+        refundAmountSantim:
+          booking.refundAmountSantim !== null && booking.refundAmountSantim !== undefined
+            ? (Number.isSafeInteger(Number(booking.refundAmountSantim))
+                ? Number(booking.refundAmountSantim)
+                : booking.refundAmountSantim.toString())
+            : null,
         consultationFee: attorney?.consultationFee ?? null,
         attorney: attorney ?? null,
         client: client ?? null,

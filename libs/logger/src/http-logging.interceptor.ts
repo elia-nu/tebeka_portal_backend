@@ -12,14 +12,43 @@ import { AppLoggerService } from './logger.service';
 import { Request, Response } from 'express';
 import { green, blue, yellow, red, magenta, cyan, gray, bold } from 'colorette';
 
+if (typeof BigInt !== 'undefined' && !(BigInt.prototype as any).toJSON) {
+  (BigInt.prototype as any).toJSON = function () {
+    const num = Number(this);
+    return Number.isSafeInteger(num) ? num : this.toString();
+  };
+}
+
+function safeJsonStringify(data: any): string {
+  if (data === null || data === undefined) return '';
+  try {
+    return JSON.stringify(data, (_, value) =>
+      typeof value === 'bigint'
+        ? (Number.isSafeInteger(Number(value)) ? Number(value) : value.toString())
+        : value
+    );
+  } catch {
+    return String(data);
+  }
+}
+
 function sanitizePayload(payload: any): any {
-  if (!payload || typeof payload !== 'object') return payload;
+  if (!payload || typeof payload !== 'object') {
+    if (typeof payload === 'bigint') {
+      const num = Number(payload);
+      return Number.isSafeInteger(num) ? num : payload.toString();
+    }
+    return payload;
+  }
   const clone = Array.isArray(payload) ? [...payload] : { ...payload };
   const sensitiveKeys = ['password', 'confirmPassword', 'token', 'refreshToken', 'secret', 'apiKey', 'card_number', 'cvv'];
   
   for (const key of Object.keys(clone)) {
     if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
       clone[key] = '***REDACTED***';
+    } else if (typeof clone[key] === 'bigint') {
+      const num = Number(clone[key]);
+      clone[key] = Number.isSafeInteger(num) ? num : clone[key].toString();
     } else if (typeof clone[key] === 'object') {
       clone[key] = sanitizePayload(clone[key]);
     }
@@ -72,8 +101,8 @@ export class HttpLoggingInterceptor implements NestInterceptor {
     const hasQuery = query && Object.keys(query).length > 0;
 
     const requestDetails = [
-      hasQuery ? `Query: ${JSON.stringify(query)}` : null,
-      hasBody ? `Body: ${JSON.stringify(sanitizedBody)}` : null,
+      hasQuery ? `Query: ${safeJsonStringify(query)}` : null,
+      hasBody ? `Body: ${safeJsonStringify(sanitizedBody)}` : null,
     ]
       .filter(Boolean)
       .join(' | ');
@@ -85,20 +114,24 @@ export class HttpLoggingInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap((responseBody) => {
-        const duration = Date.now() - startTime;
-        const statusCode = res.statusCode || 200;
-        const sanitizedRes = sanitizePayload(responseBody);
-        
-        let responsePreview = '';
-        if (sanitizedRes !== undefined && sanitizedRes !== null) {
-          const resStr = typeof sanitizedRes === 'object' ? JSON.stringify(sanitizedRes) : String(sanitizedRes);
-          responsePreview = resStr.length > 400 ? `${resStr.substring(0, 400)}... ${gray(`[truncated ${resStr.length} chars]`)}` : resStr;
-        }
+        try {
+          const duration = Date.now() - startTime;
+          const statusCode = res.statusCode || 200;
+          const sanitizedRes = sanitizePayload(responseBody);
+          
+          let responsePreview = '';
+          if (sanitizedRes !== undefined && sanitizedRes !== null) {
+            const resStr = typeof sanitizedRes === 'object' ? safeJsonStringify(sanitizedRes) : String(sanitizedRes);
+            responsePreview = resStr.length > 400 ? `${resStr.substring(0, 400)}... ${gray(`[truncated ${resStr.length} chars]`)}` : resStr;
+          }
 
-        this.logger.log(
-          `📤 COMPLETED ${colorMethod(method)} ${cyan(path)} -> ${colorStatus(statusCode)} ${cyan(`(${duration}ms)`)}${responsePreview ? ` | ${gray(`Data: ${responsePreview}`)}` : ''}`,
-          'HTTP-RESPONSE'
-        );
+          this.logger.log(
+            `📤 COMPLETED ${colorMethod(method)} ${cyan(path)} -> ${colorStatus(statusCode)} ${cyan(`(${duration}ms)`)}${responsePreview ? ` | ${gray(`Data: ${responsePreview}`)}` : ''}`,
+            'HTTP-RESPONSE'
+          );
+        } catch (logErr: any) {
+          this.logger.warn(`Failed to log response preview: ${logErr?.message || logErr}`, 'HTTP-RESPONSE');
+        }
       }),
       catchError((error) => {
         const duration = Date.now() - startTime;
@@ -110,7 +143,7 @@ export class HttpLoggingInterceptor implements NestInterceptor {
           error instanceof HttpException ? error.getResponse() : error.message;
 
         this.logger.error(
-          `❌ FAILED ${colorMethod(method)} ${cyan(path)} -> ${colorStatus(status)} ${cyan(`(${duration}ms)`)} | ${red(`Error: ${typeof errorResponse === 'object' ? JSON.stringify(errorResponse) : errorResponse}`)}`,
+          `❌ FAILED ${colorMethod(method)} ${cyan(path)} -> ${colorStatus(status)} ${cyan(`(${duration}ms)`)} | ${red(`Error: ${typeof errorResponse === 'object' ? safeJsonStringify(errorResponse) : errorResponse}`)}`,
           error.stack,
           'HTTP-ERROR'
         );

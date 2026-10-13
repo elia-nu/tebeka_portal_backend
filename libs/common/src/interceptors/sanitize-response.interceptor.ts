@@ -20,6 +20,10 @@ export const SENSITIVE_KEYS = new Set([
 
 export function deepSanitize(data: any): any {
   if (data === null || data === undefined) return data;
+  if (typeof data === 'bigint') {
+    const num = Number(data);
+    return Number.isSafeInteger(num) ? num : data.toString();
+  }
   if (data instanceof Date) return data;
   if (typeof data !== 'object') return data;
   if (Buffer.isBuffer(data)) return data;

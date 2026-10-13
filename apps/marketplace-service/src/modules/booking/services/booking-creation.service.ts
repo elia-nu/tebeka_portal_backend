@@ -47,8 +47,16 @@ export class BookingCreationService {
       }
     }
 
+    const refundAmountSantim =
+      booking.refundAmountSantim !== null && booking.refundAmountSantim !== undefined
+        ? (Number.isSafeInteger(Number(booking.refundAmountSantim))
+            ? Number(booking.refundAmountSantim)
+            : booking.refundAmountSantim.toString())
+        : booking.refundAmountSantim;
+
     return {
       ...booking,
+      refundAmountSantim,
       consultationFee,
       attorney,
     };
