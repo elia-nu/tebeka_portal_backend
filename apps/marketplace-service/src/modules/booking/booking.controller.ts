@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Body, Param, Query, Req, UsePipes, UseGuards, Headers } from '@nestjs/common';
-import { JwtAuthGuard, RolesGuard, Public } from '@workspace/auth';
+import { JwtAuthGuard, RolesGuard, Roles, Public } from '@workspace/auth';
 import { BookingService } from './booking.service';
 import { BookingCheckoutService } from './services/booking-checkout.service';
 import {
@@ -41,9 +41,33 @@ export class BookingController {
     @Req() req: any,
     @Headers('x-correlation-id') correlationId?: string,
   ) {
-    const userId = req.user.id;
-    const role = req.user.role || query.role || 'CLIENT';
+    const userId = req.user?.id || query.userId;
+    const role = req.user?.role || query.role || 'CLIENT';
     return this.bookingService.findUserBookings(userId, role, query, correlationId);
+  }
+
+  @Get('all')
+  @UsePipes(new JoiValidationPipe(QueryBookingSchema))
+  async getAllBookings(
+    @Query() query: QueryBookingDto,
+    @Req() req: any,
+    @Headers('x-correlation-id') correlationId?: string,
+  ) {
+    const userId = req.user?.id || query.userId;
+    const role = req.user?.role || query.role || 'CLIENT';
+    return this.bookingService.findAllBookings(userId, role, query, correlationId);
+  }
+
+  @Get('admin/all')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @UsePipes(new JoiValidationPipe(QueryBookingSchema))
+  async getAdminAllBookings(
+    @Query() query: QueryBookingDto,
+    @Req() req: any,
+    @Headers('x-correlation-id') correlationId?: string,
+  ) {
+    const userId = req.user?.id || query.userId;
+    return this.bookingService.findAllBookings(userId, 'ADMIN', query, correlationId);
   }
 
   @Get(':id')

@@ -148,38 +148,104 @@ export class BookingService {
     });
   }
 
+  async findAllBookings(userId: string, role: string, query: any, correlationId?: string) {
+    return this.findUserBookings(userId, role, { ...query, all: true }, correlationId);
+  }
+
   async findUserBookings(userId: string, role: string, query: any, correlationId?: string) {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.max(1, Number(query.limit) || 20);
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (role === 'CLIENT') {
-      where.clientId = userId;
-    } else if (role === 'ATTORNEY') {
-      where.attorneyId = userId;
+    const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'ALL';
+    const isExplicitAll = query.all === true || query.all === 'true' || query.role === 'ALL';
+
+    // Scoped ownership unless admin or explicit authorized all
+    if (!isAdmin && !isExplicitAll) {
+      if (role === 'CLIENT') {
+        where.clientId = userId;
+      } else if (role === 'ATTORNEY') {
+        where.attorneyId = userId;
+      }
     }
 
+    // Role-specific and explicit overrides
+    if (query.clientId && (isAdmin || isExplicitAll || role !== 'CLIENT')) {
+      where.clientId = query.clientId;
+    }
+    if (query.attorneyId && (isAdmin || isExplicitAll || role !== 'ATTORNEY')) {
+      where.attorneyId = query.attorneyId;
+    }
+    if (query.userId && (isAdmin || isExplicitAll)) {
+      where.OR = [
+        { clientId: query.userId },
+        { attorneyId: query.userId },
+      ];
+    }
+
+    // Status, Payment & Consultation Type filters
     if (query.status) {
       where.status = query.status;
     }
+    if (query.paymentStatus) {
+      where.paymentStatus = query.paymentStatus;
+    }
+    if (query.consultationType) {
+      where.consultationType = query.consultationType;
+    }
+
+    // Date range filtering on bookingDate
+    if (query.fromDate || query.toDate) {
+      where.bookingDate = {};
+      if (query.fromDate) where.bookingDate.gte = new Date(query.fromDate);
+      if (query.toDate) where.bookingDate.lte = new Date(query.toDate);
+    }
+
+    // Full-text / search term matching
+    const searchTerm = query.search || query.q;
+    if (searchTerm) {
+      const searchConditions = [
+        { referenceNumber: { contains: searchTerm, mode: 'insensitive' } },
+        { issueBrief: { contains: searchTerm, mode: 'insensitive' } },
+        { notes: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+      if (where.OR) {
+        where.AND = [
+          { OR: where.OR },
+          { OR: searchConditions },
+        ];
+        delete where.OR;
+      } else {
+        where.OR = searchConditions;
+      }
+    }
+
+    // Dynamic sorting
+    const allowedSortFields = ['bookingDate', 'createdAt', 'status', 'paymentStatus'];
+    const sortBy = allowedSortFields.includes(query.sortBy) ? query.sortBy : 'bookingDate';
+    const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const [items, total] = await Promise.all([
       this.prisma.booking.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { bookingDate: 'desc' },
+        orderBy: { [sortBy]: sortOrder },
       }),
       this.prisma.booking.count({ where }),
     ]);
 
-    // Batch enrich consultationFee and attorney details
+    // Batch enrich consultationFee, attorney details, and client details
     const attorneyMap = new Map<string, any>();
+    const clientMap = new Map<string, any>();
+
     if (this.userServiceClient && items.length > 0) {
-      const attorneyIds = Array.from(new Set(items.map((b) => b.attorneyId)));
-      await Promise.all(
-        attorneyIds.map(async (attorneyId) => {
+      const attorneyIds = Array.from(new Set(items.map((b) => b.attorneyId).filter(Boolean)));
+      const clientIds = Array.from(new Set(items.map((b) => b.clientId).filter(Boolean)));
+
+      await Promise.all([
+        ...attorneyIds.map(async (attorneyId) => {
           try {
             const profile = await this.userServiceClient?.getAttorneyProfile(
               attorneyId,
@@ -201,16 +267,37 @@ export class BookingService {
           } catch {
             // Graceful fallback
           }
-        })
-      );
+        }),
+        ...clientIds.map(async (clientId) => {
+          try {
+            const clientProfile = await this.userServiceClient?.getUserProfile(
+              clientId,
+              correlationId
+            );
+            if (clientProfile) {
+              clientMap.set(clientId, {
+                id: clientProfile.id,
+                fullName: clientProfile.fullName || clientProfile.name,
+                email: clientProfile.email,
+                phoneNumber: clientProfile.phoneNumber || clientProfile.phone,
+                photoUrl: clientProfile.photoUrl || clientProfile.avatarUrl,
+              });
+            }
+          } catch {
+            // Graceful fallback
+          }
+        }),
+      ]);
     }
 
     const enrichedItems = items.map((booking) => {
       const attorney = attorneyMap.get(booking.attorneyId);
+      const client = clientMap.get(booking.clientId);
       return {
         ...booking,
         consultationFee: attorney?.consultationFee ?? null,
         attorney: attorney ?? null,
+        client: client ?? null,
       };
     });
 

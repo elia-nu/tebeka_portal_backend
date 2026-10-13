@@ -44,6 +44,7 @@ export const UpdateBookingStatusSchema = Joi.object({
       'CANCELLED',
       'COMPLETED',
       'NOSHOW',
+      'DISPUTED',
       'EXPIRED'
     )
     .required(),
@@ -117,6 +118,7 @@ export const CreateBlackoutSchema = Joi.object({
 export interface QueryBookingDto {
   page?: number;
   limit?: number;
+  all?: boolean | string;
   userId?: string;
   role?: string;
   clientId?: string;
@@ -126,6 +128,8 @@ export interface QueryBookingDto {
   consultationType?: ConsultationType;
   fromDate?: string;
   toDate?: string;
+  q?: string;
+  search?: string;
   sortBy?: 'bookingDate' | 'createdAt' | 'status' | 'paymentStatus';
   sortOrder?: 'asc' | 'desc';
 }
@@ -133,8 +137,9 @@ export interface QueryBookingDto {
 export const QueryBookingSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
+  all: Joi.alternatives().try(Joi.boolean(), Joi.string()).optional(),
   userId: Joi.string().optional(),
-  role: Joi.string().valid('CLIENT', 'ATTORNEY', 'ADMIN', 'SUPER_ADMIN').optional(),
+  role: Joi.string().valid('CLIENT', 'ATTORNEY', 'ADMIN', 'SUPER_ADMIN', 'ALL').optional(),
   clientId: Joi.string().optional(),
   attorneyId: Joi.string().optional(),
   status: Joi.string()
@@ -146,6 +151,7 @@ export const QueryBookingSchema = Joi.object({
       'CANCELLED',
       'COMPLETED',
       'NOSHOW',
+      'DISPUTED',
       'EXPIRED'
     )
     .optional(),
@@ -153,6 +159,8 @@ export const QueryBookingSchema = Joi.object({
   consultationType: Joi.string().valid('IN_PERSON', 'VIDEO', 'PHONE').optional(),
   fromDate: Joi.date().iso().optional(),
   toDate: Joi.date().iso().optional(),
+  q: Joi.string().max(100).optional(),
+  search: Joi.string().max(100).optional(),
   sortBy: Joi.string().valid('bookingDate', 'createdAt', 'status', 'paymentStatus').default('bookingDate'),
   sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
 });

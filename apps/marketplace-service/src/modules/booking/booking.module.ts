@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { BookingController } from './booking.controller';
+import { AdminBookingController } from './admin-booking.controller';
 import { BookingService } from './booking.service';
 import { BookingCancellationService } from './services/booking-cancellation.service';
 import { BookingRescheduleService } from './services/booking-reschedule.service';
@@ -14,7 +15,7 @@ import { BookingAvailabilityService } from './services/booking-availability.serv
 import { BookingCreationService } from './services/booking-creation.service';
 
 @Module({
-  controllers: [BookingController],
+  controllers: [BookingController, AdminBookingController],
   providers: [
     BookingService,
     BookingCreationService,

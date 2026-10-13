@@ -218,6 +218,38 @@
               }
             },
             {
+              "name": "Get All Consultation Bookings (Global / Admin)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [{ "key": "token", "value": "{{adminAuthToken}}", "type": "string" }]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{marketplaceUrl}}/bookings/all?page=1&limit=20&sortBy=bookingDate&sortOrder=desc",
+                  "host": ["{{marketplaceUrl}}"],
+                  "path": ["bookings", "all"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" },
+                    { "key": "role", "value": "ADMIN", "description": "CLIENT | ATTORNEY | ADMIN | ALL" },
+                    { "key": "status", "value": "", "description": "REQUESTED | CONFIRMED | DECLINED | CANCELLED | COMPLETED | NOSHOW | DISPUTED | EXPIRED", "disabled": true },
+                    { "key": "paymentStatus", "value": "", "description": "UNPAID | PAID | REFUNDED", "disabled": true },
+                    { "key": "consultationType", "value": "", "description": "IN_PERSON | VIDEO | PHONE", "disabled": true },
+                    { "key": "clientId", "value": "", "description": "Filter by specific client ID", "disabled": true },
+                    { "key": "attorneyId", "value": "", "description": "Filter by specific attorney ID", "disabled": true },
+                    { "key": "search", "value": "", "description": "Search referenceNumber, issueBrief, notes", "disabled": true },
+                    { "key": "fromDate", "value": "", "description": "ISO date filter start", "disabled": true },
+                    { "key": "toDate", "value": "", "description": "ISO date filter end", "disabled": true },
+                    { "key": "sortBy", "value": "bookingDate", "description": "bookingDate | createdAt | status | paymentStatus" },
+                    { "key": "sortOrder", "value": "desc" }
+                  ]
+                },
+                "description": "Get all consultation bookings across the platform with full filtering, pagination, search, and enriched client/attorney profiles."
+              }
+            },
+            {
               "name": "Get Booking by ID",
               "request": {
                 "auth": {

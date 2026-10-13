@@ -142,7 +142,9 @@ async function bootstrap() {
         '/api/v1/disputes',
         '/api/v1/admin/disputes',
         '/api/v1/admin/reviews',
+        '/api/v1/admin/bookings',
         '/api/v1/admin/queues/disputes',
+        '/api/v1/admin/queues/bookings',
         '/api/v1/marketplace',
       ],
       pathRewrite: {

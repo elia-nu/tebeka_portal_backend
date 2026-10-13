@@ -36,6 +36,7 @@ describe('BookingService', () => {
     };
     const mockUserServiceClient = {
       getAttorneyProfile: jest.fn(),
+      getUserProfile: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -449,6 +450,53 @@ describe('BookingService', () => {
       const result = await service.findUserBookings('client-1', 'CLIENT', {});
       expect(result.items.length).toBe(1);
       expect(result.items[0].consultationFee).toBe(3000.0);
+      expect(result.items[0].attorney.fullName).toBe('Advocate Yared Tesfaye');
+    });
+
+    it('should return all consultation bookings for ADMIN on findAllBookings with filters & rich enrichment', async () => {
+      mockPrisma.booking.findMany.mockResolvedValue([
+        {
+          id: 'b-201',
+          referenceNumber: 'CONS-2026-000201',
+          clientId: 'client-1',
+          attorneyId: 'att-1',
+          status: BookingStatus.CONFIRMED,
+          paymentStatus: 'PAID',
+          consultationType: 'VIDEO',
+          bookingDate: new Date('2026-10-15T00:00:00.000Z'),
+        },
+      ]);
+      mockPrisma.booking.count = jest.fn().mockResolvedValue(1);
+
+      const mockUserServiceClient = (service as any).userServiceClient;
+      mockUserServiceClient.getAttorneyProfile.mockResolvedValue({
+        id: 'prof-1',
+        userId: 'att-1',
+        consultationFee: 2500.0,
+        user: { fullName: 'Advocate Yared Tesfaye' },
+      });
+      mockUserServiceClient.getUserProfile.mockResolvedValue({
+        id: 'client-1',
+        fullName: 'Abebe Bikila',
+        email: 'abebe@tebeka.et',
+      });
+
+      const result = await service.findAllBookings('admin-user-1', 'ADMIN', {
+        status: BookingStatus.CONFIRMED,
+        search: 'CONS-2026',
+        fromDate: '2026-10-01',
+        toDate: '2026-10-31',
+      });
+
+      expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: BookingStatus.CONFIRMED,
+          }),
+        }),
+      );
+      expect(result.items.length).toBe(1);
+      expect(result.items[0].client.fullName).toBe('Abebe Bikila');
       expect(result.items[0].attorney.fullName).toBe('Advocate Yared Tesfaye');
     });
   });
