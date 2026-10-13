@@ -115,103 +115,125 @@ export class GoogleMeetService {
       };
     }
 
-    return this.circuitBreaker.execute(async () => {
-      return retryWithBackoff(
-        async () => {
-          const attendees: calendar_v3.Schema$EventAttendee[] = [];
-          if (req.clientEmail) {
-            attendees.push({ email: req.clientEmail, displayName: req.clientName || 'Client' });
-          }
-          if (req.attorneyEmail) {
-            attendees.push({ email: req.attorneyEmail, displayName: req.attorneyName || 'Attorney' });
-          }
+    try {
+      return await this.circuitBreaker.execute(async () => {
+        return retryWithBackoff(
+          async () => {
+            const attendees: calendar_v3.Schema$EventAttendee[] = [];
+            if (req.clientEmail) {
+              attendees.push({ email: req.clientEmail, displayName: req.clientName || 'Client' });
+            }
+            if (req.attorneyEmail) {
+              attendees.push({ email: req.attorneyEmail, displayName: req.attorneyName || 'Attorney' });
+            }
 
-          const buildPayload = (includeConference: boolean, includeAttendees: boolean): calendar_v3.Schema$Event => ({
-            summary: req.title || `Tebeka Consultation: ${req.referenceNumber || req.bookingId}`,
-            description:
-              req.description ||
-              `Confidential legal consultation scheduled on the Tebeka Legal Platform.\n` +
-              `Video Consultation Link: ${designatedMeetLink}\n` +
-              `Reference: ${req.referenceNumber}\n` +
-              `Client: ${req.clientName || req.clientEmail || 'Client'}\n` +
-              `Attorney: ${req.attorneyName || req.attorneyEmail || 'Attorney'}`,
-            location: designatedMeetLink,
-            start: {
-              dateTime: new Date(startDateTime).toISOString(),
-              timeZone,
-            },
-            end: {
-              dateTime: new Date(endDateTime).toISOString(),
-              timeZone,
-            },
-            ...(includeAttendees && attendees.length > 0 ? { attendees } : {}),
-            ...(includeConference
-              ? {
-                  conferenceData: {
-                    createRequest: {
-                      requestId: `meet-req-${req.referenceNumber || req.bookingId}-${Date.now()}`,
-                      conferenceSolutionKey: {
-                        type: 'hangoutsMeet',
+            const buildPayload = (includeConference: boolean, includeAttendees: boolean): calendar_v3.Schema$Event => ({
+              summary: req.title || `Tebeka Consultation: ${req.referenceNumber || req.bookingId}`,
+              description:
+                req.description ||
+                `Confidential legal consultation scheduled on the Tebeka Legal Platform.\n` +
+                `Video Consultation Link: ${designatedMeetLink}\n` +
+                `Reference: ${req.referenceNumber}\n` +
+                `Client: ${req.clientName || req.clientEmail || 'Client'}\n` +
+                `Attorney: ${req.attorneyName || req.attorneyEmail || 'Attorney'}`,
+              location: designatedMeetLink,
+              start: {
+                dateTime: new Date(startDateTime).toISOString(),
+                timeZone,
+              },
+              end: {
+                dateTime: new Date(endDateTime).toISOString(),
+                timeZone,
+              },
+              ...(includeAttendees && attendees.length > 0 ? { attendees } : {}),
+              ...(includeConference
+                ? {
+                    conferenceData: {
+                      createRequest: {
+                        requestId: `meet-req-${req.referenceNumber || req.bookingId}-${Date.now()}`,
+                        conferenceSolutionKey: {
+                          type: 'hangoutsMeet',
+                        },
                       },
                     },
-                  },
-                }
-              : {}),
-            visibility: 'private',
-            guestsCanModify: false,
-            guestsCanInviteOthers: false,
-            guestsCanSeeOtherGuests: false,
-            reminders: {
-              useDefault: false,
-              overrides: [
-                { method: 'email', minutes: 60 * 24 },
-                { method: 'popup', minutes: 30 },
-              ],
-            },
-          });
+                  }
+                : {}),
+              visibility: 'private',
+              guestsCanModify: false,
+              guestsCanInviteOthers: false,
+              guestsCanSeeOtherGuests: false,
+              reminders: {
+                useDefault: false,
+                overrides: [
+                  { method: 'email', minutes: 60 * 24 },
+                  { method: 'popup', minutes: 30 },
+                ],
+              },
+            });
 
-          let response: any;
-          try {
-            // Attempt 1: Full payload with conference creation and attendees
-            response = await this.calendar!.events.insert({
-              calendarId: 'primary',
-              conferenceDataVersion: 1,
-              sendUpdates: 'all',
-              requestBody: buildPayload(true, true),
-            });
-          } catch (err: any) {
-            // If conference type or attendees are unsupported on this service account, fallback to direct event insertion
-            this.logger.warn(`Google Calendar full conference insertion noticed (${err?.message || err?.code}). Using direct Google Meet synced calendar event.`);
-            response = await this.calendar!.events.insert({
-              calendarId: 'primary',
-              requestBody: buildPayload(false, false),
-            });
+            let response: any;
+            try {
+              // Attempt 1: Full payload with conference creation and attendees
+              response = await this.calendar!.events.insert({
+                calendarId: 'primary',
+                conferenceDataVersion: 1,
+                sendUpdates: 'all',
+                requestBody: buildPayload(true, true),
+              });
+            } catch (err: any) {
+              // If conference type or attendees are unsupported on this service account, fallback to direct event insertion
+              this.logger.warn(`Google Calendar full conference insertion noticed (${err?.message || err?.code}). Using direct Google Meet synced calendar event.`);
+              try {
+                response = await this.calendar!.events.insert({
+                  calendarId: 'primary',
+                  requestBody: buildPayload(false, false),
+                });
+              } catch (directErr: any) {
+                this.logger.warn(`Google Calendar direct event insertion also failed (${directErr?.message || directErr?.code}). Falling back to deterministic Google Meet link.`);
+                return {
+                  meetingLink: designatedMeetLink,
+                  googleCalendarEventId: `gcal_fallback_${req.referenceNumber || req.bookingId}`,
+                  calendarHtmlLink: undefined,
+                  isMock: true,
+                };
+              }
+            }
+
+            const event = response?.data;
+            const meetingLink =
+              event?.hangoutLink ||
+              event?.conferenceData?.entryPoints?.find((ep: any) => ep.entryPointType === 'video')?.uri ||
+              designatedMeetLink;
+
+            this.logger.log(
+              `Google Calendar Event & Meet Room created for booking [${req.bookingId}]: ${meetingLink} (Event ID: ${event?.id})`
+            );
+
+            return {
+              meetingLink,
+              googleCalendarEventId: event?.id || null,
+              calendarHtmlLink: event?.htmlLink || undefined,
+              isMock: false,
+            };
+          },
+          {
+            name: `GoogleMeetCreate:${req.bookingId}`,
+            maxRetries: 2,
+            initialDelayMs: 500,
           }
-
-          const event = response.data;
-          const meetingLink =
-            event.hangoutLink ||
-            event.conferenceData?.entryPoints?.find((ep: any) => ep.entryPointType === 'video')?.uri ||
-            designatedMeetLink;
-
-          this.logger.log(
-            `Google Calendar Event & Meet Room created for booking [${req.bookingId}]: ${meetingLink} (Event ID: ${event.id})`
-          );
-
-          return {
-            meetingLink,
-            googleCalendarEventId: event.id || null,
-            calendarHtmlLink: event.htmlLink || undefined,
-            isMock: false,
-          };
-        },
-        {
-          name: `GoogleMeetCreate:${req.bookingId}`,
-          maxRetries: 2,
-          initialDelayMs: 500,
-        }
+        );
+      });
+    } catch (apiError: any) {
+      this.logger.warn(
+        `Failed to provision Google Calendar event (${apiError?.message || apiError}). Falling back to deterministic Google Meet room: ${designatedMeetLink}`
       );
-    });
+      return {
+        meetingLink: designatedMeetLink,
+        googleCalendarEventId: `gcal_fallback_${req.referenceNumber || req.bookingId}`,
+        calendarHtmlLink: undefined,
+        isMock: true,
+      };
+    }
   }
 
   async updateConsultationMeeting(

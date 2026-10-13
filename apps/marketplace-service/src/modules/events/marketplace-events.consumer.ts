@@ -134,15 +134,27 @@ export class MarketplaceEventsConsumer implements OnModuleInit {
         }
 
         // Generate real Google Meet video room & Google Calendar invite
-        const meetResult = await this.googleMeetService.createConsultationMeeting({
-          bookingId: existingBooking.id,
-          referenceNumber: existingBooking.referenceNumber || existingBooking.id,
-          bookingDate: existingBooking.bookingDate,
-          startTime: existingBooking.startTime,
-          endTime: existingBooking.endTime,
-          clientEmail: data.payerEmail || `client-${existingBooking.clientId}@tebeka.et`,
-          attorneyEmail: data.payeeEmail || `attorney-${existingBooking.attorneyId}@tebeka.et`,
-        });
+        let meetResult;
+        try {
+          meetResult = await this.googleMeetService.createConsultationMeeting({
+            bookingId: existingBooking.id,
+            referenceNumber: existingBooking.referenceNumber || existingBooking.id,
+            bookingDate: existingBooking.bookingDate,
+            startTime: existingBooking.startTime,
+            endTime: existingBooking.endTime,
+            clientEmail: data.payerEmail || `client-${existingBooking.clientId}@tebeka.et`,
+            attorneyEmail: data.payeeEmail || `attorney-${existingBooking.attorneyId}@tebeka.et`,
+          });
+        } catch (err: any) {
+          this.logger.warn(`Google Meet provision error: ${err?.message || err}. Falling back to deterministic link.`);
+          const fallbackLink = this.googleMeetService.generateMeetLink(existingBooking.referenceNumber || existingBooking.id);
+          meetResult = {
+            meetingLink: fallbackLink,
+            googleCalendarEventId: null,
+            calendarHtmlLink: undefined,
+            isMock: true,
+          };
+        }
 
         await this.prisma.$transaction(async (tx) => {
           const updated = await tx.booking.update({

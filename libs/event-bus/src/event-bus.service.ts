@@ -136,9 +136,10 @@ export class EventBusService implements OnModuleInit {
       await channel.bindQueue(qName, 'tebeka.events', routingKey);
       await channel.consume(qName, async (msg: any) => {
         if (msg) {
+          let eventId: string | null = null;
           try {
             const content = JSON.parse(msg.content.toString());
-            const eventId =
+            eventId =
               content.id ||
               content.paymentId ||
               content.bookingId ||
@@ -169,6 +170,18 @@ export class EventBusService implements OnModuleInit {
             await handler(content as T);
             channel.ack(msg);
           } catch (err) {
+            try {
+              if (prisma?.processedEvent && eventId) {
+                await prisma.processedEvent.deleteMany({
+                  where: {
+                    eventId: String(eventId),
+                    consumerName,
+                  },
+                });
+              }
+            } catch {
+              // Ignore cleanup error
+            }
             this.logger.error(`Error processing event [${routingKey}] - routing to DLQ:`, err);
             channel.nack(msg, false, false);
           }
