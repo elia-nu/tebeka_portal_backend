@@ -55,7 +55,8 @@ export class PaymentController {
     if (!clientId) {
       throw new UnauthorizedException('Authenticated client ID is required to approve payment');
     }
-    return this.paymentService.approvePayment(body.paymentId, clientId);
+    const clientIp = this.geoPaymentService.extractClientIp(req);
+    return this.paymentService.approvePayment(body.paymentId, clientId, body, clientIp);
   }
 
   @Get()

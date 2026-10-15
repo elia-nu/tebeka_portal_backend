@@ -309,6 +309,9 @@ Before checking out, the frontend or backend can detect the appropriate gateway 
 }
 ```
 
+> [!NOTE]
+> **Payment Request Streamlining:** If an attorney already initiated a milestone payment request via `POST /api/v1/payments/request`, the client does **not** need to re-supply this entire body. The client can simply provide `{ "paymentId": "payment-uuid-101" }` to `POST /api/v1/payments/approve` or `POST /api/v1/payments`, and the backend automatically inherits `caseId`, `payeeId`, `amount`, `currency`, and `milestoneName`.
+
 ---
 
 ### Flow B: International Payment via Stripe ($250 USD Consultation)

@@ -26,15 +26,18 @@
         │                                │                             │                          │
   [4] Request Milestone Payment ──────────────────────────────────────►│                          │
         │   POST /payments/request       │                             │ (Status: PENDING)        │
+        │                                │                             │ Creates Payment Request  │
         │                                │                             │                          │
-  [5] Client Approves & Pays ─────────────────────────────────────────►│                          │
-        │   POST /payments/approve       │                             │ Chapa Split (15% / 85%)  │
-        │   POST /payments/checkout      │                             │ Returns Checkout URL     │
+  [5] Client Approves & Checks Out ───────────────────────────────────►│                          │
+        │   POST /payments/approve       │                             │ Inherits Request Body    │
+        │   (passes paymentId only)      │                             │ Chapa Split (15% / 85%)  │
+        │   (or POST /payments)          │                             │ Returns Checkout URL     │
         │                                │                             │                          │
-  [6] Payment Verified ───────────────────────────────────────────────►│ (Status: COMPLETED)      │
-        │   Webhook / Verify             │                             │ Writes Outbox Event      │
-        │                                │◄────── RabbitMQ ────────────│                          │
-        │                                │   (PAYMENT_COMPLETED)       │                          │
+  [6] Payment Verified & Case Activated ─►│◄────── RabbitMQ ───────────│ (Status: COMPLETED)      │
+        │   Webhook / Callback           │   (PAYMENT_COMPLETED)       │ Ledger: Credit + Comm.   │
+        │                                │   • Case -> IN_PROGRESS     │ Credits Attorney Wallet  │
+        │                                │   • Milestone -> IN_PROGRESS│                          │
+        │                                │   • Timeline Escrow Created │                          │
         │                                │                             │                          │
   [7] Timeline & Court Filings ─────────►│                             │                          │
         │   POST /cases/:id/timeline     │ (Logs Hearing / Filing)     │                          │
@@ -251,16 +254,16 @@ The attorney structures the legal phases and milestone deliverables for the case
 ---
 
 ### Step 4: Attorney Requests Milestone Payment
-The attorney requests the milestone fee escrow through `financial-service`.
+The attorney requests the milestone fee escrow through `financial-service`. The service calculates the platform commission (e.g., 15%) and sets up the escrow payment record in `financial_db`.
 
 * **Endpoint**: `POST /api/v1/payments/request`
-* **Headers**: `Authorization: Bearer <attorney_jwt>`
+* **Headers**: `Authorization: Bearer <attorney_jwt>` (Role: `ATTORNEY`)
 
 #### Request Payload:
 ```json
 {
   "caseId": "c198a0e2-6612-4cf3-9912-108274a018bb",
-  "payerId": "client_usr_1048",
+  "clientId": "client_usr_1048",
   "amount": 15000.0,
   "currency": "ETB",
   "milestoneName": "Phase 1: Legal Notice & Statement of Claim Draft",
@@ -268,7 +271,7 @@ The attorney requests the milestone fee escrow through `financial-service`.
 }
 ```
 
-#### Response:
+#### Response (`201 Created`):
 ```json
 {
   "id": "p_case_77192a01-4412-4cf1-9912-1049281141aa",
@@ -279,36 +282,43 @@ The attorney requests the milestone fee escrow through `financial-service`.
   "amount": "15000.00",
   "commission": "2250.00",
   "splitPercentage": 15.0,
-  "status": "PENDING_APPROVAL",
+  "status": "PENDING",
   "milestoneName": "Phase 1: Legal Notice & Statement of Claim Draft",
-  "transactionReference": "TX-CASE-1787141500-9A1B2C"
+  "transactionReference": "TX-REQ-1787141500-9A1B2C"
 }
 ```
 
 ---
 
-### Step 5: Client Approves & Pays Milestone Fee
-The client approves the payment request and completes checkout via Chapa (Telebirr / CBE / Cards).
+### Step 5: Client Approves & Checks Out (Body Inherited from Payment Request)
+The client approves the payment and initializes checkout. 
 
+> [!TIP]
+> **No Redundant Payload Re-entry:** The client does **NOT** need to re-supply `caseId`, `payeeId`, `amount`, `currency`, `milestoneName`, or `description`. The backend automatically inherits these parameters from the payment record created in **Step 4** using the `paymentId`, avoiding duplicate database records and eliminating front-end payload duplication.
+
+#### Route A: Approve & Generate Checkout URL (Standard Flow)
 * **Endpoint**: `POST /api/v1/payments/approve`
-* **Headers**: `Authorization: Bearer <client_jwt>`
+* **Headers**: `Authorization: Bearer <client_jwt>` (Role: `CLIENT`)
 
-#### Request Payload:
+##### Request Payload:
 ```json
 {
   "paymentId": "p_case_77192a01-4412-4cf1-9912-1049281141aa"
 }
 ```
+*(Optional client overrides: `"provider": "CHAPA"`, `"email": "client@example.com"`, `"phone": "0911223344"`, `"returnUrl": "https://tebeka.et/cases/c198/paid"`, `"directComplete": false`)*
 
-#### Response:
+##### Response (`200 OK`):
 ```json
 {
   "success": true,
   "message": "Payment approved and checkout URL generated",
+  "paymentId": "p_case_77192a01-4412-4cf1-9912-1049281141aa",
   "checkoutUrl": "https://checkout.chapa.co/checkout/payment/9A1B2C",
-  "transactionReference": "TX-CASE-1787141500-9A1B2C",
+  "transactionReference": "TX-REQ-1787141500-9A1B2C",
   "amount": 15000.0,
   "currency": "ETB",
+  "provider": "CHAPA",
   "splitBreakdown": {
     "platformCommission": "2,250.00 ETB (15%)",
     "attorneyPayout": "12,750.00 ETB (85%)",
@@ -317,26 +327,65 @@ The client approves the payment request and completes checkout via Chapa (Telebi
 }
 ```
 
----
+#### Route B: Direct Payment via `POST /api/v1/payments` with `paymentId`
+Alternatively, the client can initiate checkout via `POST /api/v1/payments` by simply submitting the `paymentId`:
 
-### Step 6: Payment Verification & Milestone Activation
-Upon webhook confirmation from Chapa:
+* **Endpoint**: `POST /api/v1/payments`
+* **Headers**: `Authorization: Bearer <client_jwt>`
 
-1. `financial-service` updates payment status to `COMPLETED` and places `12,750 ETB` in the attorney's `pendingBalance`.
-2. Outbox event `PAYMENT_COMPLETED` is emitted.
-3. `marketplace-service` updates Milestone status to `IN_PROGRESS` and Case status to `IN_PROGRESS`.
-
-#### Financial Ledger Entry:
+##### Request Payload:
 ```json
 {
-  "id": "led_881290aa-9912-4cf1-8812-1049281a01bb",
   "paymentId": "p_case_77192a01-4412-4cf1-9912-1049281141aa",
-  "entryType": "CREDIT",
-  "amount": "12750.00",
-  "balanceAfter": "12750.00",
-  "createdAt": "2026-08-19T14:53:00.000Z"
+  "provider": "CHAPA"
 }
 ```
+*`createPayment` recognizes `paymentId`, loads the requested payment, inherits all case and financial fields, and generates the gateway checkout link without creating duplicate payment entries.*
+
+---
+
+### Step 6: Payment Verification & Cross-Service Milestone Activation
+When the client completes payment via Chapa (Telebirr/CBE/Card) or Stripe (Diaspora USD), the gateway webhook hits `POST /api/v1/payments/webhooks/chapa` or `POST /api/v1/payments/webhooks/stripe`:
+
+1. **Financial Service State Update**:
+   - Updates `Payment.status` to `COMPLETED`.
+   - Records `paidAt`, `approvedAt`, and `approvedBy`.
+   - Creates 2 Financial Ledger entries:
+     - **`CREDIT`**: Total payment amount (`15,000.00 ETB`, net balance `12,750.00 ETB`).
+     - **`COMMISSION`**: Platform commission (`2,250.00 ETB`, 15%).
+   - Credits the attorney's `Wallet.pendingBalance` by `12,750.00 ETB` (85%).
+   - Emits outbox event `PAYMENT_COMPLETED` with `caseId`, `milestoneName`, `amount`, `currency`, and `paymentType: "CASE_MILESTONE"`.
+
+#### Financial Ledger Entries (`financial_db`):
+```json
+[
+  {
+    "id": "led_881290aa-9912-4cf1-8812-1049281a01bb",
+    "paymentId": "p_case_77192a01-4412-4cf1-9912-1049281141aa",
+    "entryType": "CREDIT",
+    "amount": "15000.00",
+    "balanceAfter": "12750.00",
+    "createdAt": "2026-08-19T14:53:00.000Z"
+  },
+  {
+    "id": "led_881290aa-9912-4cf1-8812-1049281a01bc",
+    "paymentId": "p_case_77192a01-4412-4cf1-9912-1049281141aa",
+    "entryType": "COMMISSION",
+    "amount": "2250.00",
+    "balanceAfter": "2250.00",
+    "createdAt": "2026-08-19T14:53:00.000Z"
+  }
+]
+```
+
+2. **Marketplace Service Cross-Service Saga Ingestion (`MarketplaceEventsConsumer`)**:
+   `marketplace-service` consumes `PAYMENT_COMPLETED` and executes an atomic saga:
+   - Updates `Case.status` from `OPEN` to `IN_PROGRESS`.
+   - Updates `CaseMilestone.status` from `PENDING` to `IN_PROGRESS` matching the `milestoneName`.
+   - Adds an entry to `CaseTimeline`:
+     - **Title**: *"Milestone Escrow Payment Secured"*
+     - **Description**: *"Payment of 15000 ETB completed and held in escrow. Milestone 'Phase 1: Legal Notice & Statement of Claim Draft' activated."*
+   - Emits `CASE_MILESTONE_PAID` outbox event for communication and audit listeners.
 
 ---
 

@@ -72,6 +72,8 @@ export class PaymentCompletionService {
             paymentId: updated.id,
             bookingId: updated.bookingId || null,
             caseId: updated.caseId || null,
+            milestoneName: updated.milestoneName || null,
+            paymentType: updated.paymentType,
             payerId: updated.payerId,
             payeeId: updated.payeeId,
             userId: updated.payerId,
