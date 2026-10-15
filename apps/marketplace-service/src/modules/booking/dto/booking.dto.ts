@@ -11,6 +11,8 @@ export interface CreateBookingDto {
   consultationType?: ConsultationType;
   paymentStatus?: PaymentStatus;
   meetingLink?: string;
+  issueBrief?: string;
+  notes?: string;
 }
 
 export const CreateBookingSchema = Joi.object({
@@ -27,6 +29,8 @@ export const CreateBookingSchema = Joi.object({
   consultationType: Joi.string().valid('IN_PERSON', 'VIDEO', 'PHONE').default('VIDEO'),
   paymentStatus: Joi.string().valid('UNPAID', 'PAID', 'REFUNDED').default('UNPAID'),
   meetingLink: Joi.string().uri().optional(),
+  issueBrief: Joi.string().max(2000).allow('', null).optional(),
+  notes: Joi.string().max(2000).allow('', null).optional(),
 });
 
 export interface UpdateBookingStatusDto {

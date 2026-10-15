@@ -166,8 +166,8 @@ export class BookingCreationService {
           status: BookingStatus.REQUESTED,
           paymentStatus: data.paymentStatus || 'UNPAID',
           meetingLink: data.meetingLink || null,
-          issueBrief: data.issueBrief || data.notes || null,
-          notes: data.notes || null,
+          issueBrief: data.issueBrief ? data.issueBrief.trim() : (data.notes ? data.notes.trim() : null),
+          notes: data.notes ? data.notes.trim() : null,
           bookingEvents: {
             create: {
               event: 'BOOKING_REQUESTED',
@@ -192,11 +192,13 @@ export class BookingCreationService {
           eventType: 'BOOKING_REQUESTED',
           payload: {
             bookingId: booking.id,
+            referenceNumber: booking.referenceNumber,
             clientId,
             attorneyId: data.attorneyId,
             bookingDate: booking.bookingDate,
             startTime: booking.startTime,
             endTime: booking.endTime,
+            issueBrief: booking.issueBrief,
           },
         },
       });

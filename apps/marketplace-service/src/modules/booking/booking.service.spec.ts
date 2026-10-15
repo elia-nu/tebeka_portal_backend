@@ -145,6 +145,39 @@ describe('BookingService', () => {
       expect(result.attorney).toBeDefined();
       expect(result.attorney.fullName).toBe('Advocate Yared Tesfaye');
     });
+
+    it('should persist issueBrief and notes when provided in createBooking', async () => {
+      mockPrisma.booking.findMany.mockResolvedValue([]);
+      mockPrisma.booking.count.mockResolvedValue(1);
+      mockPrisma.booking.create.mockImplementation(async ({ data }: any) => ({
+        id: 'b-brief',
+        ...data,
+      }));
+
+      const result = await service.createBooking(
+        {
+          attorneyId: 'att-1',
+          bookingDate: '2026-10-07',
+          startTime: '14:00',
+          endTime: '15:00',
+          issueBrief: 'Commercial litigation contract review',
+          notes: 'Client prefers English',
+        },
+        'client-1',
+      );
+
+      expect(result.id).toBe('b-brief');
+      expect(result.issueBrief).toBe('Commercial litigation contract review');
+      expect(result.notes).toBe('Client prefers English');
+      expect(mockPrisma.booking.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            issueBrief: 'Commercial litigation contract review',
+            notes: 'Client prefers English',
+          }),
+        })
+      );
+    });
   });
 
   describe('declineBooking', () => {
