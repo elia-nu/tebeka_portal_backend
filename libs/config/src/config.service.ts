@@ -21,6 +21,8 @@ export class AppConfigService {
 
     const defaultOrigins = [
       'https://tebeka.alikohub.com',
+      'https://tebeka-frontend.vercel.app',
+      'http://localhost:3000',
       'http://localhost:3009',
       'http://127.0.0.1:3000',
       'http://localhost:5173',
@@ -143,4 +145,16 @@ export class AppConfigService {
     const key = this.configService.get<string>('FIREBASE_PRIVATE_KEY', '');
     return key ? key.replace(/\\n/g, '\n') : '';
   }
+
+  get frontendUrl(): string {
+    return this.configService.get<string>('FRONTEND_URL', 'https://tebeka-frontend.vercel.app');
+  }
+
+  get paymentReturnUrl(): string {
+    return this.configService.get<string>(
+      'PAYMENT_RETURN_URL',
+      'https://tebeka-frontend.vercel.app/en/payment/complete'
+    );
+  }
 }
+

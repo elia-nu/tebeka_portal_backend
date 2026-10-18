@@ -47,7 +47,7 @@ export class ChapaStrategy implements IPaymentProviderStrategy {
             phone_number: phone,
             tx_ref: request.txRef,
             callback_url: request.callbackUrl || process.env.CHAPA_WEBHOOK_URL || 'https://tebeka.alikohub.com/api/v1/payments/webhooks/chapa',
-            return_url: request.returnUrl || `${process.env.FRONTEND_URL || 'https://tebeka.alikohub.com'}/payment/complete`,
+            return_url: request.returnUrl || process.env.PAYMENT_RETURN_URL || `${process.env.FRONTEND_URL || 'https://tebeka-frontend.vercel.app'}/en/payment/complete`,
             'customization[title]': 'Tebeka Legal Services',
             'customization[description]': `Payment for reference ${request.txRef}`,
           };

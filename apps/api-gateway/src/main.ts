@@ -82,7 +82,9 @@ async function bootstrap() {
         origin.startsWith('http://localhost:') ||
         origin.startsWith('http://127.0.0.1:') ||
         origin.endsWith('.alikohub.com') ||
-        origin === 'https://tebeka.alikohub.com';
+        origin.endsWith('.vercel.app') ||
+        origin === 'https://tebeka.alikohub.com' ||
+        origin === 'https://tebeka-frontend.vercel.app';
       callback(null, isAllowed ? true : false);
     },
     credentials: true,

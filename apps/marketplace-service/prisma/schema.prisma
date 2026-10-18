@@ -40,7 +40,9 @@ enum Priority {
 }
 
 enum CaseStatus {
+  SUBMITTED
   OPEN
+  ACCEPTED
   IN_PROGRESS
   PENDING_REVIEW
   DISPUTED
@@ -71,9 +73,13 @@ enum AgreementType {
 
 enum MilestoneStatus {
   PENDING
+  PROPOSED
+  APPROVED
   IN_PROGRESS
+  PENDING_CLIENT_APPROVAL
   COMPLETED
   OVERDUE
+  REJECTED
 }
 
 enum ReviewStatus {
@@ -366,13 +372,17 @@ model CaseDocument {
 }
 
 model CaseMilestone {
-  id          String          @id @default(uuid())
-  caseId      String          @map("case_id")
-  case        Case            @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  title       String
-  status      MilestoneStatus @default(PENDING)
-  dueDate     DateTime?       @map("due_date")
-  completedAt DateTime?       @map("completed_at")
+  id                     String          @id @default(uuid())
+  caseId                 String          @map("case_id")
+  case                   Case            @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  title                  String
+  description            String?
+  proposedBy             String?         @map("proposed_by")
+  status                 MilestoneStatus @default(PENDING)
+  dueDate                DateTime?       @map("due_date")
+  approvedByClientAt     DateTime?       @map("approved_by_client_at")
+  completedAt            DateTime?       @map("completed_at")
+  acknowledgedByClientAt DateTime?       @map("acknowledged_by_client_at")
 
   @@map("case_milestones")
 }

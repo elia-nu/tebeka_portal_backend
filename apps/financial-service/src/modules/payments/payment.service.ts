@@ -190,6 +190,7 @@ export class PaymentService {
         subaccountId: payeeWallet?.chapaSubaccountId || undefined,
         splitPercentage,
         commission: Number(payment.commission),
+        returnUrl: data.returnUrl,
       });
     } else if (provider === PaymentProvider.STRIPE) {
       checkoutResult = await this.stripeStrategy.initializePayment({
@@ -203,6 +204,7 @@ export class PaymentService {
         subaccountId: payeeWallet?.stripeAccountId || undefined,
         splitPercentage,
         commission: Number(payment.commission),
+        returnUrl: data.returnUrl,
       });
     }
 

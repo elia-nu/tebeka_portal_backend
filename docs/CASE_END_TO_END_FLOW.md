@@ -13,7 +13,11 @@
         │                                │                             │       • Create Locked    │
         │                                │                             │         Chat Room        │
         │                                │                             │                          │
-  [2] Tri-Party Agreement Room ─────────►│                             │                          │
+  [2] Attorney Case Decision ───────────►│                             │                          │
+        │   POST /cases/:id/decision     │ (Status: ACCEPTED)          │                          │
+        │   (COI Gate Passed)            │                             │                          │
+        │                                │                             │                          │
+  [3] Tri-Party Agreement Room ─────────►│                             │                          │
         │   GET /cases/:id/agreement     │ Terms: Non-circumvention,   │                          │
         │   POST /cases/:id/agree/sign   │ Escrow & Conduct            │                          │
         │                                │                             │                          │
@@ -21,34 +25,38 @@
         │                                │────── RabbitMQ (AGREEMENT_EXECUTED) ──────────────────►│
         │                                │                             │       • Unlock Chat Room │
         │                                │                             │                          │
-  [3] Create Milestones ────────────────►│                             │                          │
-        │   POST /cases/:id/milestones   │ (Status: IN_PROGRESS)       │                          │
+  [4] Attorney Proposes Milestones ─────►│ (FR-CASE-04)                │                          │
+        │   POST /cases/:id/milestones   │ (Milestones: PROPOSED)      │                          │
         │                                │                             │                          │
-  [4] Request Milestone Payment ──────────────────────────────────────►│                          │
+  [5] Client Approves Milestone Plan ───►│ (FR-CASE-04)                │                          │
+        │   POST /milestones/approve     │ • Milestones: APPROVED      │                          │
+        │   (Blocks if not approved)     │ • Case -> IN_PROGRESS       │                          │
+        │                                │                             │                          │
+  [6] Request Milestone Payment ──────────────────────────────────────►│                          │
         │   POST /payments/request       │                             │ (Status: PENDING)        │
         │                                │                             │ Creates Payment Request  │
         │                                │                             │                          │
-  [5] Client Approves & Checks Out ───────────────────────────────────►│                          │
+  [7] Client Approves & Checks Out ───────────────────────────────────►│                          │
         │   POST /payments/approve       │                             │ Inherits Request Body    │
         │   (passes paymentId only)      │                             │ Chapa Split (15% / 85%)  │
         │   (or POST /payments)          │                             │ Returns Checkout URL     │
         │                                │                             │                          │
-  [6] Payment Verified & Case Activated ─►│◄────── RabbitMQ ───────────│ (Status: COMPLETED)      │
+  [8] Payment Verified & Escrow Held ────►│◄────── RabbitMQ ───────────│ (Status: COMPLETED)      │
         │   Webhook / Callback           │   (PAYMENT_COMPLETED)       │ Ledger: Credit + Comm.   │
-        │                                │   • Case -> IN_PROGRESS     │ Credits Attorney Wallet  │
-        │                                │   • Milestone -> IN_PROGRESS│                          │
+        │                                │   • Milestone -> IN_PROGRESS│ Credits Attorney Wallet  │
         │                                │   • Timeline Escrow Created │                          │
         │                                │                             │                          │
-  [7] Timeline & Court Filings ─────────►│                             │                          │
+  [9] Timeline & Court Filings ─────────►│                             │                          │
         │   POST /cases/:id/timeline     │ (Logs Hearing / Filing)     │                          │
         │                                │────── RabbitMQ (CASE_UPDATED) ────────────────────────►│
         │                                │                             │       • Push Notification│
         │                                │                             │       • SMS / In-App     │
         │                                │                             │                          │
-  [8] Complete Milestone & Release ─────►│                             │                          │
-        │   PATCH /cases/:id/milestones/..                             │                          │
+ [10] Milestone Completion & Ack ───────►│ (FR-CASE-04)                │                          │
+        │   POST .../complete (Attorney) │ • PENDING_CLIENT_APPROVAL   │                          │
+        │   POST .../acknowledge (Client)│ • Milestone -> COMPLETED    │ Escrow Released          │
         │                                │                             │                          │
-  [9] Close Case & Review ──────────────►│                             │                          │
+ [11] Close Case & Review ──────────────►│                             │                          │
         │   PATCH /cases/:id/status      │ (Status: CLOSED)            │                          │
         │   POST /api/v1/reviews         │ Recalculates Ranking Score  │                          │
 ```
@@ -225,29 +233,76 @@ Upon receiving `AGREEMENT_EXECUTED`, `communication-service` fully activates the
 
 ---
 
-### Step 3: Attorney Sets Up Case Milestones
-The attorney structures the legal phases and milestone deliverables for the case.
+### Step 3: Attorney Proposes Case Milestones (FR-CASE-04)
+On an `ACCEPTED` case, the assigned attorney proposes the legal phases and milestone deliverables.
 
 * **Endpoint**: `POST /api/v1/cases/c198a0e2-6612-4cf3-9912-108274a018bb/milestones`
-* **Headers**: `Authorization: Bearer <attorney_jwt>`
+* **Headers**: `Authorization: Bearer <attorney_jwt>` (Role: `ATTORNEY`)
 
 #### Request Payload:
 ```json
 {
-  "title": "Phase 1: Legal Notice & Statement of Claim Draft",
-  "dueDate": "2026-09-05T00:00:00.000Z"
+  "milestones": [
+    {
+      "title": "Phase 1: Legal Notice & Statement of Claim Draft",
+      "description": "Retainer fee for pleadings preparation, evidence compilation, and filing in Commercial Court.",
+      "dueDate": "2026-09-05T00:00:00.000Z"
+    },
+    {
+      "title": "Phase 2: Witness Hearings & Final Commercial Award",
+      "description": "Representation at commercial tribunal hearings and final decree execution.",
+      "dueDate": "2026-10-15T00:00:00.000Z"
+    }
+  ]
 }
 ```
 
 #### Response (`201 Created`):
 ```json
+[
+  {
+    "id": "m_1049281a-8812-4cf1-9012-9918274a01cc",
+    "caseId": "c198a0e2-6612-4cf3-9912-108274a018bb",
+    "title": "Phase 1: Legal Notice & Statement of Claim Draft",
+    "status": "PROPOSED",
+    "dueDate": "2026-09-05T00:00:00.000Z",
+    "proposedBy": "attorney_usr_4a71",
+    "approvedByClientAt": null,
+    "completedAt": null,
+    "acknowledgedByClientAt": null
+  }
+]
+```
+
+---
+
+### Step 3b: Client Approves Milestone Plan before IN_PROGRESS (FR-CASE-04)
+The client reviews and approves the proposed milestone plan. Upon client approval, the case transitions from `ACCEPTED` to `IN_PROGRESS`.
+
+* **Endpoint**: `POST /api/v1/cases/c198a0e2-6612-4cf3-9912-108274a018bb/milestones/approve`
+* **Headers**: `Authorization: Bearer <client_jwt>` (Role: `CLIENT`)
+
+#### Request Payload:
+```json
 {
-  "id": "m_1049281a-8812-4cf1-9012-9918274a01cc",
-  "caseId": "c198a0e2-6612-4cf3-9912-108274a018bb",
-  "title": "Phase 1: Legal Notice & Statement of Claim Draft",
-  "status": "PENDING",
-  "dueDate": "2026-09-05T00:00:00.000Z",
-  "createdAt": "2026-08-19T14:51:00.000Z"
+  "feedback": "Milestone deliverables and schedule accepted."
+}
+```
+
+#### Response (`200 OK`):
+```json
+{
+  "message": "Milestones approved successfully",
+  "caseStatus": "IN_PROGRESS",
+  "milestones": [
+    {
+      "id": "m_1049281a-8812-4cf1-9012-9918274a01cc",
+      "caseId": "c198a0e2-6612-4cf3-9912-108274a018bb",
+      "title": "Phase 1: Legal Notice & Statement of Claim Draft",
+      "status": "APPROVED",
+      "approvedByClientAt": "2026-08-19T14:52:00.000Z"
+    }
+  ]
 }
 ```
 
@@ -430,27 +485,57 @@ The attorney logs court dates, document filings, and official hearing updates.
 
 ---
 
-### Step 8: Milestone Completion & Fund Release
-When the attorney finishes the deliverable, the milestone is marked completed, and pending escrow funds are transferred to the attorney's `availableBalance`.
+### Step 8: Milestone Completion & Client Acknowledgement (FR-CASE-04)
+Per SRS **FR-CASE-04**, milestone completion requires client acknowledgement:
 
-* **Endpoint**: `PATCH /api/v1/cases/c198a0e2-6612-4cf3-9912-108274a018bb/milestones/m_1049281a-8812-4cf1-9012-9918274a01cc/status`
-* **Headers**: `Authorization: Bearer <attorney_jwt>`
+#### 8a. Attorney Submits Milestone Deliverable:
+* **Endpoint**: `POST /api/v1/cases/c198a0e2-6612-4cf3-9912-108274a018bb/milestones/m_1049281a-8812-4cf1-9012-9918274a01cc/complete`
+* **Headers**: `Authorization: Bearer <attorney_jwt>` (Role: `ATTORNEY`)
 
-#### Request Payload:
 ```json
 {
-  "status": "COMPLETED"
+  "deliverableNotes": "Statement of claim and supporting documentary annexes filed with Federal High Court Registry (Receipt #FHC-2026-9921)."
 }
 ```
 
-#### Response:
+##### Response (`200 OK`):
 ```json
 {
-  "id": "m_1049281a-8812-4cf1-9012-9918274a01cc",
-  "caseId": "c198a0e2-6612-4cf3-9912-108274a018bb",
-  "title": "Phase 1: Legal Notice & Statement of Claim Draft",
-  "status": "COMPLETED",
-  "completedAt": "2026-08-22T11:00:00.000Z"
+  "message": "Milestone completion submitted. Awaiting client acknowledgement (FR-CASE-04).",
+  "milestone": {
+    "id": "m_1049281a-8812-4cf1-9012-9918274a01cc",
+    "caseId": "c198a0e2-6612-4cf3-9912-108274a018bb",
+    "title": "Phase 1: Legal Notice & Statement of Claim Draft",
+    "status": "PENDING_CLIENT_APPROVAL",
+    "completedAt": "2026-08-22T11:00:00.000Z",
+    "acknowledgedByClientAt": null
+  }
+}
+```
+
+#### 8b. Client Acknowledges Milestone Completion:
+* **Endpoint**: `POST /api/v1/cases/c198a0e2-6612-4cf3-9912-108274a018bb/milestones/m_1049281a-8812-4cf1-9012-9918274a01cc/acknowledge`
+* **Headers**: `Authorization: Bearer <client_jwt>` (Role: `CLIENT`)
+
+```json
+{
+  "feedback": "Confirmed receipt and stamped filing copy. Outstanding work.",
+  "rating": 5
+}
+```
+
+##### Response (`200 OK`):
+```json
+{
+  "message": "Milestone completion acknowledged successfully",
+  "milestone": {
+    "id": "m_1049281a-8812-4cf1-9012-9918274a01cc",
+    "caseId": "c198a0e2-6612-4cf3-9912-108274a018bb",
+    "title": "Phase 1: Legal Notice & Statement of Claim Draft",
+    "status": "COMPLETED",
+    "completedAt": "2026-08-22T11:00:00.000Z",
+    "acknowledgedByClientAt": "2026-08-22T14:30:00.000Z"
+  }
 }
 ```
 

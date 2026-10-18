@@ -13,6 +13,13 @@ export class AppController {
   @Public()
   @Get(['payment/complete', 'payment/success'])
   getPaymentComplete(@Req() req: any, @Res() res: any) {
+    const baseReturnUrl =
+      process.env.PAYMENT_RETURN_URL ||
+      `${process.env.FRONTEND_URL || 'https://tebeka-frontend.vercel.app'}/en/payment/complete`;
+
+    const queryString = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+    const redirectUrl = `${baseReturnUrl}${queryString ? (baseReturnUrl.includes('?') ? '&' + queryString.substring(1) : queryString) : ''}`;
+
     const isHtml = req.headers.accept?.includes('text/html');
     if (isHtml) {
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -21,6 +28,7 @@ export class AppController {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="2;url=${redirectUrl}">
   <title>Payment Successful - Tebeka Legal Services</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -134,8 +142,8 @@ export class AppController {
     </div>
     <div class="badge">Payment Confirmed</div>
     <h1>Thank You!</h1>
-    <p>Your payment was processed successfully. Your consultation has been confirmed and the video meeting details have been updated in your account.</p>
-    <a href="${process.env.FRONTEND_URL || 'https://tebeka.alikohub.com'}" class="btn" id="return-btn">Return to Tebeka Platform</a>
+    <p>Your payment was processed successfully. Redirecting you back to the Tebeka Platform...</p>
+    <a href="${redirectUrl}" class="btn" id="return-btn">Return to Tebeka Platform</a>
   </div>
 </body>
 </html>`);
@@ -143,6 +151,7 @@ export class AppController {
     return res.json({
       success: true,
       status: 'COMPLETED',
+      returnUrl: redirectUrl,
       message: 'Payment completed successfully. Consultation has been confirmed.',
       timestamp: new Date().toISOString(),
     });

@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
-import { CaseStatus, Priority, AgreementStatus, AgreementType } from '@prisma/client/marketplace';
+import { CaseStatus, Priority, AgreementStatus, AgreementType, MilestoneStatus } from '@prisma/client/marketplace';
 import { PrismaService } from '../../database/prisma.service';
 import { CommunicationServiceClient } from '../../integrations/communication-service.client';
 import { SignAgreementDto, DeclineAgreementDto } from './dto/agreement.dto';
+import { ProposeMilestonesDto, ApproveMilestonesDto, AcknowledgeMilestoneDto, CompleteMilestoneDto } from './dto/case.dto';
 import { DEFAULT_AGREEMENT_TERMS } from './constants/agreement-terms.constant';
 import { CaseAgreementService } from './services/case-agreement.service';
 
@@ -64,13 +65,6 @@ export class CaseService {
               termsContent: DEFAULT_AGREEMENT_TERMS,
               status: AgreementStatus.PENDING_SIGNATURES,
             },
-          },
-          caseMilestones: {
-            create: [
-              { title: 'Case Opened & Consultation Conducted' },
-              { title: 'Initial Document Review' },
-              { title: 'Legal Strategy Formulation' },
-            ],
           },
           caseTimelines: {
             create: [
@@ -165,10 +159,26 @@ export class CaseService {
     return this.prisma.$transaction(async (tx) => {
       const caseItem = await tx.case.findUnique({
         where: { id },
+        include: { caseMilestones: true },
       });
 
       if (!caseItem) {
         throw new NotFoundException(`Legal Case ${id} not found`);
+      }
+
+      // State machine guard for FR-CASE-04: Cannot transition to IN_PROGRESS unless client approved milestones
+      if (newStatus === CaseStatus.IN_PROGRESS) {
+        if (!caseItem.caseMilestones || caseItem.caseMilestones.length === 0) {
+          throw new BadRequestException(
+            'Case cannot transition to IN_PROGRESS: Milestones must be proposed by attorney and approved by client (FR-CASE-04).'
+          );
+        }
+        const hasUnapproved = caseItem.caseMilestones.some((m) => !m.approvedByClientAt);
+        if (hasUnapproved) {
+          throw new BadRequestException(
+            'Case cannot transition to IN_PROGRESS until proposed milestones are approved by the client (FR-CASE-04).'
+          );
+        }
       }
 
       const updated = await tx.case.update({
@@ -192,30 +202,352 @@ export class CaseService {
     });
   }
 
-  async createMilestone(caseId: string, data: { title: string; dueDate?: string }, userId: string) {
-    const caseItem = await this.prisma.case.findUnique({ where: { id: caseId } });
-    if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
+  // FR-CASE-04: Given an ACCEPTED case, when the attorney proposes milestones...
+  async proposeMilestones(caseId: string, data: ProposeMilestonesDto, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const caseItem = await tx.case.findUnique({
+        where: { id: caseId },
+        include: { caseMilestones: true },
+      });
+      if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
 
-    return this.prisma.caseMilestone.create({
-      data: {
-        caseId,
-        title: data.title,
-        dueDate: data.dueDate ? new Date(data.dueDate) : null,
-      },
+      // Role check: Only the assigned attorney can propose milestones
+      if (caseItem.attorneyId !== userId) {
+        throw new ForbiddenException('Only the assigned attorney can propose milestones for this case (FR-CASE-04).');
+      }
+
+      // Precondition: Case must be in ACCEPTED status (or IN_PROGRESS if adding subsequent milestones)
+      if (caseItem.status !== CaseStatus.ACCEPTED && caseItem.status !== CaseStatus.IN_PROGRESS) {
+        throw new BadRequestException(
+          `Cannot propose milestones: Case must be in ACCEPTED status (current status: ${caseItem.status}) (FR-CASE-04).`
+        );
+      }
+
+      const itemsToCreate: { title: string; description?: string; dueDate?: Date | null }[] = [];
+      if (data.milestones && data.milestones.length > 0) {
+        for (const m of data.milestones) {
+          itemsToCreate.push({
+            title: m.title,
+            description: m.description || null,
+            dueDate: m.dueDate ? new Date(m.dueDate) : null,
+          });
+        }
+      } else if (data.title) {
+        itemsToCreate.push({
+          title: data.title,
+          description: data.description || null,
+          dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        });
+      } else {
+        throw new BadRequestException('Milestone title or milestones array is required.');
+      }
+
+      const createdMilestones = await Promise.all(
+        itemsToCreate.map((item) =>
+          tx.caseMilestone.create({
+            data: {
+              caseId,
+              title: item.title,
+              description: item.description,
+              status: MilestoneStatus.PROPOSED,
+              dueDate: item.dueDate,
+              proposedBy: userId,
+              approvedByClientAt: null,
+            },
+          })
+        )
+      );
+
+      await tx.caseTimeline.create({
+        data: {
+          caseId,
+          title: 'Milestones Proposed',
+          description: `Attorney proposed ${createdMilestones.length} milestone(s) for client review and approval.`,
+          eventDate: new Date(),
+        },
+      });
+
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'Case',
+          aggregateId: caseId,
+          eventType: 'MILESTONES_PROPOSED',
+          payload: {
+            caseId,
+            attorneyId: caseItem.attorneyId,
+            clientId: caseItem.clientId,
+            milestones: createdMilestones.map((m) => ({ id: m.id, title: m.title })),
+          },
+        },
+      });
+
+      return createdMilestones.length === 1 && !data.milestones ? createdMilestones[0] : createdMilestones;
+    });
+  }
+
+  // Alias for backward compatibility
+  async createMilestone(caseId: string, data: { title: string; dueDate?: string }, userId: string) {
+    return this.proposeMilestones(caseId, data, userId);
+  }
+
+  // FR-CASE-04: ...then the client must approve before IN_PROGRESS
+  async approveMilestones(caseId: string, data: ApproveMilestonesDto, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const caseItem = await tx.case.findUnique({
+        where: { id: caseId },
+        include: { caseMilestones: true },
+      });
+      if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
+
+      // Role check: Only the client can approve proposed milestones
+      if (caseItem.clientId !== userId) {
+        throw new ForbiddenException('Only the client can approve proposed milestones (FR-CASE-04).');
+      }
+
+      let targetMilestones = caseItem.caseMilestones.filter((m) => !m.approvedByClientAt);
+      if (data?.milestoneIds && data.milestoneIds.length > 0) {
+        targetMilestones = targetMilestones.filter((m) => data.milestoneIds!.includes(m.id));
+      }
+
+      if (targetMilestones.length === 0) {
+        throw new BadRequestException('No pending or unapproved milestones found to approve.');
+      }
+
+      const now = new Date();
+      const updatedMilestones = await Promise.all(
+        targetMilestones.map((m) =>
+          tx.caseMilestone.update({
+            where: { id: m.id },
+            data: {
+              status: MilestoneStatus.APPROVED,
+              approvedByClientAt: now,
+            },
+          })
+        )
+      );
+
+      // Check remaining unapproved milestones
+      const remainingUnapproved = await tx.caseMilestone.count({
+        where: { caseId, approvedByClientAt: null },
+      });
+
+      let currentCaseStatus = caseItem.status;
+      // When client approves milestone plan on an ACCEPTED case, move to IN_PROGRESS
+      if (caseItem.status === CaseStatus.ACCEPTED && remainingUnapproved === 0) {
+        const updatedCase = await tx.case.update({
+          where: { id: caseId },
+          data: { status: CaseStatus.IN_PROGRESS },
+        });
+        currentCaseStatus = updatedCase.status;
+
+        await tx.caseTimeline.create({
+          data: {
+            caseId,
+            title: 'Milestone Plan Approved & Case IN_PROGRESS',
+            description: 'Client approved the proposed milestones. Case has transitioned to IN_PROGRESS (FR-CASE-04).',
+            eventDate: now,
+          },
+        });
+
+        await tx.outboxEvent.create({
+          data: {
+            aggregateType: 'Case',
+            aggregateId: caseId,
+            eventType: 'CASE_IN_PROGRESS',
+            payload: { caseId, clientId: caseItem.clientId, attorneyId: caseItem.attorneyId },
+          },
+        });
+      } else {
+        await tx.caseTimeline.create({
+          data: {
+            caseId,
+            title: 'Milestones Approved',
+            description: `Client approved ${updatedMilestones.length} milestone(s).`,
+            eventDate: now,
+          },
+        });
+      }
+
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'Case',
+          aggregateId: caseId,
+          eventType: 'MILESTONES_APPROVED',
+          payload: {
+            caseId,
+            clientId: caseItem.clientId,
+            attorneyId: caseItem.attorneyId,
+            approvedMilestoneIds: updatedMilestones.map((m) => m.id),
+          },
+        },
+      });
+
+      return {
+        message: 'Milestones approved successfully',
+        caseStatus: currentCaseStatus,
+        milestones: updatedMilestones,
+      };
+    });
+  }
+
+  // FR-CASE-04: ...milestone completion requires client acknowledgement
+  async completeMilestone(caseId: string, milestoneId: string, userId: string, deliverableNotes?: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const caseItem = await tx.case.findUnique({ where: { id: caseId } });
+      if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
+
+      const milestone = await tx.caseMilestone.findFirst({
+        where: { id: milestoneId, caseId },
+      });
+      if (!milestone) throw new NotFoundException(`Milestone ${milestoneId} for Case ${caseId} not found`);
+
+      if (caseItem.attorneyId !== userId) {
+        throw new ForbiddenException('Only the assigned attorney can submit milestone completion.');
+      }
+
+      if (!milestone.approvedByClientAt) {
+        throw new BadRequestException('Cannot complete milestone that has not been approved by the client.');
+      }
+
+      const now = new Date();
+      // Moves to PENDING_CLIENT_APPROVAL awaiting client acknowledgement
+      const updated = await tx.caseMilestone.update({
+        where: { id: milestoneId },
+        data: {
+          status: MilestoneStatus.PENDING_CLIENT_APPROVAL,
+          completedAt: now,
+          ...(deliverableNotes && {
+            description: milestone.description
+              ? `${milestone.description}\n[Deliverable]: ${deliverableNotes}`
+              : `[Deliverable]: ${deliverableNotes}`,
+          }),
+        },
+      });
+
+      await tx.caseTimeline.create({
+        data: {
+          caseId,
+          title: 'Milestone Deliverable Submitted',
+          description: `Attorney marked milestone "${milestone.title}" as completed. Awaiting client acknowledgement (FR-CASE-04).`,
+          eventDate: now,
+        },
+      });
+
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'Case',
+          aggregateId: caseId,
+          eventType: 'MILESTONE_COMPLETION_REQUESTED',
+          payload: {
+            caseId,
+            milestoneId,
+            title: milestone.title,
+            clientId: caseItem.clientId,
+            attorneyId: caseItem.attorneyId,
+          },
+        },
+      });
+
+      return {
+        message: 'Milestone completion submitted. Awaiting client acknowledgement (FR-CASE-04).',
+        milestone: updated,
+      };
+    });
+  }
+
+  // FR-CASE-04: Client acknowledges milestone completion
+  async acknowledgeMilestone(caseId: string, milestoneId: string, userId: string, data?: AcknowledgeMilestoneDto) {
+    return this.prisma.$transaction(async (tx) => {
+      const caseItem = await tx.case.findUnique({ where: { id: caseId } });
+      if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
+
+      const milestone = await tx.caseMilestone.findFirst({
+        where: { id: milestoneId, caseId },
+      });
+      if (!milestone) throw new NotFoundException(`Milestone ${milestoneId} for Case ${caseId} not found`);
+
+      // Role check: Only the client can acknowledge milestone completion
+      if (caseItem.clientId !== userId) {
+        throw new ForbiddenException('Only the client can acknowledge milestone completion (FR-CASE-04).');
+      }
+
+      if (
+        milestone.status !== MilestoneStatus.PENDING_CLIENT_APPROVAL &&
+        milestone.status !== MilestoneStatus.COMPLETED
+      ) {
+        throw new BadRequestException(
+          `Milestone is not awaiting acknowledgement (current status: ${milestone.status}).`
+        );
+      }
+
+      const now = new Date();
+      const updated = await tx.caseMilestone.update({
+        where: { id: milestoneId },
+        data: {
+          status: MilestoneStatus.COMPLETED,
+          acknowledgedByClientAt: now,
+        },
+      });
+
+      await tx.caseTimeline.create({
+        data: {
+          caseId,
+          title: 'Milestone Completion Acknowledged',
+          description: `Client acknowledged completion of milestone "${milestone.title}".${data?.feedback ? ` Feedback: "${data.feedback}"` : ''}`,
+          eventDate: now,
+        },
+      });
+
+      await tx.outboxEvent.create({
+        data: {
+          aggregateType: 'Case',
+          aggregateId: caseId,
+          eventType: 'MILESTONE_ACKNOWLEDGED',
+          payload: {
+            caseId,
+            milestoneId,
+            title: milestone.title,
+            clientId: caseItem.clientId,
+            attorneyId: caseItem.attorneyId,
+            acknowledgedAt: now,
+            feedback: data?.feedback,
+            rating: data?.rating,
+          },
+        },
+      });
+
+      return {
+        message: 'Milestone completion acknowledged successfully',
+        milestone: updated,
+      };
     });
   }
 
   async updateMilestoneStatus(caseId: string, milestoneId: string, status: any, userId: string) {
+    const caseItem = await this.prisma.case.findUnique({ where: { id: caseId } });
+    if (!caseItem) throw new NotFoundException(`Legal Case ${caseId} not found`);
+
     const milestone = await this.prisma.caseMilestone.findFirst({
       where: { id: milestoneId, caseId },
     });
     if (!milestone) throw new NotFoundException(`Milestone ${milestoneId} for Case ${caseId} not found`);
 
+    if (status === 'COMPLETED' || status === MilestoneStatus.COMPLETED) {
+      if (caseItem.attorneyId === userId) {
+        return this.completeMilestone(caseId, milestoneId, userId);
+      } else if (caseItem.clientId === userId) {
+        return this.acknowledgeMilestone(caseId, milestoneId, userId);
+      }
+    }
+
     return this.prisma.caseMilestone.update({
       where: { id: milestoneId },
       data: {
         status,
-        ...(status === 'COMPLETED' && { completedAt: new Date() }),
+        ...(status === MilestoneStatus.COMPLETED && {
+          completedAt: milestone.completedAt || new Date(),
+          acknowledgedByClientAt: new Date(),
+        }),
       },
     });
   }
@@ -257,7 +589,7 @@ export class CaseService {
     return this.agreementService.getOrCreateCaseChat(caseId, userId);
   }
 
-  // Conflict of Interest Gate & Case Acceptance Decision (BR-CASE-01 / TC-CASE-01)
+  // Conflict of Interest Gate & Case Acceptance Decision (FR-CASE-02 / BR-CASE-01 / TC-CASE-01)
   async recordCaseDecision(
     caseId: string,
     decision: 'ACCEPT' | 'DECLINE',
@@ -280,30 +612,49 @@ export class CaseService {
             closedAt: new Date(),
           },
         });
+        await tx.caseTimeline.create({
+          data: {
+            caseId,
+            title: 'Case Declined',
+            description: `Attorney declined representation. Reason: ${coiDeclaration?.declineReason || 'Not specified'}.`,
+            eventDate: new Date(),
+          },
+        });
         await tx.outboxEvent.create({
           data: {
             aggregateType: 'Case',
             aggregateId: caseId,
             eventType: 'CASE_DECLINED',
-            payload: { caseId, attorneyId, reason: coiDeclaration.declineReason || 'Declined by attorney' },
+            payload: { caseId, attorneyId, reason: coiDeclaration?.declineReason || 'Declined by attorney' },
           },
         });
-        return { status: 'DECLINED', message: 'Case declined successfully' };
+        return { status: 'DECLINED', message: 'Case declined successfully', case: updated };
       }
 
       // Conflict of Interest Check (BR-CASE-01): Blocks acceptance on declared conflict
-      if (coiDeclaration.hasConflict) {
+      if (coiDeclaration?.hasConflict) {
         throw new BadRequestException({
           code: 'CONFLICT_OF_INTEREST_DECLARED',
-          message: 'Acceptance blocked: Attorney indicated a Conflict of Interest. Client will be offered re-matching.'
+          message: 'Acceptance blocked: Attorney indicated a Conflict of Interest. Client will be offered re-matching.',
         });
       }
 
+      // Transition to ACCEPTED (FR-CASE-02 / FR-CASE-04)
       const updated = await tx.case.update({
         where: { id: caseId },
         data: {
-          status: CaseStatus.IN_PROGRESS,
+          status: CaseStatus.ACCEPTED,
           conflictAcknowledged: true,
+        },
+      });
+
+      await tx.caseTimeline.create({
+        data: {
+          caseId,
+          title: 'Case Accepted (Awaiting Milestone Plan)',
+          description:
+            'Attorney completed conflict-of-interest check and accepted the case. Next step: attorney proposes milestones for client approval before IN_PROGRESS (FR-CASE-04).',
+          eventDate: new Date(),
         },
       });
 
@@ -320,4 +671,5 @@ export class CaseService {
     });
   }
 }
+
 

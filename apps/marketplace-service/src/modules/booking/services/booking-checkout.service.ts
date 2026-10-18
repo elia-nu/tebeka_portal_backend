@@ -96,7 +96,7 @@ export class BookingCheckoutService {
         amount: consultationFee,
         currency: 'ETB',
         provider: dto.provider,
-        returnUrl: dto.returnUrl,
+        returnUrl: dto.returnUrl || process.env.PAYMENT_RETURN_URL || 'https://tebeka-frontend.vercel.app/en/payment/complete',
         email: email || undefined,
         phone: phone || undefined,
         description: `Consultation Booking: ${booking.referenceNumber || booking.id}`,
