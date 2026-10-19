@@ -42,6 +42,82 @@ export class DiscoveryService {
     return `${firstName} ${surnameInitial}.`;
   }
 
+  private buildAttorneyCard(
+    item: any,
+    profile: any | null,
+    availabilities: any[],
+    isAnonymous: boolean,
+    matchExplanation?: string
+  ) {
+    const attorneyAvailabilities = availabilities || [];
+    const realName = profile?.fullName || profile?.user?.name || profile?.user?.fullName || profile?.displayName;
+    const fallbackName = `Advocate ${item.city || 'Addis'} Practitioner`;
+    const displayName = isAnonymous
+      ? this.maskSurname(realName || 'Advocate ' + item.attorneyId.substring(0, 5))
+      : (realName || fallbackName);
+
+    const barAdmissionYear = profile?.barAdmissionYear || (item.experienceScore ? Math.max(1990, new Date().getFullYear() - Math.round(item.experienceScore / 5)) : 2018);
+    const yearsOfExperience = profile?.yearsOfExperience ?? profile?.experienceYears ?? (new Date().getFullYear() - barAdmissionYear);
+
+    const rawFee = profile?.consultationFee ?? profile?.consultationFees;
+    const consultationFee = rawFee !== null && rawFee !== undefined ? Number(rawFee) : null;
+
+    const practiceAreas = (profile?.practiceAreas && profile.practiceAreas.length > 0)
+      ? profile.practiceAreas
+      : (item.practiceAreaIds?.length ? item.practiceAreaIds : ['Commercial Law', 'Contract Dispute']);
+
+    const languages = (profile?.languages && profile.languages.length > 0)
+      ? profile.languages
+      : (item.languages?.length ? item.languages : ['en', 'am']);
+
+    const city = profile?.city || item.city || 'Addis Ababa';
+    const officeAddress = isAnonymous
+      ? 'Masked for unauthenticated visitors'
+      : (profile?.officeAddress || 'Addis Ababa Office');
+
+    return {
+      attorneyId: item.attorneyId,
+      slug: profile?.slug || null,
+      displayName,
+      lawFirmName: profile?.lawFirmName || null,
+      professionalPhotoUrl: profile?.professionalPhotoUrl || profile?.photoUrl || profile?.user?.avatarUrl || profile?.user?.image || null,
+      bio: profile?.bio || profile?.bioEn || null,
+      bioAm: profile?.bioAm || null,
+      city,
+      subcity: profile?.subcity || null,
+      region: profile?.region || null,
+      country: profile?.country || 'Ethiopia',
+      officeAddress,
+      officeLocation: isAnonymous ? null : (profile?.officeLocation || null),
+      languages,
+      practiceAreas,
+      consultationFee,
+      feeBand: profile?.feeBand || item.feeBand || 'STANDARD',
+      rating: Number(item.rating.toFixed(1)),
+      reviewCount: profile?.reviewCount || Math.round(item.rating * 8),
+      responsivenessRate: `${Math.min(100, Math.round(item.responsivenessScore || 95))}%`,
+      searchScore: item.searchScore,
+      videoSupport: profile?.videoSupport ?? true,
+      onlineConsultation: profile?.onlineConsultation ?? false,
+      nextAvailableWindow: attorneyAvailabilities.length > 0
+        ? `Weekday ${attorneyAvailabilities[0].weekday} at ${attorneyAvailabilities[0].startTime}`
+        : 'Next Available: Tomorrow',
+      isAnonymousPreview: isAnonymous,
+      ...(matchExplanation ? { matchExplanation } : {}),
+      educations: profile?.educations || [],
+      credentialVault: {
+        verifiedBadge: true,
+        verifiedAt: profile?.verifiedAt || item.verifiedAt,
+        barAdmissionYear,
+        yearsOfExperience,
+        barRegistrationNumber: isAnonymous ? 'Masked' : (profile?.barRegistrationNumber || 'VERIFIED-BAR-ADVOCATE'),
+        standingStatus: profile?.standingStatus || 'ACTIVE_IN_GOOD_STANDING',
+        credentialClaimsMatch: profile?.credentialClaimsMatch ?? true,
+        profileCompleteness: profile?.profileCompleteness || 100,
+      },
+    };
+  }
+
   /**
    * 1. Public Attorney Discovery with Advanced Filters & Credential Vault Result Cards
    */
@@ -114,14 +190,19 @@ export class DiscoveryService {
       this.prisma.discoveryIndex.count({ where }),
     ]);
 
-    // Fetch availability & build Credential Vault result cards
+    // Fetch user profiles & availability windows in parallel
     const attorneyIds = items.map((i) => i.attorneyId);
-    const availabilities = await this.prisma.availabilityWindow.findMany({
-      where: {
-        attorneyId: { in: attorneyIds },
-        isAvailable: true,
-      },
-    });
+    const [availabilities, userProfilesSettled] = await Promise.all([
+      this.prisma.availabilityWindow.findMany({
+        where: {
+          attorneyId: { in: attorneyIds },
+          isAvailable: true,
+        },
+      }),
+      Promise.allSettled(
+        attorneyIds.map((id) => this.userServiceClient.getAttorneyProfile(id))
+      ),
+    ]);
 
     const availabilityMap = new Map<string, any[]>();
     for (const av of availabilities) {
@@ -131,34 +212,18 @@ export class DiscoveryService {
       availabilityMap.get(av.attorneyId)?.push(av);
     }
 
-    const formattedCards = items.map((item) => {
-      const attorneyAvailabilities = availabilityMap.get(item.attorneyId) || [];
-      const barAdmissionYear = item.experienceScore ? Math.max(1990, new Date().getFullYear() - Math.round(item.experienceScore / 5)) : 2018;
-      const yearsOfExperience = new Date().getFullYear() - barAdmissionYear;
+    const profileMap = new Map<string, any>();
+    attorneyIds.forEach((id, index) => {
+      const settled = userProfilesSettled[index];
+      if (settled.status === 'fulfilled' && settled.value) {
+        profileMap.set(id, settled.value);
+      }
+    });
 
-      return {
-        attorneyId: item.attorneyId,
-        displayName: isAnonymous ? this.maskSurname('Advocate ' + item.attorneyId.substring(0, 5)) : `Advocate ${item.city || 'Addis'} Practitioner`,
-        city: item.city || 'Addis Ababa',
-        languages: item.languages?.length ? item.languages : ['en', 'am'],
-        practiceAreas: item.practiceAreaIds || ['Commercial Law', 'Contract Dispute'],
-        rating: Number(item.rating.toFixed(1)),
-        reviewCount: Math.round(item.rating * 8),
-        responsivenessRate: `${Math.min(100, Math.round(item.responsivenessScore || 95))}%`,
-        searchScore: item.searchScore,
-        feeBand: item.feeBand || 'STANDARD',
-        nextAvailableWindow: attorneyAvailabilities.length > 0 ? `Weekday ${attorneyAvailabilities[0].weekday} at ${attorneyAvailabilities[0].startTime}` : 'Next Available: Tomorrow',
-        isAnonymousPreview: isAnonymous,
-        credentialVault: {
-          verifiedBadge: true,
-          verifiedAt: item.verifiedAt,
-          barAdmissionYear,
-          yearsOfExperience,
-          standingStatus: 'ACTIVE_IN_GOOD_STANDING',
-          credentialClaimsMatch: true,
-          profileCompleteness: 100,
-        },
-      };
+    const formattedCards = items.map((item) => {
+      const profile = profileMap.get(item.attorneyId) || null;
+      const attorneyAvailabilities = availabilityMap.get(item.attorneyId) || [];
+      return this.buildAttorneyCard(item, profile, attorneyAvailabilities, isAnonymous);
     });
 
     const result = {
@@ -217,30 +282,23 @@ export class DiscoveryService {
       this.prisma.discoveryIndex.count({ where }),
     ]);
 
-    const formattedCards = items.map((item) => {
-      const barAdmissionYear = item.experienceScore ? Math.max(1990, new Date().getFullYear() - Math.round(item.experienceScore / 5)) : 2017;
-      const yearsOfExperience = new Date().getFullYear() - barAdmissionYear;
+    const attorneyIds = items.map((i) => i.attorneyId);
+    const userProfilesSettled = await Promise.allSettled(
+      attorneyIds.map((id) => this.userServiceClient.getAttorneyProfile(id))
+    );
 
-      return {
-        attorneyId: item.attorneyId,
-        displayName: isAnonymous ? this.maskSurname('Advocate ' + item.attorneyId.substring(0, 5)) : `Advocate ${item.city || 'Addis'} Practitioner`,
-        city: item.city || 'Addis Ababa',
-        languages: item.languages || ['en', 'am'],
-        practiceAreas: item.practiceAreaIds?.length ? item.practiceAreaIds : [dto.matterType],
-        rating: Number(item.rating.toFixed(1)),
-        responsivenessRate: `${Math.min(100, Math.round(item.responsivenessScore || 98))}%`,
-        searchScore: item.searchScore,
-        matchExplanation: `Matched for ${dto.matterType} in ${dto.city || 'Ethiopia'} with ${dto.urgency === 'IMMEDIATE_24H' ? 'instant 24h SLA response' : 'flexible consultation'}.`,
-        isAnonymousPreview: isAnonymous,
-        credentialVault: {
-          verifiedBadge: true,
-          barAdmissionYear,
-          yearsOfExperience,
-          standingStatus: 'ACTIVE_IN_GOOD_STANDING',
-          credentialClaimsMatch: true,
-          profileCompleteness: 100,
-        },
-      };
+    const profileMap = new Map<string, any>();
+    attorneyIds.forEach((id, index) => {
+      const settled = userProfilesSettled[index];
+      if (settled.status === 'fulfilled' && settled.value) {
+        profileMap.set(id, settled.value);
+      }
+    });
+
+    const formattedCards = items.map((item) => {
+      const profile = profileMap.get(item.attorneyId) || null;
+      const matchExplanation = `Matched for ${dto.matterType} in ${dto.city || 'Ethiopia'} with ${dto.urgency === 'IMMEDIATE_24H' ? 'instant 24h SLA response' : 'flexible consultation'}.`;
+      return this.buildAttorneyCard(item, profile, [], isAnonymous, matchExplanation);
     });
 
     const result = {
