@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { sanitizeUser } from '../../users/users.service';
 import { PrismaService } from '@workspace/database';
 import { AttorneyVaultService } from './attorney-vault.service';
 import { AttorneyModerationService } from './attorney-moderation.service';
 import { evaluateAndRecordGuardedChanges } from '../utils/attorney-guarded-fields.util';
 import { calculateAttorneyProfileCompleteness } from '../utils/attorney-completeness.util';
+import { QueryAttorneyDto } from '../dto/attorney.dto';
 
 @Injectable()
 export class AttorneyProfileService {
@@ -30,14 +32,15 @@ export class AttorneyProfileService {
     return profile;
   }
 
-  async findAll(query: any = {}) {
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 20;
+  async findAll(query: QueryAttorneyDto = {}) {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(Math.max(1, Number(query.limit) || 20), 50);
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    // Base predicate: only active, verified attorneys with active user accounts
+    const where: Prisma.AttorneyProfileWhereInput = {
       status: 'ACTIVE',
-      verificationStatus: 'APPROVED',
+      verificationStatus: (query.verificationStatus as any) || 'APPROVED',
       hasVerifiedBadge: true,
       user: {
         status: 'ACTIVE',
@@ -45,23 +48,88 @@ export class AttorneyProfileService {
       },
     };
 
-    if (query.city) {
+    // 1. Keyword search (Name, Bio, Law Firm, Display Name)
+    if (query.q && query.q.trim()) {
+      const term = query.q.trim();
+      where.OR = [
+        { fullName: { contains: term, mode: 'insensitive' } },
+        { bio: { contains: term, mode: 'insensitive' } },
+        { bioEn: { contains: term, mode: 'insensitive' } },
+        { bioAm: { contains: term, mode: 'insensitive' } },
+        { lawFirmName: { contains: term, mode: 'insensitive' } },
+        { user: { name: { contains: term, mode: 'insensitive' } } },
+        { user: { displayName: { contains: term, mode: 'insensitive' } } },
+      ];
+    }
+
+    // 2. Location filtering
+    if (query.city && query.city !== 'ALL') {
       where.city = { contains: query.city, mode: 'insensitive' };
     }
-    if (query.feeBand) {
-      where.feeBand = query.feeBand;
+    if (query.subcity && query.subcity !== 'ALL') {
+      where.subcity = { contains: query.subcity, mode: 'insensitive' };
     }
-    if (query.practiceArea) {
+    if (query.region && query.region !== 'ALL') {
+      where.region = { contains: query.region, mode: 'insensitive' };
+    }
+
+    // 3. Specialty filtering (Prisma Postgres array containment)
+    if (query.practiceArea && query.practiceArea !== 'ALL') {
       where.practiceAreas = { has: query.practiceArea };
     }
 
+    // 4. Consultation fee band filtering
+    if (query.feeBand && query.feeBand !== 'ALL') {
+      where.feeBand = query.feeBand;
+    }
+
+    // 5. Spoken language filtering
+    if (query.language && query.language !== 'ALL') {
+      where.languages = { has: query.language };
+    }
+
+    // 6. Minimum Rating threshold
+    if (query.minRating && Number(query.minRating) > 0) {
+      where.rating = { gte: Number(query.minRating) };
+    }
+
+    // Standing status filtering if supplied
+    if (query.standingStatus && query.standingStatus !== 'ALL') {
+      where.standingStatus = query.standingStatus;
+    }
+
+    // 7. Dynamic Sorting mapping
+    const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+    let orderBy: Prisma.AttorneyProfileOrderByWithRelationInput;
+
+    switch (query.sortBy) {
+      case 'rating':
+        orderBy = { rating: sortOrder };
+        break;
+      case 'experienceYears':
+        orderBy = { experienceYears: sortOrder };
+        break;
+      case 'consultationFee':
+        orderBy = { consultationFee: sortOrder };
+        break;
+      case 'createdAt':
+      default:
+        orderBy = { createdAt: sortOrder };
+        break;
+    }
+
+    // Execute indexed paginated query and count in parallel
     const [items, total] = await Promise.all([
       this.prisma.attorneyProfile.findMany({
         where,
         skip,
         take: limit,
-        include: { user: true, educations: true, credentials: { include: { documents: true } } },
-        orderBy: { createdAt: 'desc' },
+        include: {
+          user: true,
+          educations: true,
+          credentials: { include: { documents: true } },
+        },
+        orderBy,
       }),
       this.prisma.attorneyProfile.count({ where }),
     ]);

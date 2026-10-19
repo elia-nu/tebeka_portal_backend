@@ -134,6 +134,33 @@ async function bootstrap() {
     next();
   });
 
+  // Reverse Proxy Routing for Marketplace Attorneys (Directory Browsing -> user-service, Reviews -> marketplace-service)
+  const marketplaceAttorneyProxy = createProxyMiddleware({
+    target: userServiceUrl,
+    changeOrigin: true,
+    pathRewrite: {
+      '^/api/v1/marketplace/attorneys': '/api/v1/attorneys',
+      '^/api/v1/marketplace/attorney': '/api/v1/attorneys',
+      '^/attorneys': '/api/v1/attorneys',
+      '^/attorney': '/api/v1/attorneys',
+    },
+    on: {
+      proxyReq: fixRequestBody,
+    },
+  });
+
+  app.use(
+    ['/api/v1/marketplace/attorneys', '/api/v1/marketplace/attorney'],
+    (req, res, next) => {
+      const url = req.originalUrl || req.url || '';
+      // If request is for attorney reviews (e.g. /attorneys/:id/reviews), let marketplace-service handle it
+      if (url.includes('/reviews')) {
+        return next();
+      }
+      return marketplaceAttorneyProxy(req, res, next);
+    }
+  );
+
   // Reverse Proxy Routing for Marketplace Service (Disputes, Bookings, Cases, Reviews, Discovery)
   app.use(
     createProxyMiddleware({

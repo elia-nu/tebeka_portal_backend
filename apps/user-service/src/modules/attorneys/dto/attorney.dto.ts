@@ -166,8 +166,14 @@ export const AddEducationSchema = Joi.object({
 export interface QueryAttorneyDto {
   page?: number;
   limit?: number;
+  q?: string;
+  practiceArea?: string;
+  feeBand?: string;
   city?: string;
   subcity?: string;
+  region?: string;
+  language?: string;
+  minRating?: number;
   verificationStatus?: string;
   standingStatus?: string;
   sortBy?: 'createdAt' | 'experienceYears' | 'consultationFee' | 'rating';
@@ -176,12 +182,20 @@ export interface QueryAttorneyDto {
 
 export const QueryAttorneySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(50).default(20),
+  q: Joi.string().trim().allow('').max(100).optional(),
+  practiceArea: Joi.string().trim().optional(),
+  feeBand: Joi.string().trim().optional(),
   city: Joi.string().trim().optional(),
   subcity: Joi.string().trim().optional(),
+  region: Joi.string().trim().optional(),
+  language: Joi.string().trim().optional(),
+  minRating: Joi.number().min(0).max(5).optional(),
   verificationStatus: Joi.string().trim().optional(),
   standingStatus: Joi.string().trim().optional(),
-  sortBy: Joi.string().valid('createdAt', 'experienceYears', 'consultationFee', 'rating').default('createdAt'),
+  sortBy: Joi.string()
+    .valid('createdAt', 'experienceYears', 'consultationFee', 'rating')
+    .default('createdAt'),
   sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
 });
 

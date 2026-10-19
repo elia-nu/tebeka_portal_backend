@@ -375,6 +375,12 @@ model AttorneyProfile {
   @@index([licenseNumber])
   @@index([nationalIdNumber])
   @@index([verificationStatus])
+  @@index([status, verificationStatus, hasVerifiedBadge])
+  @@index([city])
+  @@index([feeBand])
+  @@index([rating])
+  @@index([experienceYears])
+  @@index([createdAt])
   @@map("attorney_profiles")
 }
 
