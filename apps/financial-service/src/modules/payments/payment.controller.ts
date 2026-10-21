@@ -301,5 +301,50 @@ export class PaymentController {
     const adminId = req.user?.id;
     return this.paymentService.rejectManualRefund(id, adminId, body.reason || 'Admin rejected refund');
   }
+
+  // =========================================================================
+  // 7. ESCROW RELEASE & RECONCILIATION MANAGEMENT
+  // =========================================================================
+
+  @Post('admin/escrow/reconcile')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async reconcileEscrow(
+    @Body() body: { targetPayeeId?: string },
+    @Req() req: any
+  ) {
+    const adminId = req.user?.id || 'ADMIN_API';
+    return this.paymentService.reconcileStuckEscrow(body?.targetPayeeId, adminId);
+  }
+
+  @Post('admin/escrow/release/:paymentId')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async releaseEscrowByPaymentId(
+    @Param('paymentId') paymentId: string,
+    @Req() req: any
+  ) {
+    const adminId = req.user?.id || 'ADMIN_API';
+    return this.paymentService.releaseEscrowByPaymentId(paymentId, adminId);
+  }
+
+  @Post('admin/escrow/booking/:bookingId/release')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async releaseEscrowForBooking(
+    @Param('bookingId') bookingId: string,
+    @Req() req: any
+  ) {
+    const adminId = req.user?.id || 'ADMIN_API';
+    return this.paymentService.releaseEscrowForBooking(bookingId, adminId);
+  }
+
+  @Post('admin/escrow/case/:caseId/milestone/release')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async releaseEscrowForMilestone(
+    @Param('caseId') caseId: string,
+    @Body() body: { milestoneName?: string },
+    @Req() req: any
+  ) {
+    const adminId = req.user?.id || 'ADMIN_API';
+    return this.paymentService.releaseEscrowForMilestone(caseId, body?.milestoneName, adminId);
+  }
 }
 

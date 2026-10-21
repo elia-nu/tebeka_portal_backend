@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RefundStatus, PaymentStatus } from '@prisma/client/financial';
 import { PrismaService } from '../../database/prisma.service';
 import { EventBusService } from '@workspace/event-bus';
+import { EscrowReleaseService } from '../payments/services/escrow-release.service';
 
 @Injectable()
 export class FinancialEventsConsumer implements OnModuleInit {
@@ -10,6 +11,7 @@ export class FinancialEventsConsumer implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
+    private readonly escrowReleaseService: EscrowReleaseService,
   ) {}
 
   onModuleInit() {
@@ -133,6 +135,75 @@ export class FinancialEventsConsumer implements OnModuleInit {
 
             this.logger.log(`Manual Refund Record [${refund.id}] created in PENDING status for Attorney No-Show on booking ${bookingId}`);
           });
+        }
+      }
+    );
+
+    // Cross-Service Saga: Ingest BOOKING_COMPLETED and release pending escrow to attorney available balance
+    this.eventBus.subscribeIdempotent(
+      'BOOKING_COMPLETED',
+      'financial-service',
+      this.prisma,
+      async (data: any) => {
+        const bookingId = data.bookingId || data.aggregateId;
+        this.logger.log(`Handling BOOKING_COMPLETED event for booking [${bookingId}] to release escrow`);
+        if (!bookingId) return;
+
+        try {
+          await this.escrowReleaseService.releaseEscrowForBooking(
+            bookingId,
+            data.completedBy || data.approvedBy || 'BOOKING_COMPLETED_EVENT'
+          );
+        } catch (err: any) {
+          this.logger.error(`Error releasing escrow for booking [${bookingId}]:`, err?.message || err);
+        }
+      }
+    );
+
+    // Cross-Service Saga: Ingest MILESTONE_ACKNOWLEDGED and release pending escrow to attorney available balance
+    this.eventBus.subscribeIdempotent(
+      'MILESTONE_ACKNOWLEDGED',
+      'financial-service',
+      this.prisma,
+      async (data: any) => {
+        const caseId = data.caseId || data.aggregateId;
+        const milestoneName = data.title || data.milestoneName;
+        this.logger.log(
+          `Handling MILESTONE_ACKNOWLEDGED event for case [${caseId}], milestone: [${milestoneName || 'ALL'}]`
+        );
+        if (!caseId) return;
+
+        try {
+          await this.escrowReleaseService.releaseEscrowForMilestone(
+            caseId,
+            milestoneName,
+            data.clientId || 'MILESTONE_ACKNOWLEDGED_EVENT'
+          );
+        } catch (err: any) {
+          this.logger.error(`Error releasing milestone escrow for case [${caseId}]:`, err?.message || err);
+        }
+      }
+    );
+
+    // Cross-Service Saga: Ingest CASE_MILESTONE_COMPLETED fallback
+    this.eventBus.subscribeIdempotent(
+      'CASE_MILESTONE_COMPLETED',
+      'financial-service',
+      this.prisma,
+      async (data: any) => {
+        const caseId = data.caseId || data.aggregateId;
+        const milestoneName = data.title || data.milestoneName;
+        this.logger.log(`Handling CASE_MILESTONE_COMPLETED event for case [${caseId}]`);
+        if (!caseId) return;
+
+        try {
+          await this.escrowReleaseService.releaseEscrowForMilestone(
+            caseId,
+            milestoneName,
+            data.approvedBy || 'CASE_MILESTONE_COMPLETED_EVENT'
+          );
+        } catch (err: any) {
+          this.logger.error(`Error releasing milestone escrow for case [${caseId}]:`, err?.message || err);
         }
       }
     );

@@ -24,6 +24,7 @@
     "prisma:generate:all": "npm run prisma:generate:user && npm run prisma:generate:marketplace && npm run prisma:generate:financial && npm run prisma:generate:communication",
     "seed:admin": "ts-node -r dotenv/config apps/user-service/src/seed_test_users.ts",
     "seed:users": "ts-node -r dotenv/config apps/user-service/src/seed_test_users.ts",
+    "reconcile:escrow": "ts-node -r dotenv/config scripts/reconcile_escrow.ts",
     "deploy": "bash scripts/deploy.sh"
   },
   "workspaces": [

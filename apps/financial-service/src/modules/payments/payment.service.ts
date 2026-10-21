@@ -7,6 +7,7 @@ import { PaymentRefundService } from './services/payment-refund.service';
 import { PayoutWalletService } from './services/payout-wallet.service';
 import { GeoPaymentService, GeoGatewayResolution } from './services/geo-payment.service';
 import { PaymentCompletionService } from './services/payment-completion.service';
+import { EscrowReleaseService } from './services/escrow-release.service';
 
 @Injectable()
 export class PaymentService {
@@ -20,6 +21,7 @@ export class PaymentService {
     private readonly refundService: PaymentRefundService,
     private readonly walletService: PayoutWalletService,
     private readonly geoPaymentService: GeoPaymentService,
+    private readonly escrowReleaseService: EscrowReleaseService,
     @Optional() paymentCompletionService?: PaymentCompletionService,
   ) {
     this.completionService = paymentCompletionService || new PaymentCompletionService(this.prisma);
@@ -472,5 +474,25 @@ export class PaymentService {
 
   rejectManualRefund(refundId: string, rejectedBy: string, reason: string) {
     return this.refundService.rejectManualRefund(refundId, rejectedBy, reason);
+  }
+
+  // =========================================================================
+  // 6. ESCROW RELEASE & RECONCILIATION DELEGATIONS
+  // =========================================================================
+
+  releaseEscrowForBooking(bookingId: string, approvedBy?: string) {
+    return this.escrowReleaseService.releaseEscrowForBooking(bookingId, approvedBy);
+  }
+
+  releaseEscrowForMilestone(caseId: string, milestoneName?: string, approvedBy?: string) {
+    return this.escrowReleaseService.releaseEscrowForMilestone(caseId, milestoneName, approvedBy);
+  }
+
+  releaseEscrowByPaymentId(paymentId: string, approvedBy?: string) {
+    return this.escrowReleaseService.releaseEscrowByPaymentId(paymentId, approvedBy);
+  }
+
+  reconcileStuckEscrow(targetPayeeId?: string, approvedBy?: string) {
+    return this.escrowReleaseService.reconcileStuckEscrow(targetPayeeId, approvedBy);
   }
 }
