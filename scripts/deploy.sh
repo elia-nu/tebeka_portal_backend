@@ -15,10 +15,11 @@ export NX_TUI=false
 export CI=true
 unset NODE_OPTIONS
 
-echo "--> Pulling latest code..."
+echo "--> Syncing latest code..."
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "User-service-localization")
 echo "--> Active branch: ${CURRENT_BRANCH}"
-git pull origin "${CURRENT_BRANCH}" || git pull origin main || true
+git fetch origin "${CURRENT_BRANCH}" || git fetch origin main || true
+git reset --hard "origin/${CURRENT_BRANCH}" || git reset --hard origin/main || git pull origin "${CURRENT_BRANCH}" || true
 
 echo "--> Installing dependencies..."
 npm install --legacy-peer-deps

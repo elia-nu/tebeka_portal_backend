@@ -157,8 +157,8 @@ jobs:
             git fetch origin
             BRANCH="${{ github.ref_name }}"
             echo "--> Checking out branch: $BRANCH"
-            git checkout "$BRANCH" || git checkout -b "$BRANCH" "origin/$BRANCH"
-            git pull origin "$BRANCH"
+            git checkout -f "$BRANCH" || git checkout -f -B "$BRANCH" "origin/$BRANCH"
+            git reset --hard "origin/$BRANCH"
             echo "--> Running deploy script..."
             chmod +x scripts/deploy.sh
             bash scripts/deploy.sh
